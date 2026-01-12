@@ -1,0 +1,104 @@
+import { contextBridge, ipcRenderer } from 'electron'
+import { electronAPI } from '@electron-toolkit/preload'
+
+// Custom APIs for renderer
+const api = {
+  windowShow: () => {
+    ipcRenderer.send('window-show')
+  },
+  windowMinimize: () => {
+    ipcRenderer.send('window-minimize')
+  },
+  windowClose: () => {
+    ipcRenderer.send('window-close')
+  },
+  getAnnouncements: () => {
+    const result = ipcRenderer.invoke('get-announcements')
+    return result
+  },
+  getAnnouncementDetail: async (path: string, idx: number) => {
+    const result = await ipcRenderer.invoke('get-announcement-detail', { path, idx })
+    return result
+  },
+  selectFolder: async (currentPath?: string) => {
+    const result = await ipcRenderer.invoke('select-folder', currentPath)
+    return result
+  },
+  launchGame: async (
+    gamePath: string,
+    launchArgs?: string,
+    closeOnLaunch?: boolean,
+    processPriority?: string,
+    lowerNPPriority?: boolean
+  ) => {
+    const result = await ipcRenderer.invoke(
+      'launch-game',
+      gamePath,
+      launchArgs,
+      closeOnLaunch,
+      processPriority,
+      lowerNPPriority
+    )
+    return result
+  },
+  readPatchInfo: async (gamePath: string) => {
+    const result = await ipcRenderer.invoke('read-patch-info', gamePath)
+    return result
+  },
+  readConfigIni: async (gamePath: string) => {
+    const result = await ipcRenderer.invoke('read-config-ini', gamePath)
+    return result
+  },
+  writeConfigIni: async (gamePath: string, configJson: Record<string, unknown>) => {
+    const result = await ipcRenderer.invoke('write-config-ini', gamePath, configJson)
+    return result
+  },
+  getRemoteVersion: async () => {
+    const result = await ipcRenderer.invoke('get-remote-version')
+    return result
+  },
+  openAnnouncementDetail: (detail: unknown) => {
+    ipcRenderer.send('open-announcement-detail', detail)
+  },
+  onAnnouncementDetail: (callback: (detail: unknown) => void) => {
+    ipcRenderer.on('announcement-detail-data', (_event, payload) => {
+      callback(payload)
+    })
+  },
+  windowMinimizeCurrent: () => {
+    ipcRenderer.send('window-minimize-current')
+  },
+  windowCloseCurrent: () => {
+    ipcRenderer.send('window-close-current')
+  },
+  openRechargeCenter: () => {
+    ipcRenderer.send('open-recharge-center')
+  },
+  getRandomGameImage: async () => {
+    const result = await ipcRenderer.invoke('get-random-game-image')
+    return result
+  },
+  tcpLogin: async (username: string, password: string) => {
+    const result = await ipcRenderer.invoke('tcp-login', username, password)
+    return result
+  }
+}
+
+// Use `contextBridge` APIs to expose Electron APIs to
+// renderer only if context isolation is enabled, otherwise
+// just add to the DOM global.
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld('electron', electronAPI)
+    contextBridge.exposeInMainWorld('api', api)
+    console.log('[Preload] API exposed via contextBridge (contextIsolated: true)')
+  } catch (error) {
+    console.error('[Preload] Error exposing API:', error)
+  }
+} else {
+  // @ts-ignore (define in dts)
+  window.electron = electronAPI
+  // @ts-ignore (define in dts)
+  window.api = api
+  console.log('[Preload] API exposed directly (contextIsolated: false)')
+}

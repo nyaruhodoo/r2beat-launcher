@@ -1,0 +1,143 @@
+<template>
+  <div class="detail-container">
+    <CustomTitleBar type="detail" :title="detail?.title" />
+
+    <div class="detail-content">
+      <div v-if="loading" class="loading-state">
+        <div class="loading-spinner" />
+      </div>
+      <div v-else-if="errorText" class="placeholder error">
+        <p>{{ errorText }}</p>
+      </div>
+      <div v-else class="detail-body" v-html="contentHtml || '（暂无正文）'" />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import CustomTitleBar from './components/CustomTitleBar.vue'
+import { AnnouncementData } from '@types'
+
+const detail = ref<AnnouncementData | null>(null)
+const contentHtml = ref('')
+const loading = ref(false)
+const errorText = ref('')
+
+const getPath = (section?: number) => {
+  if (section === 1) return 'Notice'
+  if (section === 6) return 'RuleAndRegulations'
+  if (section === 4) return 'Event'
+  return ''
+}
+
+const fetchDetail = async (payload: AnnouncementData) => {
+  const path = getPath(payload.section)
+  if (!path) {
+    errorText.value = '无法识别公告类型'
+    return
+  }
+
+  loading.value = true
+  errorText.value = ''
+
+  try {
+    const res = await window.api.getAnnouncementDetail?.(path, payload.idx ?? 0)
+    if (!res?.success) {
+      errorText.value = res?.error || '获取公告详情失败'
+      return
+    }
+
+    contentHtml.value = res.data?.content ?? ''
+  } catch (error) {
+    console.error('[Renderer] 获取公告详情失败:', error)
+    errorText.value = '获取公告详情时发生异常'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  // 主进程在窗口加载完成后会通过 IPC 发送 announcement-detail-data
+  window.api.onAnnouncementDetail?.((payload: AnnouncementData) => {
+    detail.value = payload
+    fetchDetail(payload)
+  })
+})
+</script>
+
+<style scoped>
+.detail-container {
+  padding: 70px 30px 40px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+.detail-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 16px;
+}
+
+.detail-body {
+  color: var(--color-text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.detail-body :deep(img) {
+  border-radius: 16px;
+  height: auto !important;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--color-primary);
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.loading-sub {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.placeholder {
+  margin-top: 40px;
+  text-align: center;
+  color: var(--color-text-tertiary);
+}
+
+.placeholder.error {
+  color: var(--color-error, #e74c3c);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
