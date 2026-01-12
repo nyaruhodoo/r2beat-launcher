@@ -85,14 +85,29 @@ onMounted(() => {
 
 .detail-body {
   color: var(--color-text-primary);
-  white-space: pre-wrap;
+  white-space: pre-line;
   word-break: break-word;
   overflow-wrap: anywhere;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  line-height: 1.2;
 }
 
 .detail-body :deep(img) {
   border-radius: 16px;
   height: auto !important;
+}
+.detail-body :deep(ul) {
+  padding-left: 1.5em;
+}
+.detail-body :deep(ol) {
+  padding-left: 1.5em;
+}
+.detail-body :deep(div) {
+  text-align: center !important;
 }
 
 .loading-state {
