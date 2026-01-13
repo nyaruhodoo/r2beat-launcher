@@ -9,6 +9,7 @@
       <div v-else-if="errorText" class="placeholder error">
         <p>{{ errorText }}</p>
       </div>
+      <!-- eslint-disable-next-line vue/no-v-html -->
       <div v-else class="detail-body" v-html="contentHtml || '（暂无正文）'" />
     </div>
   </div>
