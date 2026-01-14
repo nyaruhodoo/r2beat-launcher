@@ -8,8 +8,8 @@
           @switch-account="handleSwitchAccount"
           @show-logout-confirm="showLogoutConfirm = true"
         />
-        <button class="nav-btn">
-          <a href="https://r2beat.xiyouxi.com/" target="_blank">
+        <a href="https://r2beat.xiyouxi.com/" target="_blank">
+          <button class="nav-btn">
             <svg
               t="1768407529180"
               class="icon nav-icon"
@@ -27,8 +27,9 @@
               ></path>
             </svg>
             <span class="nav-text">游戏官网</span>
-          </a>
-        </button>
+          </button>
+        </a>
+
         <button class="nav-btn" @click="handleNavClick('recharge')">
           <svg
             t="1768407402129"
