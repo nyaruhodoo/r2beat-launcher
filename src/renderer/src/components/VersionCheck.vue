@@ -35,6 +35,7 @@
 </template>
 
 <script setup lang="ts">
+import { checkRemoteVersionTime } from '@renderer/config'
 import { GameSettings } from '@types'
 import { ref, onMounted, watch, computed } from 'vue'
 import useInterval from 'vue-hooks-plus/lib/useInterval'
@@ -128,13 +129,9 @@ onMounted(() => {
   loadRemoteVersion()
 })
 
-// 10分钟刷一次
-useInterval(
-  () => {
-    loadRemoteVersion()
-  },
-  1000 * 60 * 10
-)
+useInterval(() => {
+  loadRemoteVersion()
+}, checkRemoteVersionTime)
 
 const handleUpdate = () => {
   // 这里后续可以添加实际的更新逻辑

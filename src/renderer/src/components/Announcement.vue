@@ -26,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import { checkAnnouncementsCacheTime, checkAnnouncementsTime } from '@renderer/config'
 import { AnnouncementData } from '@types'
 import { ref } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
@@ -90,7 +91,7 @@ const fetchAnnouncements = async () => {
       const cacheAge = now - cache.timestamp
 
       // 如果缓存未过期（5分钟内），直接使用缓存
-      if (cacheAge < 5 * 60 * 1000) {
+      if (cacheAge < checkAnnouncementsCacheTime) {
         console.log(`[Renderer] 使用缓存数据（缓存时间: ${Math.round(cacheAge / 1000)}秒）`)
         announcements.value = cache.data
         loading.value = false
@@ -112,9 +113,7 @@ const fetchAnnouncements = async () => {
       setAnnouncementsCache(newCache)
       console.log('[Renderer] 公告数据已缓存')
     } else if (cache && cache.data && Array.isArray(cache.data)) {
-      // 如果获取失败，使用过期缓存作为后备
-      console.log('[Renderer] 获取失败，使用过期缓存数据')
-      announcements.value = cache.data
+      throw new Error('[Renderer] 获取失败，使用过期缓存数据')
     }
   } catch (error) {
     console.error('[Renderer] 获取公告失败:', error)
@@ -146,13 +145,9 @@ const handleAnnouncementClick = (item: AnnouncementData) => {
 
 fetchAnnouncements()
 
-// 10分钟刷一次
-useInterval(
-  () => {
-    fetchAnnouncements()
-  },
-  1000 * 60 * 10
-)
+useInterval(() => {
+  fetchAnnouncements()
+}, checkAnnouncementsTime)
 </script>
 
 <style scoped>

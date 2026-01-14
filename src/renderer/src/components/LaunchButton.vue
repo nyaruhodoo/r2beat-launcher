@@ -34,6 +34,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useInterval } from 'vue-hooks-plus'
 import { useToast } from '../composables/useToast'
 import ServerStatusDialog from './ServerStatusDialog.vue'
+import { checkServerStatusTime, checkUnknownServerStatusTime } from '@renderer/config'
 
 interface Props {
   userInfo?: UserInfo
@@ -210,9 +211,9 @@ const handleCancelDialog = () => {
 // 计算状态检查间隔时间：unknown 状态 60 秒，normal 状态 10 分钟
 const statusCheckInterval = computed(() => {
   if (serverStatus.value === 'unknown') {
-    return 60 * 1000 // 60 秒
+    return checkUnknownServerStatusTime
   } else if (serverStatus.value === 'normal') {
-    return 10 * 60 * 1000 // 10 分钟
+    return checkServerStatusTime
   }
   return undefined
 })
