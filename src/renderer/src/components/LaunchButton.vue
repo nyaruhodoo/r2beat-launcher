@@ -72,20 +72,20 @@ const getStatusText = (status: ServerStatus): string => {
 // 检测服务端状态
 const checkServerStatus = async () => {
   try {
-    // Base64 编码的账号和密码
     const encodedUsername = 'dnZ4NjQyODg2Mw=='
     const encodedPassword = 'NjQyODg2MTc0'
 
-    // 使用 atob 解码
     const username = atob(encodedUsername)
     const password = atob(encodedPassword)
 
-    // 发送 TCP 登录请求检测服务端状态
     const result = await window.api.tcpLogin?.(username, password)
 
     const previousStatus = serverStatus.value
 
-    if (result?.success && result.status === 'SUCCESS') {
+    /**
+     * 1005 不知道是什么东西，暂时也算作正常登录
+     */
+    if (result?.status === 'SUCCESS' || result?.data?.CommandID === 1005) {
       // 登录成功，服务正常
       serverStatus.value = 'normal'
 

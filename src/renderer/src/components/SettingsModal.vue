@@ -151,6 +151,7 @@ import { ref, watch, computed } from 'vue'
 import CustomSelect from './CustomSelect.vue'
 import { AppConfig, GameSettings } from '@types'
 import qrcode from '@renderer/imgs/qrcode.jpg'
+import { useToast } from '@renderer/composables/useToast'
 
 const props = defineProps<{
   visible: boolean
@@ -161,6 +162,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'save', settings: GameSettings): void
 }>()
+
+const { error: showError } = useToast()
 
 // 创建一个本地的响应式对象用于 v-model 绑定
 const settings = ref<GameSettings>({
@@ -173,7 +176,7 @@ const settings = ref<GameSettings>({
 })
 
 // 保存 config.ini 转换后的 JSON 数据
-const configIniJson = ref<AppConfig | null>(null)
+const configIniJson = ref<AppConfig>()
 
 // 从 configIniJson 读取并双向绑定的计算属性
 const resolution = computed({
@@ -224,7 +227,6 @@ const fullscreen = computed({
 
 const graphicsQuality = computed({
   get: () => {
-    console.log(configIniJson.value?.VIDEO)
     if (!configIniJson.value?.VIDEO) return true
     return configIniJson.value.VIDEO.OUTLINING === 1
   },
@@ -268,54 +270,6 @@ const backgroundMusic = computed({
   }
 })
 
-// 读取并转换 config.ini 为 JSON
-const loadConfigIni = async () => {
-  const gamePath = settings.value.gamePath
-  if (!gamePath || gamePath.trim() === '') {
-    configIniJson.value = null
-    return
-  }
-
-  try {
-    const result = await window.api.readConfigIni?.(gamePath)
-
-    if (result?.success && result.exists && result.data) {
-      configIniJson.value = result.data
-      console.log('config.ini 已读取并转换为 JSON:', configIniJson.value)
-    } else {
-      configIniJson.value = null
-      console.error('读取 config.ini 失败:', result)
-    }
-  } catch (error) {
-    console.error('读取 config.ini 异常:', error)
-    configIniJson.value = null
-  }
-}
-
-// 当模态框打开时，从 props 加载设置并读取 config.ini
-watch(
-  () => props.visible,
-  (isVisible) => {
-    if (isVisible && props.gameSettings) {
-      settings.value = { ...props.gameSettings }
-      // 弹窗打开时读取并转换 config.ini
-      loadConfigIni()
-    }
-  },
-  { immediate: true }
-)
-
-// 监听游戏路径变化，自动重新读取 config.ini
-watch(
-  () => settings.value.gamePath,
-  (newPath) => {
-    // 只有在弹窗打开时才重新加载
-    if (props.visible && newPath) {
-      loadConfigIni()
-    }
-  }
-)
-
 const resolutionOptions = [
   { value: [1920, 1080], label: '1920 × 1080' },
   { value: [1024, 768], label: '1024 × 768' },
@@ -323,10 +277,10 @@ const resolutionOptions = [
 ]
 
 const processPriorityOptions = [
-  { value: 'realtime', label: '实时（最高，慎用）' },
+  { value: 'realtime', label: '实时' },
   { value: 'high', label: '高' },
   { value: 'abovenormal', label: '高于正常' },
-  { value: 'normal', label: '正常（推荐）' },
+  { value: 'normal', label: '正常' },
   { value: 'belownormal', label: '低于正常' },
   { value: 'low', label: '低' }
 ]
@@ -348,12 +302,10 @@ const handleSave = async () => {
       if (result?.success) {
         console.log('config.ini 保存成功')
       } else {
-        console.error('保存 config.ini 失败:', result?.error)
-        // 可以在这里添加错误提示
+        throw new Error(result?.error)
       }
     } catch (error) {
-      console.error('保存 config.ini 异常:', error)
-      // 可以在这里添加错误提示
+      showError(`保存 config.ini 失败: ${error}`)
     }
   }
 
@@ -366,12 +318,58 @@ const handleBrowse = async () => {
     const selectedPath = await window.api.selectFolder?.(settings.value.gamePath)
     if (selectedPath) {
       settings.value.gamePath = selectedPath
-      // 路径会自动保存到 localStorage（通过 useLocalStorageState）
     }
   } catch (error) {
     console.error('选择文件夹失败:', error)
   }
 }
+
+// 读取并转换 config.ini 为 JSON
+const loadConfigIni = async () => {
+  const gamePath = settings.value.gamePath
+  if (!gamePath || gamePath.trim() === '') {
+    configIniJson.value = undefined
+    return
+  }
+
+  try {
+    const result = await window.api.readConfigIni?.(gamePath)
+
+    if (result?.success && result.exists && result.data) {
+      configIniJson.value = result.data
+      console.log('config.ini 已读取并转换为 JSON:', configIniJson.value)
+    } else {
+      throw new Error(result?.error)
+    }
+  } catch {
+    configIniJson.value = undefined
+    showError(`读取 config.ini 异常`)
+  }
+}
+
+// 当模态框打开时，从 props 加载设置并读取 config.ini
+watch(
+  () => props.visible,
+  (isVisible) => {
+    if (isVisible && props.gameSettings) {
+      settings.value = { ...props.gameSettings }
+      // 弹窗打开时读取并转换 config.ini
+      loadConfigIni()
+    }
+  },
+  { immediate: true }
+)
+
+// 监听游戏路径变化，自动重新读取 config.ini
+watch(
+  () => settings.value.gamePath,
+  (newPath, oldPath) => {
+    if (props.visible && newPath && oldPath) {
+      console.log(2)
+      loadConfigIni()
+    }
+  }
+)
 </script>
 
 <style scoped>
@@ -410,7 +408,6 @@ const handleBrowse = async () => {
     opacity 0.3s ease;
 }
 
-/* 弹窗过渡动画 - 使用纯 transition 避免闪烁 */
 .modal-enter-active {
   transition: opacity 0.3s ease;
 }
@@ -1073,7 +1070,7 @@ const handleBrowse = async () => {
 
   &.qrcode {
     flex-direction: column;
-    padding-top: 200px;
+    padding-top: 600px;
 
     img {
       width: 50%;

@@ -85,7 +85,6 @@ const loadLocalVersion = async () => {
   try {
     const result = await window.api.readPatchInfo?.(path)
     if (result?.success && result.data) {
-      console.log(result.data.patch)
       currentVersion.value = result.data.patch.version.toString().padStart(5, '0')
     } else {
       currentVersion.value = '读取失败'
