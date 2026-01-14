@@ -94,7 +94,7 @@
             <div class="checkbox-group">
               <label class="setting-label checkbox-label">
                 <input v-model="settings.autoUpdate" type="checkbox" class="checkbox-input" />
-                <span>启动前自动检查更新</span>
+                <span>自动更新</span>
               </label>
               <label class="setting-label checkbox-label">
                 <input v-model="settings.closeOnLaunch" type="checkbox" class="checkbox-input" />

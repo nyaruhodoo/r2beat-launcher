@@ -1,4 +1,3 @@
-import { AppConfig } from '@types'
 import { readFileSync, writeFileSync } from 'fs'
 import { extname } from 'path'
 
@@ -60,7 +59,7 @@ export function parseIniToJson(iniStr: string) {
  * @param {object} jsonObj - 要转换的JSON对象
  * @returns {string} INI格式字符串
  */
-export function stringifyJsonToIni(jsonObj: AppConfig) {
+export function stringifyJsonToIni(jsonObj: Record<string, Record<string, unknown>>) {
   let iniStr = ''
   const sections = Object.keys(jsonObj)
 

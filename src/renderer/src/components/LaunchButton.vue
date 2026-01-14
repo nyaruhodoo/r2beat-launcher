@@ -31,7 +31,7 @@
 <script setup lang="ts">
 import { GameSettings, UserInfo } from '@types'
 import { ref, onMounted, computed } from 'vue'
-import { useInterval } from 'vue-hooks-plus'
+import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
 import { useToast } from '../composables/useToast'
 import ServerStatusDialog from './ServerStatusDialog.vue'
 import { checkServerStatusTime, checkUnknownServerStatusTime } from '@renderer/config'
@@ -59,6 +59,11 @@ const showStatusDialog = ref(false)
 
 // 自动登录相关
 const autoLoginEnabled = ref(false)
+
+// 缓存上次检测时间戳
+const [lastCheckTimestamp, setLastCheckTimestamp] = useLocalStorageState<number>(
+  'r2beat_server_status_last_check'
+)
 
 // 获取状态文本
 const getStatusText = (status: ServerStatus): string => {
@@ -103,12 +108,24 @@ const checkServerStatus = async () => {
     // 发生错误，服务异常
     console.error('[LaunchButton] 检测服务端状态失败:', error)
     serverStatus.value = 'unknown'
+  } finally {
+    // 更新检测时间戳
+    setLastCheckTimestamp(Date.now())
   }
 }
 
-// 组件初始化时检测服务端状态
+// 组件初始化时检测服务端状态（带缓存）
 onMounted(() => {
-  checkServerStatus()
+  const now = Date.now()
+  const lastCheck = lastCheckTimestamp.value
+
+  // 如果距离上次检测超过一分钟，则重新检测
+  if (!lastCheck || now - lastCheck >= checkUnknownServerStatusTime) {
+    checkServerStatus()
+  } else {
+    // 在一分钟内，跳过检测
+    console.log('[LaunchButton] 距离上次检测不足一分钟，跳过检测')
+  }
 })
 
 // Toast 提示

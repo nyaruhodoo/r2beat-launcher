@@ -16,7 +16,7 @@ export const checkAnnouncementsCacheTime = 1000 * 60 * 5
 /**
  * 服务端状态检测间隔时间(正常)
  */
-export const checkServerStatusTime = 1000 * 60 * 10
+export const checkServerStatusTime = 1000 * 60 * 5
 
 /**
  * 服务端状态检测间隔时间(维护)

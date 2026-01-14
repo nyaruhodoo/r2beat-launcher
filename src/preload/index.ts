@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type {
+  DownloadPatchOptions,
+  DownloadPatchFilesResult,
+  PatchProgressPayload,
+  PatchUpdateInfo
+} from '@types'
 
 // Custom APIs for renderer
 const api = {
@@ -81,6 +87,23 @@ const api = {
   tcpLogin: async (username: string, password: string) => {
     const result = await ipcRenderer.invoke('tcp-login', username, password)
     return result
+  },
+  downloadPatchLists: async (versions: string[], options?: DownloadPatchOptions) => {
+    const result = await ipcRenderer.invoke('download-patch-lists', versions, options)
+    return result
+  },
+  downloadPatchFiles: async (info: PatchUpdateInfo): Promise<DownloadPatchFilesResult> => {
+    const result = await ipcRenderer.invoke('download-patch-files', info)
+    return result
+  },
+  applyPatchFiles: async (gamePath: string, latestVersion: string) => {
+    const result = await ipcRenderer.invoke('apply-patch-files', gamePath, latestVersion)
+    return result
+  },
+  onPatchProgress: (callback: (payload: PatchProgressPayload) => void) => {
+    ipcRenderer.on('patch-progress', (_event, payload: PatchProgressPayload) => {
+      callback(payload)
+    })
   }
 }
 

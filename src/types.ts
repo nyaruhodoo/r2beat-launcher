@@ -208,6 +208,76 @@ export interface PatchInfo {
   }
 }
 
+export interface PatchUpdateFile {
+  // 补丁文件名，例如 00026_000001.lzma
+  patchFileName: string
+  // 目标文件名，例如 Game.exe
+  targetFileName: string
+  // 补丁文件对应的版本号（例如 00026）
+  version: string
+  // 补丁列表文件在本地的完整路径
+  filePath: string
+  // 原始文件大小
+  originalSize: number
+  // 压缩后文件大小
+  compressedSize: number
+  // 可选：校验值
+  checksum?: string
+  // 补丁下载地址
+  downloadUrl: string
+}
+
+export interface PatchUpdateInfo {
+  /** 需要下载的补丁总大小（字节） */
+  totalSize?: number
+  /** 需要下载的补丁明细列表 */
+  patches?: PatchUpdateFile[]
+}
+
+export interface DownloadPatchListsResult {
+  success: boolean
+
+  /** 失败时的错误信息 */
+  error?: string
+
+  /** 需要下载的补丁总大小（字节） */
+  totalSize?: number
+
+  /** 需要下载的补丁明细列表 */
+  patches?: PatchUpdateFile[]
+}
+
+export interface DownloadPatchFilesResult {
+  success: boolean
+  /** 实际下载并解压成功的文件（目标文件名列表） */
+  downloaded?: string[]
+  /** 因已存在而跳过的文件（目标文件名列表） */
+  skipped?: string[]
+  /** 失败时的错误信息 */
+  error?: string
+}
+
+export interface PatchProgressPayload {
+  /** 总进度百分比，0-100（下载与解压各占 50%） */
+  percent: number
+  /** 当前阶段：download=下载，decompress=解压，skip=已存在跳过 */
+  stage: 'download' | 'decompress' | 'skip'
+  /** 当前处理的目标文件名（例如 Game.exe） */
+  targetFileName?: string
+  /** 可选的描述信息，便于调试 */
+  message?: string
+}
+
+export interface DownloadPatchOptions {
+  /** 是否只保留同名补丁中的最新版本，默认 true */
+  keepLatestOnly?: boolean
+}
+
+export interface ApplyPatchFilesResult {
+  success: boolean
+  error?: string
+}
+
 export interface ContextBridgeApi {
   windowShow?: () => void
   windowMinimize?: () => void
@@ -254,6 +324,13 @@ export interface ContextBridgeApi {
     fileName?: string
     error?: string
   }>
+  downloadPatchLists?: (
+    versions: string[],
+    options?: DownloadPatchOptions
+  ) => Promise<DownloadPatchListsResult>
+  downloadPatchFiles?: (info: PatchUpdateInfo) => Promise<DownloadPatchFilesResult>
+  applyPatchFiles?: (gamePath: string, latestVersion: string) => Promise<ApplyPatchFilesResult>
+  onPatchProgress?: (callback: (payload: PatchProgressPayload) => void) => void
   tcpLogin?: (
     username: string,
     password: string

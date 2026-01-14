@@ -1,12 +1,25 @@
 import { BrowserWindow, ipcMain, dialog, app } from 'electron'
 import { join } from 'path'
 import { homedir } from 'os'
-import { existsSync, readFileSync, writeFileSync, readdirSync } from 'fs'
+import {
+  existsSync,
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  mkdirSync,
+  createReadStream,
+  createWriteStream,
+  unlinkSync,
+  statSync
+} from 'fs'
+import { get as httpGet } from 'http'
+import { copyFileSync, rmSync } from 'fs'
 import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
-import { AnnouncementData, Announcementlist, AppConfig, ProcessPriority } from '@types'
+import { AnnouncementData, Announcementlist, PatchUpdateInfo, ProcessPriority } from '@types'
 import { is } from '@electron-toolkit/utils'
 import { sendTcpLoginRequest } from './tcp-login'
 import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
+import lzma from 'lzma-native'
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
@@ -581,34 +594,37 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * @param gamePath 游戏安装目录
    * @param configJson JSON 配置对象
    */
-  ipcMain.handle('write-config-ini', async (_, gamePath: string, configJson: AppConfig) => {
-    try {
-      if (!gamePath || gamePath.trim() === '') {
-        return { success: false, error: '游戏路径未设置' }
-      }
+  ipcMain.handle(
+    'write-config-ini',
+    async (_, gamePath: string, configJson: Record<string, Record<string, unknown>>) => {
+      try {
+        if (!gamePath || gamePath.trim() === '') {
+          return { success: false, error: '游戏路径未设置' }
+        }
 
-      if (!configJson) {
-        return { success: false, error: '配置数据为空' }
-      }
+        if (!configJson) {
+          return { success: false, error: '配置数据为空' }
+        }
 
-      const configIniPath = join(gamePath, 'config.ini')
+        const configIniPath = join(gamePath, 'config.ini')
 
-      // 使用 ini-json-converter 转换为 INI 字符串
-      const iniContent = stringifyJsonToIni(configJson)
+        // 使用 ini-json-converter 转换为 INI 字符串
+        const iniContent = stringifyJsonToIni(configJson)
 
-      // 写入文件
-      writeFileSync(configIniPath, iniContent, 'utf-8')
+        // 写入文件
+        writeFileSync(configIniPath, iniContent, 'utf-8')
 
-      console.log('[Main] config.ini 保存成功:', configIniPath)
-      return { success: true }
-    } catch (error) {
-      console.error('[Main] 保存 config.ini 失败:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '保存 config.ini 文件时发生未知错误'
+        console.log('[Main] config.ini 保存成功:', configIniPath)
+        return { success: true }
+      } catch (error) {
+        console.error('[Main] 保存 config.ini 失败:', error)
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : '保存 config.ini 文件时发生未知错误'
+        }
       }
     }
-  })
+  )
 
   /**
    * 读取游戏 Patch.ini 文件
@@ -737,6 +753,493 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         success: false,
         status: 'ERROR',
         error: error instanceof Error ? error.message : 'TCP 登录时发生未知错误'
+      }
+    }
+  })
+
+  /**
+   * 下载补丁列表文件 (.lst) 到项目根目录下的 patch/lst 目录
+   * URL 模板: https://r2beat-cdn.xiyouxi.com/live/vpatch/{version}/{version}.lst
+   * 1. 仅当本地不存在同名文件时才下载
+   * 2. version 为字符串，例如: "00026"
+   */
+  ipcMain.handle(
+    'download-patch-lists',
+    async (_event, versions: string[], options?: { keepLatestOnly?: boolean }) => {
+      try {
+        if (!Array.isArray(versions) || versions.length === 0) {
+          return { success: false, error: '版本列表为空' }
+        }
+
+        // 过滤非法版本号（只允许数字字符串）
+        const validVersions = versions.filter((v) => typeof v === 'string' && /^\d+$/.test(v))
+        if (validVersions.length === 0) {
+          return { success: false, error: '没有有效的版本号' }
+        }
+
+        // 目标目录：项目根目录 /patch/lst
+        const appRoot = app.getAppPath()
+        const targetDir = join(appRoot, 'patch', 'lst')
+
+        // 确保目录存在
+        try {
+          if (!existsSync(targetDir)) {
+            // 使用 fs.mkdirSync 递归创建目录
+            mkdirSync(targetDir, { recursive: true })
+          }
+        } catch (error) {
+          console.error('[Main] 创建 patch/lst 目录失败:', error)
+          return { success: false, error: '创建本地目录失败' }
+        }
+
+        // 用于后续解析的本地文件信息
+        const localFiles: { version: string; filePath: string }[] = []
+
+        for (const version of validVersions) {
+          const fileName = `${version}.lst.txt`
+          const filePath = join(targetDir, fileName)
+
+          // 如果已经存在同名文件，则跳过下载
+          if (existsSync(filePath)) {
+            console.log(`[Main] 补丁列表已存在，跳过: ${fileName}`)
+            localFiles.push({ version, filePath })
+            continue
+          }
+
+          const url = `https://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${version}.lst`
+          console.log('[Main] 开始下载补丁列表:', url)
+
+          try {
+            const response = await fetch(url)
+            if (!response.ok) {
+              console.error('[Main] 下载补丁列表失败:', url, response.status, response.statusText)
+              continue
+            }
+
+            const arrayBuffer = await response.arrayBuffer()
+            const buffer = Buffer.from(arrayBuffer)
+            writeFileSync(filePath, buffer)
+            localFiles.push({ version, filePath })
+            console.log('[Main] 补丁列表下载完成:', filePath)
+          } catch (error) {
+            console.error('[Main] 下载补丁列表异常:', version, error)
+          }
+        }
+        // 解析所有 lst 文件，计算补丁详情与总大小
+        let patches: {
+          version: string
+          filePath: string
+          patchFileName: string
+          targetFileName: string
+          originalSize: number
+          compressedSize: number
+          checksum?: string
+          downloadUrl: string
+        }[] = []
+
+        let totalSize = 0
+
+        for (const { version, filePath } of localFiles) {
+          try {
+            const content = readFileSync(filePath, 'utf-8')
+            const lines = content
+              .split(/\r?\n/)
+              .map((line) => line.trim())
+              .filter((line) => line && !line.startsWith('#') && !line.startsWith(';'))
+
+            for (const line of lines) {
+              const parts = line.split(/\s+/)
+              if (parts.length < 4) {
+                continue
+              }
+
+              const patchFileName = parts[0]
+              const targetFileName = parts[1]
+              const originalSize = Number(parts[2]) || 0
+              const compressedSize = Number(parts[3]) || 0
+              const checksum = parts[4]
+
+              const downloadUrl = `http://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${patchFileName}`
+
+              patches.push({
+                version,
+                filePath,
+                patchFileName,
+                targetFileName,
+                originalSize,
+                compressedSize,
+                checksum,
+                downloadUrl
+              })
+
+              // 按原始大小统计总下载体积
+              totalSize += originalSize
+            }
+          } catch (error) {
+            console.error('[Main] 解析补丁列表失败:', filePath, error)
+          }
+        }
+
+        // 根据配置选择是否只保留同名补丁中的最新版本（默认 true）
+        const keepLatestOnly = options?.keepLatestOnly !== false
+
+        if (keepLatestOnly && patches.length > 0) {
+          // 以目标文件名（例如 Game.exe）作为“同名文件”的判断依据
+          const latestMap = new Map<string, (typeof patches)[number]>()
+
+          for (const patch of patches) {
+            const key = patch.targetFileName
+            const existing = latestMap.get(key)
+
+            if (!existing) {
+              latestMap.set(key, patch)
+              continue
+            }
+
+            const vNew = parseInt(patch.version, 10)
+            const vOld = parseInt(existing.version, 10)
+
+            if (!Number.isNaN(vNew) && !Number.isNaN(vOld)) {
+              if (vNew > vOld) {
+                latestMap.set(key, patch)
+              }
+            } else if (patch.version > existing.version) {
+              latestMap.set(key, patch)
+            }
+          }
+
+          patches = Array.from(latestMap.values())
+          // 重新按原始大小计算总下载体积
+          totalSize = patches.reduce((sum, p) => sum + (p.originalSize || 0), 0)
+        }
+
+        return {
+          success: true,
+          totalSize,
+          patches
+        }
+      } catch (error) {
+        console.error('[Main] download-patch-lists 处理失败:', error)
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : '下载补丁列表时发生未知错误'
+        }
+      }
+    }
+  )
+
+  /**
+   * 应用补丁文件到游戏目录：
+   * 1. 将 patch/file 下的文件复制并覆盖到 gamePath
+   * 2. 更新 PatchInfo/Patch.ini 中的 patch.version 为最新版本
+   * 3. 清空项目根目录的 patch 目录
+   */
+  ipcMain.handle('apply-patch-files', async (_event, gamePath: string, latestVersion: string) => {
+    try {
+      if (!gamePath || !latestVersion) {
+        throw new Error('游戏路径或版本号为空')
+      }
+
+      // 在应用补丁前，检查 Game.exe 是否正在运行中
+      if (process.platform === 'win32') {
+        try {
+          const result = await spawnPromise('tasklist', ['/FI', 'IMAGENAME eq Game.exe'], {
+            collectStdout: true,
+            collectStderr: false
+          })
+
+          const output = result.stdout.toLowerCase()
+          // tasklist 在找到进程时会包含 "game.exe" 这一行
+          if (output.includes('game.exe')) {
+            throw new Error('游戏正在运行中，请关闭游戏后重试')
+          }
+        } catch (error) {
+          // 如果检查进程本身失败，只在明确检测到进程存在时阻断，其他错误允许继续
+          if (error instanceof Error && error.message.includes('游戏正在运行中')) {
+            throw error
+          }
+          console.warn('[Main] 检查 Game.exe 进程状态失败（忽略）:', error)
+        }
+      }
+
+      const appRoot = app.getAppPath()
+      const patchRoot = join(appRoot, 'patch')
+      const patchFileDir = join(patchRoot, 'file')
+
+      if (!existsSync(patchFileDir)) {
+        throw new Error('未找到补丁文件目录')
+      }
+
+      // 复制补丁文件覆盖到游戏目录
+      const files = readdirSync(patchFileDir, { withFileTypes: true })
+      for (const file of files) {
+        if (!file.isFile()) continue
+        const src = join(patchFileDir, file.name)
+        const dest = join(gamePath, file.name)
+        copyFileSync(src, dest)
+      }
+
+      // 更新 PatchInfo/Patch.ini 中的版本号
+      try {
+        const patchIniPath = join(gamePath, 'PatchInfo', 'Patch.ini')
+        if (existsSync(patchIniPath)) {
+          const iniContent = readFileSync(patchIniPath, 'utf-8')
+          const json = parseIniToJson(iniContent)
+          const versionNum = Number(latestVersion)
+          if (!Number.isNaN(versionNum)) {
+            // @ts-expect-error  忽略错误
+            if (!json.patch) json.patch = {}
+            // @ts-expect-error  忽略错误
+            json.patch.version = latestVersion
+            const newIni = stringifyJsonToIni(json)
+            writeFileSync(patchIniPath, newIni, 'utf-8')
+          }
+        }
+      } catch (error) {
+        console.warn('[Main] 更新 Patch.ini 版本号失败（忽略）：', error)
+        throw error
+      }
+
+      // 清空 patch 目录
+      try {
+        rmSync(patchRoot, { recursive: true, force: true })
+      } catch (error) {
+        console.warn('[Main] 清空 patch 目录失败（忽略）：', error)
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('[Main] apply-patch-files 失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '应用补丁文件时发生未知错误'
+      }
+    }
+  })
+
+  /**
+   * 根据补丁列表信息下载并解压补丁文件到项目根目录 patch/file 目录中
+   * - 下载前检查目标文件是否已存在（根据 targetFileName 判断），存在则跳过
+   * - 下载完成后使用 lzma-native 解压，解压后的文件命名为 targetFileName
+   * - 解压完成后删除压缩包本身
+   */
+  ipcMain.handle('download-patch-files', async (event, info: PatchUpdateInfo) => {
+    try {
+      const patches = info?.patches ?? []
+      if (!Array.isArray(patches) || patches.length === 0) {
+        throw new Error('没有可下载的补丁文件')
+      }
+
+      const appRoot = app.getAppPath()
+      const targetDir = join(appRoot, 'patch', 'file')
+
+      try {
+        if (!existsSync(targetDir)) {
+          mkdirSync(targetDir, { recursive: true })
+        }
+      } catch (error) {
+        console.error('[Main] 创建 patch/file 目录失败:', error)
+        throw new Error('创建补丁文件目录失败')
+      }
+
+      // 节流控制：默认 2 秒上报一次进度
+      let lastProgressTime = 0
+
+      const emitProgress = (
+        stage: 'download' | 'decompress' | 'skip',
+        downloadFraction: number,
+        decompressFraction: number,
+        targetFileName?: string,
+        message?: string
+      ) => {
+        const overall = downloadFraction * 0.5 + decompressFraction * 0.5
+        const percent = Number((overall * 100).toFixed(2))
+
+        const now = Date.now()
+        // 始终允许 100% 上报；其余情况 2 秒节流一次
+        if (percent < 100 && now - lastProgressTime < 2000) {
+          return
+        }
+        lastProgressTime = now
+
+        event.sender.send('patch-progress', {
+          percent,
+          stage,
+          targetFileName,
+          message
+        })
+      }
+
+      emitProgress('download', 0, 0, undefined, '开始更新补丁')
+
+      for (const patch of patches) {
+        let downloadFraction = 0
+        let decompressFraction = 0
+        const targetFileName = patch.targetFileName
+        if (!targetFileName || !patch.downloadUrl) {
+          continue
+        }
+
+        const outPath = join(targetDir, targetFileName)
+
+        // 若目标文件已存在，则跳过
+        if (existsSync(outPath)) {
+          console.log('[Main] 目标文件已存在，跳过下载与解压:', outPath)
+          downloadFraction = 1
+          decompressFraction = 1
+          emitProgress(
+            'skip',
+            downloadFraction,
+            decompressFraction,
+            targetFileName,
+            '目标文件已存在，跳过'
+          )
+          continue
+        }
+
+        const tmpPath = join(targetDir, patch.patchFileName || `${targetFileName}.lzma`)
+        console.log('[Main] 开始下载补丁文件:', patch.downloadUrl)
+
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const fileStream = createWriteStream(tmpPath)
+            const req = httpGet(patch.downloadUrl, (res) => {
+              const { statusCode } = res
+              if (!statusCode || statusCode < 200 || statusCode >= 300) {
+                console.error(
+                  '[Main] 下载补丁文件失败:',
+                  patch.downloadUrl,
+                  statusCode,
+                  res.statusMessage
+                )
+                res.resume() // 丢弃数据，避免内存泄漏
+                fileStream.end()
+                return resolve()
+              }
+
+              const totalBytes = Number(res.headers['content-length'] || 0)
+              let downloadedBytes = 0
+
+              res.on('data', (chunk: Buffer) => {
+                downloadedBytes += chunk.length
+                fileStream.write(chunk)
+                if (totalBytes > 0) {
+                  downloadFraction = Math.min(1, downloadedBytes / totalBytes)
+                  emitProgress(
+                    'download',
+                    downloadFraction,
+                    decompressFraction,
+                    targetFileName,
+                    '补丁下载中'
+                  )
+                }
+              })
+
+              res.on('end', () => {
+                fileStream.end()
+                if (totalBytes === 0) {
+                  downloadFraction = 1
+                  emitProgress(
+                    'download',
+                    downloadFraction,
+                    decompressFraction,
+                    targetFileName,
+                    '补丁下载完成'
+                  )
+                }
+                resolve()
+              })
+
+              res.on('error', (err) => {
+                fileStream.destroy()
+                reject(err)
+              })
+            })
+
+            req.on('error', (err) => {
+              fileStream.destroy()
+              reject(err)
+            })
+
+            fileStream.on('error', (err) => reject(err))
+          })
+
+          console.log('[Main] 补丁文件下载完成，开始解压:', tmpPath)
+
+          downloadFraction = 1
+          emitProgress(
+            'download',
+            downloadFraction,
+            decompressFraction,
+            targetFileName,
+            '补丁下载完成'
+          )
+
+          // 使用流的方式解压 .lzma 到目标文件
+          await new Promise<void>((resolve, reject) => {
+            const decoder = lzma.createDecompressor()
+            const source = createReadStream(tmpPath)
+            const dest = createWriteStream(outPath)
+
+            let decompressedBytes = 0
+            let totalDecompressBytes = 0
+            try {
+              const stat = statSync(tmpPath)
+              totalDecompressBytes = stat.size
+            } catch {
+              totalDecompressBytes = 0
+            }
+
+            source.on('data', (chunk) => {
+              decompressedBytes += chunk.length
+              if (totalDecompressBytes > 0) {
+                decompressFraction = Math.min(1, decompressedBytes / totalDecompressBytes)
+                emitProgress(
+                  'decompress',
+                  downloadFraction,
+                  decompressFraction,
+                  targetFileName,
+                  '补丁解压中'
+                )
+              }
+            })
+
+            source.on('error', (err) => reject(err))
+            dest.on('error', (err) => reject(err))
+            dest.on('finish', () => resolve())
+
+            source.pipe(decoder).pipe(dest)
+          })
+
+          // 解压完成后删除临时压缩包
+          try {
+            unlinkSync(tmpPath)
+          } catch (error) {
+            console.warn('[Main] 删除临时补丁文件失败（可忽略）:', tmpPath, error)
+          }
+
+          console.log('[Main] 补丁解压完成:', outPath)
+          decompressFraction = 1
+          emitProgress(
+            'decompress',
+            downloadFraction,
+            decompressFraction,
+            targetFileName,
+            '补丁解压完成'
+          )
+        } catch (error) {
+          console.error('[Main] 处理补丁文件失败:', patch.downloadUrl, error)
+        }
+      }
+
+      return {
+        success: true
+      }
+    } catch (error) {
+      console.error('[Main] download-patch-files 处理失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '下载并解压补丁文件时发生未知错误'
       }
     }
   })
