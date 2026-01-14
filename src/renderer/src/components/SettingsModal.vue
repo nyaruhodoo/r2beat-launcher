@@ -132,7 +132,7 @@
           </div>
 
           <div class="author-section qrcode">
-            <p>滑到这么靠下做什么，难不成你想给我打钱？</p>
+            <p>滑到底干嘛，难道你想给我打钱？</p>
             <img :src="qrcode" alt="二维码" />
           </div>
         </div>
@@ -1075,6 +1075,7 @@ watch(
     img {
       width: 50%;
       margin-top: 20px;
+      border-radius: 20px;
     }
   }
 }
