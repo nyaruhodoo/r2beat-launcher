@@ -151,6 +151,11 @@ const handleClose = () => {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
 }
 
 .title-bar-nav :deep(.nav-btn:hover) {
