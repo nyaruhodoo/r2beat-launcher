@@ -5,7 +5,16 @@
       <span class="announcement-title">系统公告</span>
     </div>
     <div class="announcement-content">
-      <div v-if="loading && announcements.length === 0" class="loading-state">正在加载公告...</div>
+      <div v-if="loading && announcements.length === 0" class="loading-state">
+        <span class="loading-text">
+          <span>正在加载公告</span>
+          <span class="loading-dots">
+            <span class="dot">.</span>
+            <span class="dot">.</span>
+            <span class="dot">.</span>
+          </span>
+        </span>
+      </div>
       <div v-else-if="!loading && announcements.length === 0" class="empty-state">暂无公告</div>
       <div
         v-for="(item, index) in announcements"
@@ -152,7 +161,10 @@ useInterval(() => {
 
 <style scoped>
 .announcement-container {
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  height: 330px;
   background: var(--color-bg-card);
   border-radius: 16px;
   padding: 12px 20px 20px;
@@ -162,7 +174,6 @@ useInterval(() => {
     background var(--transition-normal),
     border-color var(--transition-normal),
     box-shadow var(--transition-normal);
-  overflow-x: hidden;
 
   .announcement-header {
     display: flex;
@@ -208,9 +219,9 @@ useInterval(() => {
 }
 
 .announcement-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: 210px;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
@@ -303,9 +314,71 @@ useInterval(() => {
 
 .loading-state,
 .empty-state {
-  padding: 20px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
   color: var(--color-text-tertiary);
   font-size: 14px;
+  gap: 12px;
+}
+
+.loading-state {
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loading-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  animation: fade-pulse 2s ease-in-out infinite;
+}
+
+.loading-dots {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.loading-dots .dot {
+  display: inline-block;
+  animation: dot-bounce 1.4s ease-in-out infinite;
+}
+
+.loading-dots .dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.loading-dots .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dots .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes fade-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes dot-bounce {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
 }
 </style>
