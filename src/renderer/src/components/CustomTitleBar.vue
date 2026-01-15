@@ -213,10 +213,10 @@ const handleClose = () => {
   svg {
     pointer-events: none;
   }
-}
 
-.close-btn:hover {
-  background: var(--color-error-hover-bg);
-  color: var(--color-error);
+  &.close-btn:hover {
+    background: var(--color-error-hover-bg);
+    color: var(--color-error);
+  }
 }
 </style>

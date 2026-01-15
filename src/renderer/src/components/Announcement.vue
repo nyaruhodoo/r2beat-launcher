@@ -161,10 +161,12 @@ useInterval(() => {
 
 <style scoped>
 .announcement-container {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 330px;
+  overflow: hidden;
   background: var(--color-bg-card);
   border-radius: 16px;
   padding: 12px 20px 20px;
@@ -187,12 +189,98 @@ useInterval(() => {
       font-size: 24px;
       animation: pulse 2s ease-in-out infinite;
     }
+
+    .announcement-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
   }
 
-  .announcement-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--color-primary);
+  .announcement-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: var(--color-bg-card);
+      border-radius: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: 10px;
+
+      &:hover {
+        background: var(--color-border-hover);
+      }
+    }
+
+    .announcement-item {
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      width: 100%;
+      cursor: pointer;
+
+      &:hover {
+        background: var(--color-bg-card-hover);
+        border-color: var(--color-border);
+        transform: translateX(5px);
+      }
+
+      .announcement-title-box {
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .announcement-time {
+        font-size: 12px;
+        color: var(--color-text-tertiary);
+        white-space: nowrap;
+        font-family: 'Courier New', monospace;
+      }
+
+      .announcement-text {
+        font-size: 14px;
+        color: var(--color-text-primary);
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .announcement-new {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: 700;
+        color: white;
+        background: var(--gradient-primary);
+        border-radius: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        animation: pulse-new 2s ease-in-out infinite;
+        flex-shrink: 0;
+        margin-right: 6px;
+      }
+    }
   }
 }
 
@@ -217,94 +305,6 @@ useInterval(() => {
     opacity: 0.9;
   }
 }
-
-.announcement-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-gutter: stable;
-
-  .announcement-item {
-    padding: 6px 10px;
-    border-radius: 10px;
-    border: 1px solid transparent;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    width: 100%;
-    cursor: pointer;
-
-    .announcement-title-box {
-      display: flex;
-      align-items: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .announcement-time {
-      font-size: 12px;
-      color: var(--color-text-tertiary);
-      white-space: nowrap;
-      font-family: 'Courier New', monospace;
-    }
-
-    .announcement-text {
-      font-size: 14px;
-      color: var(--color-text-primary);
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .announcement-new {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2px 8px;
-      font-size: 10px;
-      font-weight: 700;
-      color: white;
-      background: var(--gradient-primary);
-      border-radius: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      animation: pulse-new 2s ease-in-out infinite;
-      flex-shrink: 0;
-      margin-right: 6px;
-    }
-  }
-}
-
-.announcement-content::-webkit-scrollbar {
-  width: 6px;
-}
-
-.announcement-content::-webkit-scrollbar-track {
-  background: var(--color-bg-card);
-  border-radius: 10px;
-}
-
-.announcement-content::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 10px;
-}
-
-.announcement-content::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-hover);
-}
-
-.announcement-item:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-border);
-  transform: translateX(5px);
-}
-
-/* 夜间模式下的公告项样式 */
 
 .loading-indicator {
   font-size: 12px;
@@ -340,23 +340,21 @@ useInterval(() => {
 .loading-dots {
   display: inline-flex;
   gap: 2px;
-}
 
-.loading-dots .dot {
-  display: inline-block;
-  animation: dot-bounce 1.4s ease-in-out infinite;
-}
+  .dot {
+    display: inline-block;
+    animation: dot-bounce 1.4s ease-in-out infinite;
 
-.loading-dots .dot:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.loading-dots .dot:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.loading-dots .dot:nth-child(3) {
-  animation-delay: 0.4s;
+    &:nth-child(1) {
+      animation-delay: 0s;
+    }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+  }
 }
 
 @keyframes fade-pulse {

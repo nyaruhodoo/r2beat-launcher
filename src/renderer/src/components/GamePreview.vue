@@ -56,10 +56,10 @@ const loadRandomGameImage = () => {
 
   // 随机选择一个图片路径，确保与当前图片不同
   const currentPath = gameImagePath.value
-  const availableImages = currentPath 
-    ? imagePaths.filter(path => path !== currentPath)
+  const availableImages = currentPath
+    ? imagePaths.filter((path) => path !== currentPath)
     : imagePaths
-  
+
   const randomIndex = Math.floor(Math.random() * availableImages.length)
   gameImagePath.value = availableImages[randomIndex]
   console.log('随机游戏封面加载成功:', gameImagePath.value)
@@ -132,9 +132,13 @@ onMounted(() => {
 
 <style scoped>
 .game-preview {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  padding: 30px;
   background: var(--color-bg-card);
   border-radius: 16px;
-  padding: 30px;
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-lg);
   text-align: center;
@@ -144,8 +148,45 @@ onMounted(() => {
     box-shadow var(--transition-normal);
 
   .game-cover {
-    margin-bottom: 20px;
     perspective: 1000px;
+
+    .game-cover-float {
+      width: 70%;
+      max-width: 40vh;
+      animation: float-cover 4s ease-in-out infinite;
+      display: inline-block;
+
+      .game-cover-image {
+        width: 100%;
+        height: 100%;
+        margin: 0 auto;
+        object-fit: cover;
+        border-radius: 16px;
+        border: 2px solid var(--color-border);
+        box-shadow: var(--shadow-md);
+        transform-style: preserve-3d;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        will-change: transform;
+        transform: translateZ(0);
+        transition:
+          border-color var(--transition-normal),
+          box-shadow var(--transition-normal),
+          transform var(--transition-normal);
+        cursor: pointer;
+
+        &:hover {
+          transform: scale(1.05);
+          box-shadow: var(--shadow-lg);
+          border-color: var(--color-primary);
+        }
+
+        @media (max-width: 768px) {
+          width: 150px;
+          height: 210px;
+        }
+      }
+    }
   }
 
   .game-info {
@@ -203,45 +244,6 @@ onMounted(() => {
     width: 150px;
     height: 210px;
     font-size: 60px;
-  }
-}
-
-.game-cover-float {
-  width: 200px;
-  height: 280px;
-  margin: auto;
-  animation: float-cover 4s ease-in-out infinite;
-  display: inline-block;
-}
-
-.game-cover-image {
-  width: 100%;
-  height: 100%;
-  margin: 0 auto;
-  object-fit: cover;
-  border-radius: 16px;
-  border: 2px solid var(--color-border);
-  box-shadow: var(--shadow-md);
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  will-change: transform;
-  transform: translateZ(0);
-  transition:
-    border-color var(--transition-normal),
-    box-shadow var(--transition-normal),
-    transform var(--transition-normal);
-  cursor: pointer;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--color-primary);
-  }
-
-  @media (max-width: 768px) {
-    width: 150px;
-    height: 210px;
   }
 }
 

@@ -510,26 +510,28 @@ watch(
   max-height: calc(80vh - 160px);
 }
 
-.modal-content::-webkit-scrollbar {
-  width: 8px;
-}
+.modal-content {
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
 
-.modal-content::-webkit-scrollbar-track {
-  background: var(--color-bg-card);
-  border-radius: 10px;
-}
+  &::-webkit-scrollbar-track {
+    background: var(--color-bg-card);
+    border-radius: 10px;
+  }
 
-.modal-content::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 10px;
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 10px;
+  }
 }
 
 .settings-section {
   margin-bottom: 30px;
-}
 
-.settings-section:last-child {
-  margin-bottom: 0;
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .section-title {
@@ -543,10 +545,10 @@ watch(
 
 .setting-item {
   margin-bottom: 20px;
-}
 
-.setting-item:last-child {
-  margin-bottom: 0;
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .setting-label {
@@ -572,64 +574,64 @@ watch(
   user-select: none;
   width: 100%;
   min-width: 0;
-}
 
-.checkbox-label::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-card);
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-  z-index: 0;
-}
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-card);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    z-index: 0;
+  }
 
-.checkbox-label:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-card-hover);
-}
+  &:hover {
+    background: var(--color-bg-card-hover);
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-card-hover);
 
-.checkbox-label:hover::before {
-  opacity: 1;
-}
+    &::before {
+      opacity: 1;
+    }
 
-.checkbox-label:active {
-  transform: translateY(0) scale(0.98);
-}
+    span {
+      color: var(--color-primary);
+    }
+  }
 
-.checkbox-label span {
-  position: relative;
-  z-index: 1;
-  font-size: 14px;
-  color: var(--color-text-primary);
-  transition: color var(--transition-normal);
-}
+  &:active {
+    transform: translateY(0) scale(0.98);
+  }
 
-.checkbox-label:hover span {
-  color: var(--color-primary);
-}
+  span {
+    position: relative;
+    z-index: 1;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    transition: color var(--transition-normal);
+  }
 
-.checkbox-input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--color-primary);
-  transition: all var(--transition-normal);
-  position: relative;
-  z-index: 1;
-}
+  .checkbox-input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+    transition: all var(--transition-normal);
+    position: relative;
+    z-index: 1;
 
-.checkbox-input:hover {
-  transform: scale(1.1);
-}
+    &:hover {
+      transform: scale(1.1);
+    }
 
-.checkbox-input:checked {
-  transform: scale(1.05);
+    &:checked {
+      transform: scale(1.05);
+    }
+  }
 }
 
 .path-input-group {
@@ -647,21 +649,21 @@ watch(
   font-size: 14px;
   transition: all var(--transition-normal);
   width: 100%;
-}
 
-.path-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  background: var(--color-bg-card-hover);
-  box-shadow: var(--shadow-input-focus);
-
-  :global(.light-theme) & {
-    box-shadow: var(--shadow-input-focus-light);
+  &::placeholder {
+    color: var(--color-text-muted);
   }
-}
 
-.path-input::placeholder {
-  color: var(--color-text-muted);
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-bg-card-hover);
+    box-shadow: var(--shadow-input-focus);
+
+    :global(.light-theme) & {
+      box-shadow: var(--shadow-input-focus-light);
+    }
+  }
 }
 
 .resolution-group {
@@ -863,11 +865,11 @@ watch(
   cursor: pointer;
   transition: all var(--transition-normal);
   min-height: 44px;
-}
 
-.custom-select-trigger:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-primary);
+  &:hover {
+    background: var(--color-bg-card-hover);
+    border-color: var(--color-primary);
+  }
 }
 
 .custom-select-value {
@@ -883,10 +885,10 @@ watch(
   transition: transform var(--transition-normal);
   margin-left: 10px;
   flex-shrink: 0;
-}
 
-.custom-select-arrow.rotated {
-  transform: rotate(180deg);
+  &.rotated {
+    transform: rotate(180deg);
+  }
 }
 
 .custom-select-dropdown {
@@ -908,24 +910,24 @@ watch(
     background var(--transition-normal),
     border-color var(--transition-normal),
     box-shadow var(--transition-normal);
-}
 
-.custom-select-dropdown::-webkit-scrollbar {
-  width: 5px;
-}
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
 
-.custom-select-dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-.custom-select-dropdown::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
-  transition: background var(--transition-normal);
-}
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+    transition: background var(--transition-normal);
 
-.custom-select-dropdown::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-hover);
+    &:hover {
+      background: var(--color-border-hover);
+    }
+  }
 }
 
 .custom-select-option {
@@ -936,17 +938,16 @@ watch(
   font-size: 13px;
   position: relative;
   line-height: 1.5;
-}
 
-.custom-select-option:hover {
-  background: var(--color-bg-card-hover);
-  color: var(--color-text-primary);
-}
+  &:hover,
+  &.active {
+    background: var(--color-bg-card-hover);
+    color: var(--color-text-primary);
+  }
 
-.custom-select-option.active {
-  background: var(--color-bg-card-hover);
-  color: var(--color-text-primary);
-  font-weight: 500;
+  &.active {
+    font-weight: 500;
+  }
 }
 
 /* 下拉动画 */
@@ -1024,29 +1025,29 @@ watch(
   border: 1.5px solid var(--color-border);
   position: relative;
   overflow: hidden;
-}
 
-.btn-cancel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-card);
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-  z-index: -1;
-}
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-card);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    z-index: -1;
+  }
 
-.btn-cancel:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-bg-card-hover);
-}
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-bg-card-hover);
+  }
 
-.btn-cancel:hover:not(:disabled)::before {
-  opacity: 1;
+  &:hover:not(:disabled)::before {
+    opacity: 1;
+  }
 }
 
 .btn-save {
@@ -1085,26 +1086,26 @@ watch(
   text-decoration: none;
   transition: transform var(--transition-normal);
   cursor: pointer;
-}
 
-.author-link:hover {
-  transform: scale(1.1);
-}
+  &:hover {
+    transform: scale(1.1);
 
-.author-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid var(--color-border);
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-sm);
-  background: var(--color-bg-card);
-}
+    .author-avatar {
+      border-color: var(--color-primary);
+      box-shadow: var(--shadow-button-hover);
+    }
+  }
 
-.author-link:hover .author-avatar {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-button-hover);
+  .author-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--color-border);
+    transition: all var(--transition-normal);
+    box-shadow: var(--shadow-sm);
+    background: var(--color-bg-card);
+  }
 }
 
 .avatar-img {

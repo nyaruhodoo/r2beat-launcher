@@ -41,7 +41,6 @@
           <Announcement />
 
           <LaunchButton
-            class="launch-button-wrapper"
             :user-info="userInfo"
             :game-settings="gameSettings"
             @login-required="showLoginModal = true"
@@ -73,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import CustomTitleBar from './components/CustomTitleBar.vue'
 import Announcement from './components/Announcement.vue'
@@ -98,6 +97,9 @@ const showLogoutConfirm = ref(false)
 /* 当前登录账号 */
 const [userInfo, setUseInfo] = useLocalStorageState<UserInfo>('r2beat_user')
 
+/**
+ * 一些基础配置
+ */
 const [gameSettings, setGameSettings] = useLocalStorageState<GameSettings>('r2beat_game_settings', {
   defaultValue: {
     gamePath: '',
@@ -208,56 +210,49 @@ const handleSaveSettings = (settings: GameSettings) => {
   console.log('保存设置:', settings)
 }
 
-// 为什么会白一下呢。。。
 onMounted(() => {
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      setTimeout(() => {
+  setTimeout(() => {
+    nextTick(() => {
+      requestAnimationFrame(() => {
         window.api.windowShow?.()
-      }, 220)
+      })
     })
-  })
+  }, 300)
 })
 </script>
 
 <style scoped>
 .app-container {
-  min-height: 100vh;
+  height: 100%;
   position: relative;
 }
 
 .main-content {
+  height: 100%;
   padding: 50px 30px 40px;
   position: relative;
   z-index: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 
-.content-wrapper {
-  max-width: 1400px;
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 30px;
-}
+  .content-wrapper {
+    display: grid;
+    height: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 30px;
 
-.left-section {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
+    .left-section {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
 
-.right-section {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  position: relative;
-  align-items: center;
-
-  .launch-button-wrapper {
-    margin-top: auto;
+    .right-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      align-items: center;
+      min-height: 0;
+    }
   }
 }
 </style>

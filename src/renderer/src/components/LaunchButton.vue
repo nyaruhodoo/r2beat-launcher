@@ -245,10 +245,11 @@ useInterval(() => {
 .launch-button-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: end;
   align-items: center;
-  width: 100%;
   gap: 12px;
+  height: 100%;
+  min-height: 0;
 }
 
 .launch-btn {
@@ -346,32 +347,32 @@ useInterval(() => {
   gap: 8px;
   font-size: 13px;
   font-weight: 400;
-}
 
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
 
-.status-text {
-  color: var(--color-text-tertiary);
-  font-size: 13px;
-}
+  .status-text {
+    color: var(--color-text-tertiary);
+    font-size: 13px;
+  }
 
-/* 未知状态 - 黄色 */
-.status-unknown .status-dot {
-  background: #ffc107;
-}
+  /* 未知状态 - 黄色 */
+  &.status-unknown .status-dot {
+    background: #ffc107;
+  }
 
-/* 正常状态 - 绿色 */
-.status-normal .status-dot {
-  background: #4caf50;
-}
+  /* 正常状态 - 绿色 */
+  &.status-normal .status-dot {
+    background: #4caf50;
+  }
 
-/* 维护状态 - 红色 */
-.status-maintenance .status-dot {
-  background: #f44336;
+  /* 维护状态 - 红色 */
+  &.status-maintenance .status-dot {
+    background: #f44336;
+  }
 }
 </style>

@@ -118,20 +118,20 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   line-height: 1.2;
-}
 
-.detail-body :deep(img) {
-  border-radius: 16px;
-  height: auto !important;
-}
-.detail-body :deep(ul) {
-  padding-left: 1.5em;
-}
-.detail-body :deep(ol) {
-  padding-left: 1.5em;
-}
-.detail-body :deep(div) {
-  text-align: center !important;
+  :deep(img) {
+    border-radius: 16px;
+    height: auto !important;
+  }
+
+  :deep(ul),
+  :deep(ol) {
+    padding-left: 1.5em;
+  }
+
+  :deep(div) {
+    text-align: center !important;
+  }
 }
 
 .loading-state {
@@ -168,10 +168,10 @@ onMounted(() => {
   margin-top: 40px;
   text-align: center;
   color: var(--color-text-tertiary);
-}
 
-.placeholder.error {
-  color: var(--color-error, #e74c3c);
+  &.error {
+    color: var(--color-error, #e74c3c);
+  }
 }
 
 @keyframes spin {

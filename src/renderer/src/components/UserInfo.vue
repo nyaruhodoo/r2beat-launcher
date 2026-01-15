@@ -1,7 +1,7 @@
 <template>
   <div class="user-info-wrapper">
     <div v-if="userInfo" class="user-info" @click.stop="toggleMenu">
-      <span class="user-name">{{ userInfo.remark || userInfo.remark }}</span>
+      <span class="user-name">{{ userInfo.remark || userInfo.username }}</span>
       <div class="dropdown-icon" :class="{ rotated: showMenu }">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
           <path
@@ -117,55 +117,55 @@ const handleSwitchAccount = () => {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 4px 12px;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   height: 28px;
-}
 
-.user-info:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-border-hover);
-  color: var(--color-primary);
-  transform: translateY(-1px);
-}
+  &:hover {
+    background: var(--color-bg-card-hover);
+    border-color: var(--color-border-hover);
+    color: var(--color-primary);
+    transform: translateY(-1px);
 
-.user-info:active {
-  transform: translateY(0);
-}
+    .user-name {
+      color: var(--color-primary);
+    }
+  }
 
-.user-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
-  line-height: 1;
-  transition: color 0.2s ease;
-}
+  &:active {
+    transform: translateY(0);
+  }
 
-.user-info:hover .user-name {
-  color: var(--color-primary);
-}
+  .user-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+    line-height: 1;
+    transition: color 0.2s ease;
+  }
 
-.dropdown-icon {
-  color: var(--color-text-tertiary);
-  transition: transform 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 12px;
-  height: 12px;
-}
+  .dropdown-icon {
+    color: var(--color-text-tertiary);
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
 
-.dropdown-icon.rotated {
-  transform: rotate(180deg);
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
 }
 
 .user-menu {
@@ -206,42 +206,42 @@ const handleSwitchAccount = () => {
   transition: all 0.2s ease;
   color: var(--color-text-primary);
   position: relative;
-}
 
-.menu-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: var(--gradient-primary);
-  transform: scaleY(0);
-  transition: transform 0.2s ease;
-}
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--gradient-primary);
+    transform: scaleY(0);
+    transition: transform 0.2s ease;
+  }
 
-.menu-item:hover {
-  background: var(--color-bg-card-hover);
-  color: var(--color-primary);
-}
+  &:hover {
+    background: var(--color-bg-card-hover);
+    color: var(--color-primary);
 
-.menu-item:hover::before {
-  transform: scaleY(1);
-}
+    &::before {
+      transform: scaleY(1);
+    }
 
-.menu-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  color: var(--color-text-secondary);
-  transition: color 0.2s ease;
-}
+    .menu-icon {
+      color: var(--color-primary);
+    }
+  }
 
-.menu-item:hover .menu-icon {
-  color: var(--color-primary);
+  .menu-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--color-text-secondary);
+    transition: color 0.2s ease;
+  }
 }
 
 .menu-text {
@@ -259,8 +259,8 @@ const handleSwitchAccount = () => {
 .login-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
+  gap: 6px;
+  padding: 4px 12px;
   background: var(--gradient-primary);
   border: none;
   border-radius: 20px;

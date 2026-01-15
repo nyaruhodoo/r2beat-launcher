@@ -179,11 +179,11 @@ const handleCancel = () => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-}
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .btn-icon {
@@ -194,11 +194,11 @@ const handleCancel = () => {
   background: var(--gradient-primary);
   color: white;
   box-shadow: var(--shadow-button-active);
-}
 
-.btn-option:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-button-hover);
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-button-hover);
+  }
 }
 
 .btn-cancel {
@@ -207,29 +207,29 @@ const handleCancel = () => {
   border: 1.5px solid var(--color-border);
   position: relative;
   overflow: hidden;
-}
 
-.btn-cancel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-card);
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-  z-index: -1;
-}
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-card);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    z-index: -1;
+  }
 
-.btn-cancel:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-bg-card-hover);
-}
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-bg-card-hover);
+  }
 
-.btn-cancel:hover:not(:disabled)::before {
-  opacity: 1;
+  &:hover:not(:disabled)::before {
+    opacity: 1;
+  }
 }
 
 /* 模态框过渡动画 */

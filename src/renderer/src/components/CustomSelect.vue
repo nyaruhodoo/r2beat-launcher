@@ -115,11 +115,11 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all var(--transition-normal);
   min-height: 44px;
-}
 
-.custom-select-trigger:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-primary);
+  &:hover {
+    background: var(--color-bg-card-hover);
+    border-color: var(--color-primary);
+  }
 }
 
 .custom-select-value {
@@ -135,10 +135,10 @@ onUnmounted(() => {
   transition: transform var(--transition-normal);
   margin-left: 10px;
   flex-shrink: 0;
-}
 
-.custom-select-arrow.rotated {
-  transform: rotate(180deg);
+  &.rotated {
+    transform: rotate(180deg);
+  }
 }
 
 .custom-select-dropdown {
@@ -162,24 +162,24 @@ onUnmounted(() => {
     background var(--transition-normal),
     border-color var(--transition-normal),
     box-shadow var(--transition-normal);
-}
 
-.custom-select-dropdown::-webkit-scrollbar {
-  width: 5px;
-}
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
 
-.custom-select-dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-.custom-select-dropdown::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
-  transition: background var(--transition-normal);
-}
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+    transition: background var(--transition-normal);
 
-.custom-select-dropdown::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-hover);
+    &:hover {
+      background: var(--color-border-hover);
+    }
+  }
 }
 
 .custom-select-option {
@@ -190,17 +190,16 @@ onUnmounted(() => {
   font-size: 13px;
   position: relative;
   line-height: 1.5;
-}
 
-.custom-select-option:hover {
-  background: var(--color-bg-card-hover);
-  color: var(--color-text-primary);
-}
+  &:hover,
+  &.active {
+    background: var(--color-bg-card-hover);
+    color: var(--color-text-primary);
+  }
 
-.custom-select-option.active {
-  background: var(--color-bg-card-hover);
-  color: var(--color-text-primary);
-  font-weight: 500;
+  &.active {
+    font-weight: 500;
+  }
 }
 
 /* 下拉动画 - 使用 transition 而不是 animation 来避免闪烁 */

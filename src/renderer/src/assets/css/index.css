@@ -1,3 +1,5 @@
+@import './base.css';
+
 :root {
   /* 二次元粉色系主题色 */
   --color-primary: #ffb6c1;
@@ -53,8 +55,6 @@
   --transition-slow: 0.5s ease;
 }
 
-/* 夜间模式（默认） */
-:root,
 :root.dark-theme {
   /* 背景色 */
   --color-bg-primary: #1a1a2e;
@@ -92,7 +92,6 @@
   --toast-error-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 107, 107, 0.1);
 }
 
-/* 日间模式 */
 :root.light-theme {
   /* 背景色 */
   --color-bg-primary: #f5f5f8;
@@ -130,16 +129,7 @@
   --toast-error-shadow: 0 4px 20px rgba(255, 107, 107, 0.1);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 body {
-  min-height: 100vh;
   color: var(--color-text-primary);
   background:
     radial-gradient(circle at 20% 50%, var(--color-bg-card) 0%, transparent 50%),
@@ -150,44 +140,12 @@ body {
       var(--color-bg-secondary) 50%,
       var(--color-bg-tertiary) 100%
     );
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+
   transition: color var(--transition-normal);
 }
 
-ul {
-  list-style: none;
-}
-
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
-button {
-  font-family: inherit;
-}
-
-input,
-select,
-textarea {
-  font-family: inherit;
-}
-
-/* 全局禁用图片拖拽与选中 */
-img,
-a {
-  -webkit-user-drag: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  pointer-events: auto;
-}
-
-img {
-  max-width: 100%;
+#app {
+  height: 100%;
 }
 
 /* 动画关键帧 */

@@ -35,27 +35,27 @@ const props = defineProps<Props>()
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
-}
 
-.theme-toggle:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-border-hover);
-  color: var(--color-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
-}
+  &:hover {
+    background: var(--color-bg-card-hover);
+    border-color: var(--color-border-hover);
+    color: var(--color-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 
-.theme-toggle:active {
-  transform: translateY(0);
-}
+    .theme-icon {
+      transform: rotate(15deg);
+    }
+  }
 
-.theme-icon {
-  font-size: 14px;
-  transition: transform 0.3s ease;
-}
+  &:active {
+    transform: translateY(0);
+  }
 
-.theme-toggle:hover .theme-icon {
-  transform: rotate(15deg);
+  .theme-icon {
+    font-size: 14px;
+    transition: transform 0.3s ease;
+  }
 }
 
 .theme-text {

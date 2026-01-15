@@ -531,11 +531,11 @@ const handleLogin = async () => {
   cursor: pointer;
   transition: all var(--transition-normal);
   min-height: 44px;
-}
 
-.account-select-trigger:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-primary);
+  &:hover {
+    background: var(--color-bg-card-hover);
+    border-color: var(--color-primary);
+  }
 }
 
 .account-select-value {
@@ -552,10 +552,10 @@ const handleLogin = async () => {
   transition: transform var(--transition-normal);
   margin-left: 10px;
   flex-shrink: 0;
-}
 
-.account-select-arrow.rotated {
-  transform: rotate(180deg);
+  &.rotated {
+    transform: rotate(180deg);
+  }
 }
 
 .account-select-dropdown {
@@ -579,24 +579,24 @@ const handleLogin = async () => {
     background var(--transition-normal),
     border-color var(--transition-normal),
     box-shadow var(--transition-normal);
-}
 
-.account-select-dropdown::-webkit-scrollbar {
-  width: 5px;
-}
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
 
-.account-select-dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-.account-select-dropdown::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 3px;
-  transition: background var(--transition-normal);
-}
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+    transition: background var(--transition-normal);
 
-.account-select-dropdown::-webkit-scrollbar-thumb:hover {
-  background: var(--color-border-hover);
+    &:hover {
+      background: var(--color-border-hover);
+    }
+  }
 }
 
 .account-select-option {
@@ -610,17 +610,20 @@ const handleLogin = async () => {
   font-size: 13px;
   position: relative;
   line-height: 1.5;
-}
 
-.account-select-option:hover {
-  background: var(--color-bg-card-hover);
-  color: var(--color-text-primary);
-}
+  &:hover,
+  &.active {
+    background: var(--color-bg-card-hover);
+    color: var(--color-text-primary);
 
-.account-select-option.active {
-  background: var(--color-bg-card-hover);
-  color: var(--color-text-primary);
-  font-weight: 500;
+    .account-delete-btn {
+      opacity: 1;
+    }
+  }
+
+  &.active {
+    font-weight: 500;
+  }
 }
 
 .account-option-info {
@@ -651,15 +654,11 @@ const handleLogin = async () => {
   justify-content: center;
   opacity: 0;
   margin-left: 8px;
-}
 
-.account-select-option:hover .account-delete-btn {
-  opacity: 1;
-}
-
-.account-delete-btn:hover {
-  background: var(--color-error-bg);
-  color: var(--color-error);
+  &:hover {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+  }
 }
 
 /* 下拉框动画 */
@@ -724,16 +723,20 @@ const handleLogin = async () => {
   width: 100%;
   user-select: text;
   -webkit-user-select: text;
-}
 
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  background: var(--color-bg-card-hover);
-  box-shadow: var(--shadow-input-focus);
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
 
-  :global(.light-theme) & {
-    box-shadow: var(--shadow-input-focus-light);
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-bg-card-hover);
+    box-shadow: var(--shadow-input-focus);
+
+    :global(.light-theme) & {
+      box-shadow: var(--shadow-input-focus-light);
+    }
   }
 }
 
@@ -762,19 +765,15 @@ const handleLogin = async () => {
   transition: all 0.2s ease;
   width: 28px;
   height: 28px;
-}
 
-.password-toggle-btn:hover {
-  background: var(--color-bg-card-hover);
-  color: var(--color-primary);
-}
+  &:hover {
+    background: var(--color-bg-card-hover);
+    color: var(--color-primary);
+  }
 
-.password-toggle-btn:active {
-  background: var(--color-bg-card);
-}
-
-.form-input::placeholder {
-  color: var(--color-text-muted);
+  &:active {
+    background: var(--color-bg-card);
+  }
 }
 
 .form-options {
@@ -793,41 +792,41 @@ const handleLogin = async () => {
   border-radius: 8px;
   transition: all var(--transition-normal);
   position: relative;
-}
 
-.checkbox-label:hover {
-  background: var(--color-bg-card);
-}
+  &:hover {
+    background: var(--color-bg-card);
 
-.checkbox-label:active {
-  transform: scale(0.98);
-}
+    .checkbox-text {
+      color: var(--color-text-primary);
+    }
+  }
 
-.checkbox-input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--color-primary);
-  transition: all var(--transition-normal);
-  position: relative;
-}
+  &:active {
+    transform: scale(0.98);
+  }
 
-.checkbox-input:hover {
-  transform: scale(1.1);
-}
+  .checkbox-input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+    transition: all var(--transition-normal);
+    position: relative;
 
-.checkbox-input:checked {
-  transform: scale(1.05);
-}
+    &:hover {
+      transform: scale(1.1);
+    }
 
-.checkbox-text {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  transition: color var(--transition-normal);
-}
+    &:checked {
+      transform: scale(1.05);
+    }
+  }
 
-.checkbox-label:hover .checkbox-text {
-  color: var(--color-text-primary);
+  .checkbox-text {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    transition: color var(--transition-normal);
+  }
 }
 
 .error-message {
@@ -857,11 +856,11 @@ const handleLogin = async () => {
   font-size: 13px;
   cursor: pointer;
   transition: all 0.3s ease;
-}
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .btn-cancel {
@@ -870,29 +869,29 @@ const handleLogin = async () => {
   border: 1.5px solid var(--color-border);
   position: relative;
   overflow: hidden;
-}
 
-.btn-cancel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-card);
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-  z-index: -1;
-}
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-card);
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    z-index: -1;
+  }
 
-.btn-cancel:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-bg-card-hover);
-}
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-bg-card-hover);
+  }
 
-.btn-cancel:hover:not(:disabled)::before {
-  opacity: 1;
+  &:hover:not(:disabled)::before {
+    opacity: 1;
+  }
 }
 
 .btn-login {
