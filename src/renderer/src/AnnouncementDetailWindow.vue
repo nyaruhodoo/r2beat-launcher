@@ -10,7 +10,7 @@
         <p>{{ errorText }}</p>
       </div>
       <!-- eslint-disable-next-line vue/no-v-html -->
-      <div v-else class="detail-body" v-html="contentHtml || '（暂无正文）'" />
+      <div v-else class="detail-body" v-html="formatRichTextImage(contentHtml) || '（暂无正文）'" />
     </div>
   </div>
 </template>
@@ -56,6 +56,29 @@ const fetchDetail = async (payload: AnnouncementData) => {
   } finally {
     loading.value = false
   }
+}
+
+const formatRichTextImage = (html: string) => {
+  if (!html) return ''
+
+  // 匹配 <img> 标签及其 style 属性
+  return html.replace(/<img [^>]*style="([^"]+)"[^>]*>/gi, (match, styleStr) => {
+    // 提取 width 和 height 的数值 (支持 px 或纯数字)
+    const widthMatch = styleStr.match(/width:\s*(\d+)px/i)
+    const heightMatch = styleStr.match(/height:\s*(\d+)px/i)
+
+    if (widthMatch && heightMatch) {
+      const w = widthMatch[1]
+      const h = heightMatch[1]
+
+      if (!styleStr.includes('aspect-ratio')) {
+        const aspectRatioStyle = `aspect-ratio: ${w} / ${h};`
+        return match.replace(`style="${styleStr}"`, `style="${aspectRatioStyle} ${styleStr}"`)
+      }
+    }
+
+    return match
+  })
 }
 
 onMounted(() => {
