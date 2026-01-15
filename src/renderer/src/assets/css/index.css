@@ -55,6 +55,7 @@
   --transition-slow: 0.5s ease;
 }
 
+:root,
 :root.dark-theme {
   /* 背景色 */
   --color-bg-primary: #1a1a2e;
