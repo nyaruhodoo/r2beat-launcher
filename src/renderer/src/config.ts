@@ -1,24 +1,34 @@
+function minutesToMilliseconds(minutes: number) {
+  if (typeof minutes !== 'number' || isNaN(minutes)) {
+    throw new Error('输入必须是有效的数值类型（数字），例如 1、2.5、0.1 等')
+  }
+
+  const milliseconds = minutes * 60 * 1000
+
+  return milliseconds
+}
+
 /**
  * 版本检查间隔时间
  */
-export const checkRemoteVersionTime = 1000 * 60 * 10
+export const checkRemoteVersionTime = minutesToMilliseconds(10)
 
 /**
  * 系统公告检查间隔时间
  */
-export const checkAnnouncementsTime = 1000 * 60 * 10
+export const checkAnnouncementsTime = minutesToMilliseconds(10)
 
 /**
  * 系统公告缓存时间
  */
-export const checkAnnouncementsCacheTime = 1000 * 60 * 5
+export const checkAnnouncementsCacheTime = minutesToMilliseconds(5)
 
 /**
  * 服务端状态检测间隔时间(正常)
  */
-export const checkServerStatusTime = 1000 * 60 * 5
+export const checkServerStatusTime = minutesToMilliseconds(5)
 
 /**
  * 服务端状态检测间隔时间(维护)
  */
-export const checkUnknownServerStatusTime = 1000 * 60 * 1
+export const checkUnknownServerStatusTime = minutesToMilliseconds(1)
