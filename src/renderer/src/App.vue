@@ -199,7 +199,7 @@ const handleNavClick = (type: 'website' | 'recharge' | 'settings') => {
   if (type === 'settings') {
     showSettings.value = true
   } else if (type === 'recharge') {
-    window.api.openRechargeCenter?.()
+    window.api.openRechargeCenter?.(userInfo.value?.username)
   }
 }
 

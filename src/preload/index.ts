@@ -77,8 +77,8 @@ const api = {
   windowCloseCurrent: () => {
     ipcRenderer.send('window-close-current')
   },
-  openRechargeCenter: () => {
-    ipcRenderer.send('open-recharge-center')
+  openRechargeCenter: (username?: string) => {
+    ipcRenderer.send('open-recharge-center', username)
   },
   getRandomGameImage: async () => {
     const result = await ipcRenderer.invoke('get-random-game-image')

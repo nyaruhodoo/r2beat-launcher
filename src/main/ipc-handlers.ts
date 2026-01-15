@@ -49,8 +49,10 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 打开充值中心窗口
    * 使用独立 Electron 窗口而不是浏览器新标签页
+   * @param _event IPC 事件对象
+   * @param username 可选，当前登录的用户名
    */
-  ipcMain.on('open-recharge-center', () => {
+  ipcMain.on('open-recharge-center', (_event, username?: string) => {
     const rechargeWindow = new BrowserWindow({
       width: 900,
       height: 590,
@@ -74,12 +76,51 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
     // 页面完全加载完成后在目标页面内执行脚本
     rechargeWindow.webContents.on('did-finish-load', () => {
+      const stringUserName = JSON.stringify(username ?? '')
+
       rechargeWindow.webContents
         .executeJavaScript(
           `
           const amountBox = document.querySelector("#DivAmountInfo")  
           if(amountBox) {
             amountBox.innerHTML = '<input type="number" id="pg_pay_amt" name="pg_pay_amt" placeholder="请输入充值金额（整数）" min="1" step="1" inputmode="numeric" title="请输入正整数，不能包含小数点、负数或0" required style="height:27px; border:1px solid #ddd; box-sizing:border-box;" />'
+          }
+          
+          const noContent = document.querySelector('#no_content')
+          if (noContent) {
+            const timerId = setInterval(() => {
+              const noContent = document.querySelector('#no_content')
+              if (noContent && noContent.children.length > 1) {
+                  clearInterval(timerId)
+
+                  noContent.value = 'RB'
+                  const changeEvent = new Event('change', {
+                    bubbles: true,
+                    cancelable: true,
+                  })
+                  noContent.dispatchEvent(changeEvent)
+              }
+            }, 500)
+          }
+
+          const timerId = setInterval(() => {
+            const gameServer = document.querySelector('#game_server')
+            gameServer.value = '01'
+            const changeEvent = new Event('change', {
+              bubbles: true,
+              cancelable: true,
+            })
+            gameServer.dispatchEvent(changeEvent)
+
+            if (gameServer && gameServer.children.length > 1) {
+              clearInterval(timerId)
+            }
+          }, 500)
+
+          const gameUserId = document.querySelector("#game_user_id") 
+          const gameUserIdC = document.querySelector("#game_user_id_c")
+          if(gameUserId && gameUserIdC){
+            gameUserId.value = gameUserIdC.value = ${stringUserName}
           }
         `
         )

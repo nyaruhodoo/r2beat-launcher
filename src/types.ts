@@ -317,7 +317,7 @@ export interface ContextBridgeApi {
   onAnnouncementDetail?: (callback: (detail: AnnouncementData) => void) => void
   windowMinimizeCurrent?: () => void
   windowCloseCurrent?: () => void
-  openRechargeCenter?: () => void
+  openRechargeCenter?: (username?: string) => void
   getRandomGameImage?: () => Promise<{
     success: boolean
     imagePath?: string
