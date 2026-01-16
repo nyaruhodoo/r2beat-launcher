@@ -130,7 +130,10 @@
   --toast-error-shadow: 0 4px 20px rgba(255, 107, 107, 0.1);
 }
 
-body {
+#app {
+  border-radius: 16px;
+  overflow: hidden;
+  height: 100%;
   color: var(--color-text-primary);
   background:
     radial-gradient(circle at 20% 50%, var(--color-bg-card) 0%, transparent 50%),
@@ -141,12 +144,7 @@ body {
       var(--color-bg-secondary) 50%,
       var(--color-bg-tertiary) 100%
     );
-
   transition: color var(--transition-normal);
-}
-
-#app {
-  height: 100%;
 }
 
 /* 动画关键帧 */

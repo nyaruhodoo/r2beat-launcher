@@ -211,13 +211,9 @@ const handleSaveSettings = (settings: GameSettings) => {
 }
 
 onMounted(() => {
-  setTimeout(() => {
-    nextTick(() => {
-      requestAnimationFrame(() => {
-        window.api.windowShow?.()
-      })
-    })
-  }, 300)
+  nextTick(() => {
+    window.api.windowShow?.()
+  })
 })
 </script>
 

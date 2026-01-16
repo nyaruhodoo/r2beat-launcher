@@ -14,6 +14,11 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 768,
     show: false,
+    // 透明窗口避免闪屏
+    // transparent: true,
+    backgroundColor: '#00000000',
+    resizable: true, // 必须为 true
+    thickFrame: true, // 尝试强制开启原生窗口阴影和缩放
     autoHideMenuBar: true,
     frame: false,
     titleBarStyle: 'hidden',
