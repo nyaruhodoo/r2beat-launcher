@@ -91,7 +91,7 @@ import { GameSettings, Theme, UserInfo } from '../../types'
 import guanwangImg from '@renderer/imgs/guanwang.png'
 import zuanshiImg from '@renderer/imgs/zuanshi.png'
 import shezhiImg from '@renderer/imgs/shezhi.png'
-import WindowResizer from './components/windowResizer.vue'
+import WindowResizer from './components/WindowResizer.vue'
 
 // ========== 状态管理 ==========
 const showSettings = ref(false)

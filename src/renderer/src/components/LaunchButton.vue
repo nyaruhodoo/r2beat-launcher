@@ -34,7 +34,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
 import { useToast } from '../composables/useToast'
 import ServerStatusDialog from './ServerStatusDialog.vue'
-import { checkServerStatusTime, checkUnknownServerStatusTime } from '@renderer/config'
+import { checkServerStatusTime, checkUnknownServerStatusTime } from '@config'
 
 interface Props {
   userInfo?: UserInfo

@@ -8,6 +8,7 @@
 </template>
 
 <script setup lang="ts">
+import { minWindowHeight, minWindowWidth } from '@config'
 import { onUnmounted } from 'vue'
 
 /**
@@ -21,8 +22,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  minWidth: 1024,
-  minHeight: 768
+  minWidth: minWindowWidth,
+  minHeight: minWindowHeight
 })
 
 /**
@@ -85,7 +86,7 @@ const handleResizeLogic = (dir: ResizeDirection, mouseX: number, mouseY: number)
       const targetHeight = mouseY - state.startTop
       const canResizeWidth = targetWidth >= props.minWidth
       const canResizeHeight = targetHeight >= props.minHeight
-      
+
       if (canResizeWidth && canResizeHeight) {
         // 两个维度都可以调整
         window.resizeTo(targetWidth, targetHeight)
@@ -105,7 +106,7 @@ const handleResizeLogic = (dir: ResizeDirection, mouseX: number, mouseY: number)
       const targetHeight = mouseY - state.startTop
       const canResizeWidth = targetWidth >= props.minWidth
       const canResizeHeight = targetHeight >= props.minHeight
-      
+
       if (canResizeWidth && canResizeHeight) {
         // 两个维度都可以调整
         window.resizeTo(targetWidth, targetHeight)
@@ -129,7 +130,7 @@ const handleResizeLogic = (dir: ResizeDirection, mouseX: number, mouseY: number)
       const targetHeight = state.startTop + state.startHeight - mouseY
       const canResizeWidth = targetWidth >= props.minWidth
       const canResizeHeight = targetHeight >= props.minHeight
-      
+
       if (canResizeWidth && canResizeHeight) {
         // 两个维度都可以调整
         window.resizeTo(targetWidth, targetHeight)
@@ -153,7 +154,7 @@ const handleResizeLogic = (dir: ResizeDirection, mouseX: number, mouseY: number)
       const targetHeight = state.startTop + state.startHeight - mouseY
       const canResizeWidth = targetWidth >= props.minWidth
       const canResizeHeight = targetHeight >= props.minHeight
-      
+
       if (canResizeWidth && canResizeHeight) {
         // 两个维度都可以调整
         window.resizeTo(targetWidth, targetHeight)
@@ -198,15 +199,15 @@ const startResizing = (direction: ResizeDirection, event: MouseEvent): void => {
   event.preventDefault()
   event.stopPropagation() // 阻止事件冒泡，避免与其他拖拽冲突
   event.stopImmediatePropagation() // 立即停止事件传播，确保优先级最高
-  
+
   state.direction = direction
-  
+
   // 记录拖拽开始时的状态
   state.startX = event.screenX
   state.startY = event.screenY
   state.startWidth = window.outerWidth
   state.startHeight = window.outerHeight
-  
+
   // 计算窗口在屏幕上的起始位置
   // 对于不同方向的拖拽，窗口起始位置的计算方式不同
   if (direction === 'e' || direction === 'se' || direction === 'ne') {

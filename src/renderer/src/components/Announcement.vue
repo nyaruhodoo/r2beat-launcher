@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { checkAnnouncementsCacheTime, checkAnnouncementsTime } from '@renderer/config'
+import { checkAnnouncementsCacheTime, checkAnnouncementsTime } from '@config'
 import { AnnouncementData } from '@types'
 import { ref } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
