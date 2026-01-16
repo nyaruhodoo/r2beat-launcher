@@ -21,6 +21,7 @@
                   type="text"
                   class="path-input"
                   placeholder="请选择游戏安装目录"
+                  readonly
                 />
                 <button class="browse-btn" @click="handleBrowse">浏览</button>
               </div>
@@ -649,9 +650,15 @@ watch(
   font-size: 14px;
   transition: all var(--transition-normal);
   width: 100%;
+  cursor: default; /* 只读输入框显示默认光标 */
 
   &::placeholder {
     color: var(--color-text-muted);
+  }
+
+  &[readonly] {
+    cursor: default;
+    user-select: text; /* 允许选择文本以便复制 */
   }
 
   &:focus {
