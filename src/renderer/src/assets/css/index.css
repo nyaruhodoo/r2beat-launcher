@@ -64,6 +64,19 @@
   --color-bg-card: rgba(255, 182, 193, 0.1);
   --color-bg-card-hover: rgba(255, 182, 193, 0.15);
 
+  /* #app 背景颜色变量 - 使用纯色替代渐变，支持过渡效果 */
+  --app-bg: #16213e; /* 主背景色（原渐变的中间色，作为纯色背景） */
+
+  /* 模态框背景颜色变量 - 支持过渡效果 */
+  --modal-bg: #16213e;
+  --modal-bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Toast 错误提示框颜色 - 暗色模式 */
+  --toast-error-bg: rgba(26, 26, 46, 0.95);
+  --toast-error-border: rgba(255, 107, 107, 0.4);
+  --toast-error-text: #ff9999;
+  --toast-error-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 107, 107, 0.1);
+
   /* 文字颜色 */
   --color-text-primary: rgba(255, 255, 255, 0.95);
   --color-text-secondary: rgba(255, 255, 255, 0.8);
@@ -85,12 +98,6 @@
   --shadow-button-active: 0 2px 8px rgba(255, 182, 193, 0.2);
   --shadow-input-focus: 0 0 0 3px rgba(255, 182, 193, 0.1);
   --shadow-input-focus-light: 0 0 0 3px rgba(255, 107, 157, 0.15);
-
-  /* Toast 错误提示框颜色 - 暗色模式 */
-  --toast-error-bg: rgba(26, 26, 46, 0.95);
-  --toast-error-border: rgba(255, 107, 107, 0.4);
-  --toast-error-text: #ff9999;
-  --toast-error-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 107, 107, 0.1);
 }
 
 :root.light-theme {
@@ -100,6 +107,19 @@
   --color-bg-tertiary: #e8e8f0;
   --color-bg-card: rgba(255, 107, 157, 0.08);
   --color-bg-card-hover: rgba(255, 107, 157, 0.12);
+
+  /* #app 背景颜色变量 - 使用纯色替代渐变，支持过渡效果 */
+  --app-bg: #f5f5f8; /* 主背景色（原渐变的起始色，作为纯色背景） */
+
+  /* 模态框背景颜色变量 - 支持过渡效果 */
+  --modal-bg: #ffffff;
+  --modal-bg-overlay: rgba(0, 0, 0, 0.4);
+
+  /* Toast 错误提示框颜色 - 日间模式 */
+  --toast-error-bg: rgba(255, 255, 255, 0.95);
+  --toast-error-border: rgba(255, 107, 107, 0.3);
+  --toast-error-text: #ff6b6b;
+  --toast-error-shadow: 0 4px 20px rgba(255, 107, 107, 0.1);
 
   /* 文字颜色 */
   --color-text-primary: rgba(30, 30, 40, 0.95);
@@ -122,12 +142,6 @@
   --shadow-button-active: 0 2px 8px rgba(255, 182, 193, 0.2);
   --shadow-input-focus: 0 0 0 3px rgba(255, 182, 193, 0.1);
   --shadow-input-focus-light: 0 0 0 3px rgba(255, 107, 157, 0.15);
-
-  /* Toast 错误提示框颜色 - 日间模式 */
-  --toast-error-bg: rgba(255, 255, 255, 0.95);
-  --toast-error-border: rgba(255, 107, 107, 0.3);
-  --toast-error-text: #ff6b6b;
-  --toast-error-shadow: 0 4px 20px rgba(255, 107, 107, 0.1);
 }
 
 #app {
@@ -135,16 +149,11 @@
   overflow: hidden;
   height: 100%;
   color: var(--color-text-primary);
-  background:
-    radial-gradient(circle at 20% 50%, var(--color-bg-card) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, var(--color-bg-card-hover) 0%, transparent 50%),
-    linear-gradient(
-      135deg,
-      var(--color-bg-primary) 0%,
-      var(--color-bg-secondary) 50%,
-      var(--color-bg-tertiary) 100%
-    );
-  transition: color var(--transition-normal);
+  /* 使用纯色替代渐变，支持平滑过渡效果 */
+  background-color: var(--app-bg);
+  transition:
+    color var(--transition-normal),
+    background-color var(--transition-normal);
 }
 
 /* 动画关键帧 */

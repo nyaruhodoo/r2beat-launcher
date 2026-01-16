@@ -89,9 +89,16 @@ const getIcon = (type: 'success' | 'error' | 'warning' | 'info') => {
   box-shadow: var(--toast-error-shadow);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
+  transition:
+    background var(--transition-normal),
+    border-color var(--transition-normal),
+    box-shadow var(--transition-normal),
+    --toast-error-bg var(--transition-normal),
+    --toast-error-border var(--transition-normal);
 
   .toast-message {
     color: var(--toast-error-text);
+    transition: color var(--transition-normal);
   }
 }
 

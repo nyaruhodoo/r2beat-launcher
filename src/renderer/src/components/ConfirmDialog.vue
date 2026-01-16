@@ -50,18 +50,16 @@ const handleCancel = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--color-overlay);
+  background: var(--modal-bg-overlay);
   backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   animation: fadeIn 0.3s ease;
-  transition: background var(--transition-normal);
-
-  :global(.light-theme) & {
-    background: var(--color-overlay-light);
-  }
+  transition:
+    background var(--transition-normal),
+    --modal-bg-overlay var(--transition-normal);
 }
 
 @keyframes fadeIn {
@@ -74,7 +72,7 @@ const handleCancel = () => {
 }
 
 .confirm-dialog {
-  background: var(--color-bg-secondary);
+  background: var(--modal-bg);
   border-radius: 20px;
   width: 90%;
   max-width: 400px;
@@ -85,7 +83,8 @@ const handleCancel = () => {
   transition:
     background var(--transition-normal),
     border-color var(--transition-normal),
-    box-shadow var(--transition-normal);
+    box-shadow var(--transition-normal),
+    --modal-bg var(--transition-normal);
 }
 
 @keyframes slideUp {

@@ -379,20 +379,19 @@ watch(
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--color-overlay);
+  background: var(--modal-bg-overlay);
   backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
-
-  :global(.light-theme) & {
-    background: var(--color-overlay-light);
-  }
+  transition:
+    background var(--transition-normal),
+    --modal-bg-overlay var(--transition-normal);
 }
 
 .settings-modal {
-  background: var(--color-bg-secondary);
+  background: var(--modal-bg);
   border-radius: 20px;
   width: 90%;
   max-width: 600px;
@@ -405,7 +404,8 @@ watch(
     border-color var(--transition-normal),
     box-shadow var(--transition-normal),
     transform 0.3s ease,
-    opacity 0.3s ease;
+    opacity 0.3s ease,
+    --modal-bg var(--transition-normal);
 }
 
 .modal-enter-active {

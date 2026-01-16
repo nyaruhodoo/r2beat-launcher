@@ -383,21 +383,19 @@ const handleLogin = async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--color-overlay);
+  background: var(--modal-bg-overlay);
   backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  transition: background var(--transition-normal);
-
-  :global(.light-theme) & {
-    background: var(--color-overlay-light);
-  }
+  transition:
+    background var(--transition-normal),
+    --modal-bg-overlay var(--transition-normal);
 }
 
 .login-modal {
-  background: var(--color-bg-secondary);
+  background: var(--modal-bg);
   border-radius: 20px;
   width: 90%;
   max-width: 450px;
@@ -407,7 +405,8 @@ const handleLogin = async () => {
   transition:
     background var(--transition-normal),
     border-color var(--transition-normal),
-    box-shadow var(--transition-normal);
+    box-shadow var(--transition-normal),
+    --modal-bg var(--transition-normal);
 }
 
 /* 弹窗过渡动画 - 使用纯 transition 避免闪烁 */
