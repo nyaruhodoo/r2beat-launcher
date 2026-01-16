@@ -224,7 +224,8 @@ const getPreDownloadList = async () => {
     props.gameSettings?.autoUpdate && handleUpdate()
   } catch (error) {
     console.error('下载补丁列表异常:', error)
-    showError('下载补丁列表异常')
+
+    showError(error instanceof Error ? error.message : '下载补丁列表异常')
     preDownloadList.value = undefined
   }
 }
@@ -247,8 +248,7 @@ const handleUpdate = async () => {
   })
 
   if (hasDiffPatch) {
-    showError('检测到 diff 补丁，请使用官方启动器更新')
-    return
+    throw new Error('检测到 diff 补丁，请使用官方启动器更新')
   }
 
   // 点击更新时，先显示进度条（主进程会持续推送）

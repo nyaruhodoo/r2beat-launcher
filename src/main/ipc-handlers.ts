@@ -16,7 +16,6 @@ import { get as httpGet } from 'http'
 import { copyFileSync, rmSync } from 'fs'
 import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
 import { AnnouncementData, Announcementlist, PatchUpdateInfo, ProcessPriority } from '@types'
-import { is } from '@electron-toolkit/utils'
 import { sendTcpLoginRequest } from './tcp-login'
 import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
 import lzma from 'lzma-native'
@@ -699,73 +698,6 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   })
 
   /**
-   * 获取随机游戏封面图片路径
-   * 从 resources/images 目录中随机选择一个图片文件
-   */
-  ipcMain.handle('get-random-game-image', async () => {
-    try {
-      // 获取 resources 目录路径
-      // 开发环境：项目根目录/resources
-      // 生产环境：应用资源目录/resources
-      let resourcesPath: string
-      if (is.dev) {
-        // 开发环境：从主进程文件位置向上找到项目根目录
-        resourcesPath = join(__dirname, '../../resources')
-      } else {
-        // 生产环境：使用应用资源目录
-        resourcesPath = join(process.resourcesPath || app.getAppPath(), 'resources')
-      }
-
-      const imagesDir = join(resourcesPath, 'images')
-
-      // 检查目录是否存在
-      if (!existsSync(imagesDir)) {
-        console.error('[Main] images 目录不存在:', imagesDir)
-        return { success: false, error: '图片目录不存在' }
-      }
-
-      // 读取目录下的所有文件
-      const files = readdirSync(imagesDir).filter((file) => {
-        // 只返回图片文件（.avif, .png, .jpg, .jpeg 等）
-        const ext = file.toLowerCase()
-        return (
-          ext.endsWith('.avif') ||
-          ext.endsWith('.png') ||
-          ext.endsWith('.jpg') ||
-          ext.endsWith('.jpeg') ||
-          ext.endsWith('.webp')
-        )
-      })
-
-      if (files.length === 0) {
-        console.error('[Main] images 目录中没有图片文件')
-        return { success: false, error: '没有找到图片文件' }
-      }
-
-      // 随机选择一个文件
-      const randomIndex = Math.floor(Math.random() * files.length)
-      const selectedFile = files[randomIndex]
-
-      // 对文件名进行 URL 编码（处理中文字符和特殊字符）
-      // 使用 encodeURIComponent 编码文件名，但保留路径分隔符
-      const encodedFileName = encodeURIComponent(selectedFile)
-
-      // 使用自定义协议 app:// 返回图片路径
-      // 路径格式：app://images/filename.ext（文件名已编码）
-      const imageUrl = `app://images/${encodedFileName}`
-
-      console.log('[Main] 随机选择图片:', selectedFile)
-      return { success: true, imagePath: imageUrl, fileName: selectedFile }
-    } catch (error) {
-      console.error('[Main] 获取随机图片失败:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '获取随机图片时发生未知错误'
-      }
-    }
-  })
-
-  /**
    * TCP 登录请求
    * @param username 用户名
    * @param password 密码
@@ -773,10 +705,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   ipcMain.handle('tcp-login', async (_, username: string, password: string) => {
     try {
       if (!username || !password) {
-        return {
-          success: false,
-          error: '用户名和密码不能为空'
-        }
+        throw new Error('用户名和密码不能为空')
       }
 
       console.log(`[Main] 收到 TCP 登录请求: ${username}`)
@@ -809,13 +738,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     async (_event, versions: string[], options?: { keepLatestOnly?: boolean }) => {
       try {
         if (!Array.isArray(versions) || versions.length === 0) {
-          return { success: false, error: '版本列表为空' }
+          throw new Error('版本列表为空')
         }
 
         // 过滤非法版本号（只允许数字字符串）
         const validVersions = versions.filter((v) => typeof v === 'string' && /^\d+$/.test(v))
         if (validVersions.length === 0) {
-          return { success: false, error: '没有有效的版本号' }
+          throw new Error('没有有效的版本号')
         }
 
         // 目标目录：项目根目录 /patch/lst
@@ -830,7 +759,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           }
         } catch (error) {
           console.error('[Main] 创建 patch/lst 目录失败:', error)
-          return { success: false, error: '创建本地目录失败' }
+          throw new Error('创建本地目录失败')
         }
 
         // 用于后续解析的本地文件信息
@@ -850,21 +779,18 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           const url = `https://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${version}.lst`
           console.log('[Main] 开始下载补丁列表:', url)
 
-          try {
-            const response = await fetch(url)
-            if (!response.ok) {
-              console.error('[Main] 下载补丁列表失败:', url, response.status, response.statusText)
-              continue
-            }
-
-            const arrayBuffer = await response.arrayBuffer()
-            const buffer = Buffer.from(arrayBuffer)
-            writeFileSync(filePath, buffer)
-            localFiles.push({ version, filePath })
-            console.log('[Main] 补丁列表下载完成:', filePath)
-          } catch (error) {
-            console.error('[Main] 下载补丁列表异常:', version, error)
+          const response = await fetch(url)
+          if (!response.ok) {
+            const errorMsg = `下载补丁列表失败: ${url} (${response.status} ${response.statusText})`
+            console.error('[Main]', errorMsg)
+            throw new Error(errorMsg)
           }
+
+          const arrayBuffer = await response.arrayBuffer()
+          const buffer = Buffer.from(arrayBuffer)
+          writeFileSync(filePath, buffer)
+          localFiles.push({ version, filePath })
+          console.log('[Main] 补丁列表下载完成:', filePath)
         }
         // 解析所有 lst 文件，计算补丁详情与总大小
         let patches: {
@@ -917,7 +843,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               totalSize += originalSize
             }
           } catch (error) {
-            console.error('[Main] 解析补丁列表失败:', filePath, error)
+            const errorMsg = `解析补丁列表失败: ${filePath} - ${error instanceof Error ? error.message : String(error)}`
+            console.error('[Main]', errorMsg)
+            throw new Error(errorMsg)
           }
         }
 
@@ -1147,15 +1075,11 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             const req = httpGet(patch.downloadUrl, (res) => {
               const { statusCode } = res
               if (!statusCode || statusCode < 200 || statusCode >= 300) {
-                console.error(
-                  '[Main] 下载补丁文件失败:',
-                  patch.downloadUrl,
-                  statusCode,
-                  res.statusMessage
-                )
+                const errorMsg = `下载补丁文件失败: ${patch.downloadUrl} (${statusCode} ${res.statusMessage})`
+                console.error('[Main]', errorMsg)
                 res.resume() // 丢弃数据，避免内存泄漏
-                fileStream.end()
-                return resolve()
+                fileStream.destroy()
+                return reject(new Error(errorMsg))
               }
 
               const totalBytes = Number(res.headers['content-length'] || 0)
@@ -1269,7 +1193,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             '补丁解压完成'
           )
         } catch (error) {
-          console.error('[Main] 处理补丁文件失败:', patch.downloadUrl, error)
+          const errorMsg = `处理补丁文件失败: ${patch.downloadUrl} - ${error instanceof Error ? error.message : String(error)}`
+          console.error('[Main]', errorMsg)
+          throw new Error(errorMsg)
         }
       }
 
