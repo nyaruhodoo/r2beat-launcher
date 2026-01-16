@@ -184,8 +184,11 @@ const loadLocalVersion = async () => {
 }
 
 // 获取远程版本
-const loadRemoteVersion = async () => {
-  isVersionSectionLoading.value = true
+const loadRemoteVersion = async (isLoading?: boolean) => {
+  if (isLoading) {
+    isVersionSectionLoading.value = true
+  }
+
   try {
     const result = await window.api.getRemoteVersion?.()
     if (result?.success && result.version) {
@@ -305,7 +308,7 @@ onMounted(() => {
   })
 
   loadLocalVersion()
-  loadRemoteVersion()
+  loadRemoteVersion(true)
 })
 
 // 监听游戏路径变化，自动重新加载版本
