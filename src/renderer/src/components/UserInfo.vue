@@ -213,7 +213,6 @@ watch(showMenu, (newVal) => {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 120px;
-    line-height: 1;
     transition: color 0.2s ease;
   }
 
