@@ -19,6 +19,17 @@
           <img :src="zuanshiImg" />
           <span class="nav-text">充值中心</span>
         </button>
+
+        <a
+          href="https://tieba.baidu.com/f?kw=%E9%9F%B3%E9%80%9F%E8%A7%89%E9%86%92&fr=index"
+          target="_blank"
+        >
+          <button class="nav-btn">
+            <img :src="aixinImg" />
+            <span class="nav-text">CPDD</span>
+          </button>
+        </a>
+
         <button class="nav-btn" @click="handleNavClick('settings')">
           <img :src="shezhiImg" />
           <span class="nav-text">设置</span>
@@ -91,6 +102,7 @@ import { GameSettings, Theme, UserInfo } from '../../types'
 import guanwangImg from '@renderer/imgs/guanwang.png'
 import zuanshiImg from '@renderer/imgs/zuanshi.png'
 import shezhiImg from '@renderer/imgs/shezhi.png'
+import aixinImg from '@renderer/imgs/aixin.png'
 import WindowResizer from './components/WindowResizer.vue'
 
 // ========== 状态管理 ==========
