@@ -364,6 +364,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 启动游戏
    * @param gamePath 游戏安装目录
+   * @param username 账号用户名
    * @param launchArgs 命令行参数（可选）
    * @param closeOnLaunch 启动后是否关闭启动器
    */
@@ -372,6 +373,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     async (
       _,
       gamePath: string,
+      username: string,
       launchArgs?: string,
       closeOnLaunch?: boolean,
       processPriority?: ProcessPriority,
@@ -387,6 +389,19 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           return {
             success: false,
             error: `找不到游戏文件: ${gameExePath}\n请检查游戏安装目录是否正确`
+          }
+        }
+
+        // 修改 xyxID.txt 文件
+        if (username && username.trim() !== '') {
+          try {
+            const xyxIdFilePath = join(gamePath, 'xyxID.txt')
+            // 直接写入用户名（纯文本）
+            writeFileSync(xyxIdFilePath, username.trim(), 'utf-8')
+            console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
+          } catch (error) {
+            console.error(`[Main] 更新 xyxID.txt 失败:`, error)
+            // 不阻止游戏启动，只记录错误
           }
         }
 

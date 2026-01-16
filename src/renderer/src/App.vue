@@ -228,7 +228,9 @@ const handleSaveSettings = (settings: GameSettings) => {
 
 onMounted(() => {
   nextTick(() => {
-    window.api.windowShow?.()
+    setTimeout(() => {
+      window.api.windowShow?.()
+    }, 200)
   })
 })
 </script>

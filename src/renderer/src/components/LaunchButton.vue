@@ -185,6 +185,7 @@ const executeLaunch = async () => {
   try {
     const result = await window.api.launchGame?.(
       latestSettings.gamePath,
+      props.userInfo?.username || '',
       latestSettings.launchArgs || undefined,
       latestSettings.closeOnLaunch || false,
       latestSettings.processPriority || 'normal',
