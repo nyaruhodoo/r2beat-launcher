@@ -119,17 +119,17 @@ onMounted(() => {
   align-items: center;
   line-height: 1.2;
 
-  :deep(img) {
+  &:deep(img) {
     border-radius: 16px;
     height: auto !important;
   }
 
-  :deep(ul),
-  :deep(ol) {
+  &:deep(ul),
+  &:deep(ol) {
     padding-left: 1.5em;
   }
 
-  :deep(div) {
+  &:deep(div) {
     text-align: center !important;
   }
 }

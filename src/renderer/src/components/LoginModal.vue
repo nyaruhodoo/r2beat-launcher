@@ -406,6 +406,8 @@ const handleLogin = async () => {
   transition:
     background var(--transition-normal),
     --modal-bg-overlay var(--transition-normal);
+  border-radius: var(--border-radius-app);
+  overflow: hidden;
 }
 
 .login-modal {

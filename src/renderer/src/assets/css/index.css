@@ -53,6 +53,9 @@
   --transition-fast: 0.2s ease;
   --transition-normal: 0.3s ease;
   --transition-slow: 0.5s ease;
+
+  /* 圆角 */
+  --border-radius-app: 8px;
 }
 
 :root,
@@ -145,7 +148,7 @@
 }
 
 #app {
-  border-radius: 8px;
+  border-radius: var(--border-radius-app);
   overflow: hidden;
   height: 100%;
   color: var(--color-text-primary);

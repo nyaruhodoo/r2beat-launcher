@@ -77,7 +77,7 @@ const handleClose = () => {
     background var(--transition-normal),
     border-color var(--transition-normal);
 
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--border-radius-app) var(--border-radius-app) 0 0;
   overflow: hidden;
 }
 
