@@ -145,7 +145,7 @@
 }
 
 #app {
-  border-radius: 16px;
+  border-radius: 8px;
   overflow: hidden;
   height: 100%;
   color: var(--color-text-primary);
@@ -154,6 +154,7 @@
   transition:
     color var(--transition-normal),
     background-color var(--transition-normal);
+  border: 1px solid rgba(0, 0, 0, 0.3);
 }
 
 /* 动画关键帧 */
