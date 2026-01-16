@@ -148,7 +148,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import CustomSelect from './CustomSelect.vue'
 import { AppConfig, GameSettings } from '@types'
 import qrcode from '@renderer/imgs/qrcode.jpg'
@@ -371,6 +371,21 @@ watch(
     }
   }
 )
+
+// ESC 键关闭弹框
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && props.visible) {
+    handleClose()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <style scoped>

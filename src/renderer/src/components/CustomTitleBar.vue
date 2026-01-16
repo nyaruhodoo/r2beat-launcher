@@ -154,6 +154,15 @@ const handleClose = () => {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  outline: none;
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
 
   img {
     width: 16px;
@@ -199,6 +208,7 @@ const handleClose = () => {
   justify-content: center;
   transition: all 0.2s ease;
   position: relative;
+  outline: none;
 
   @media (platform: windows) {
     width: 46px;
@@ -211,6 +221,14 @@ const handleClose = () => {
 
   &:active {
     background: var(--color-bg-card);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: none;
   }
 
   svg {

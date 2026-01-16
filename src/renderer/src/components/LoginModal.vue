@@ -228,12 +228,26 @@ watch(
   }
 )
 
+// ESC 键关闭弹框
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && props.visible) {
+    // 如果确认删除对话框打开，先关闭它
+    if (showDeleteConfirm.value) {
+      cancelDeleteAccount()
+    } else {
+      handleClose()
+    }
+  }
+}
+
 onMounted(() => {
   document.addEventListener('click', handleAccountClickOutside)
+  document.addEventListener('keydown', handleKeyDown)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleAccountClickOutside)
+  document.removeEventListener('keydown', handleKeyDown)
 
   if (countdownTimer.value) {
     clearInterval(countdownTimer.value)
