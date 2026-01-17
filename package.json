@@ -1,9 +1,9 @@
 {
   "name": "r2beat-launcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "https://github.com/nyaruhodoo",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",
