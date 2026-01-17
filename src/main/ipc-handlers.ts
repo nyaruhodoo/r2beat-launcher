@@ -80,9 +80,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       rechargeWindow.webContents
         .executeJavaScript(
           `
-          const amountBox = document.querySelector("#DivAmountInfo")  
-          if(amountBox) {
-            amountBox.innerHTML = '<input type="number" id="pg_pay_amt" name="pg_pay_amt" placeholder="请输入充值金额（整数）" min="1" step="1" inputmode="numeric" title="请输入正整数，不能包含小数点、负数或0" required style="height:27px; border:1px solid #ddd; box-sizing:border-box;" />'
+          const pgPayAmt = document.querySelector("#pg_pay_amt")  
+          if(pgPayAmt) {
+            const newOption = document.createElement('option');
+            newOption.value = 1;
+            newOption.textContent = '1元';
+            pgPayAmt.insertBefore(newOption, pgPayAmt.firstChild);
           }
           
           const noContent = document.querySelector('#no_content')
@@ -104,6 +107,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
           const timerId = setInterval(() => {
             const gameServer = document.querySelector('#game_server')
+            if(!gameServer) return
             gameServer.value = '01'
             const changeEvent = new Event('change', {
               bubbles: true,
