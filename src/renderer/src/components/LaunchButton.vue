@@ -195,11 +195,15 @@ const executeLaunch = async () => {
     if (result?.success) {
       showSuccess('游戏启动成功！')
     } else {
-      showError(result?.error || '启动游戏失败', 5000)
+      throw new Error(result?.error)
     }
   } catch (error) {
     if (error instanceof Error) {
-      showError(error.message || '启动游戏失败', 5000)
+      if (error.message.includes('EACCES')) {
+        showError('权限不足，请以管理员身份运行')
+      } else {
+        showError(error.message || '启动游戏失败')
+      }
     }
   } finally {
     isLaunching.value = false
