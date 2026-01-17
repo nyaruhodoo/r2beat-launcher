@@ -285,6 +285,7 @@ const selectSavedAccount = (userInfo: UserInfo) => {
 // 唤醒删除账号弹窗
 const handleDeleteAccount = (userInfo: UserInfo) => {
   deleteConfirmMessage.value = `确定要删除账号 "${userInfo?.remark || userInfo.username}" 吗？`
+  pendingDeleteUsername.value = userInfo.username ?? ''
   showDeleteConfirm.value = true
 }
 

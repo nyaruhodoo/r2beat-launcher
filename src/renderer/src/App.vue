@@ -143,6 +143,11 @@ const saveAccount = (userInfo: UserInfo): void => {
 const deleteAccount = (userName: string): void => {
   const newAccounts = savedAccounts.value?.filter((account) => account.username !== userName)
   setSavedAccounts(newAccounts)
+
+  // 如果移除的是当前登录账号则退出登录
+  if (userName === userInfo.value?.username) {
+    setUseInfo()
+  }
 }
 
 const applyTheme = (newTheme: Theme) => {
