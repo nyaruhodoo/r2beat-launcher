@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain, dialog, app } from 'electron'
-import { join } from 'path'
+import { join, relative } from 'path'
 import { homedir } from 'os'
 import {
   existsSync,
@@ -272,9 +272,6 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         const dateB = new Date(b.created_at).getTime()
         return dateB - dateA // 降序排列
       })
-
-      console.error('[Main] 已获取最新系统公告:')
-      console.log(allAnnouncements)
 
       return allAnnouncements
     } catch (error) {
@@ -844,7 +841,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               }
 
               const patchFileName = parts[0]
-              const targetFileName = parts[1]
+              let targetFileName = parts[1]
+
+              // 如果 targetFileName 是 VLauncher_New.exe，修改为 VLauncher.exe
+              if (targetFileName === 'VLauncher_New.exe') {
+                targetFileName = 'VLauncher.exe'
+              }
+
               const originalSize = Number(parts[2]) || 0
               const compressedSize = Number(parts[3]) || 0
               const checksum = parts[4]
@@ -929,25 +932,34 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('游戏路径或版本号为空')
       }
 
-      // 在应用补丁前，检查 Game.exe 是否正在运行中
+      // 在应用补丁前，检查 Game.exe 和 VLauncher.exe 是否正在运行中
       if (process.platform === 'win32') {
-        try {
-          const result = await spawnPromise('tasklist', ['/FI', 'IMAGENAME eq Game.exe'], {
-            collectStdout: true,
-            collectStderr: false
-          })
+        const processesToCheck = ['Game.exe', 'VLauncher.exe']
+        const runningProcesses: string[] = []
 
-          const output = result.stdout.toLowerCase()
-          // tasklist 在找到进程时会包含 "game.exe" 这一行
-          if (output.includes('game.exe')) {
-            throw new Error('游戏正在运行中，请关闭游戏后重试')
+        for (const processName of processesToCheck) {
+          try {
+            const result = await spawnPromise('tasklist', ['/FI', `IMAGENAME eq ${processName}`], {
+              collectStdout: true,
+              collectStderr: false
+            })
+
+            const output = result.stdout.toLowerCase()
+            const processNameLower = processName.toLowerCase()
+            // tasklist 在找到进程时会包含进程名这一行
+            if (output.includes(processNameLower)) {
+              runningProcesses.push(processName)
+            }
+          } catch (error) {
+            // 如果检查进程本身失败，记录警告但继续检查其他进程
+            console.warn(`[Main] 检查 ${processName} 进程状态失败（忽略）:`, error)
           }
-        } catch (error) {
-          // 如果检查进程本身失败，只在明确检测到进程存在时阻断，其他错误允许继续
-          if (error instanceof Error && error.message.includes('游戏正在运行中')) {
-            throw error
-          }
-          console.warn('[Main] 检查 Game.exe 进程状态失败（忽略）:', error)
+        }
+
+        // 如果有进程正在运行，抛出错误
+        if (runningProcesses.length > 0) {
+          const processList = runningProcesses.join(' 和 ')
+          throw new Error(`${processList} 正在运行中，请关闭后重试`)
         }
       }
 
@@ -959,13 +971,183 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('未找到补丁文件目录')
       }
 
-      // 复制补丁文件覆盖到游戏目录
-      const files = readdirSync(patchFileDir, { withFileTypes: true })
-      for (const file of files) {
-        if (!file.isFile()) continue
-        const src = join(patchFileDir, file.name)
-        const dest = join(gamePath, file.name)
-        copyFileSync(src, dest)
+      // 递归读取所有补丁文件
+      const getAllFiles = (
+        dir: string,
+        baseDir: string = dir
+      ): Array<{ path: string; relativePath: string }> => {
+        const files: Array<{ path: string; relativePath: string }> = []
+        const entries = readdirSync(dir, { withFileTypes: true })
+
+        for (const entry of entries) {
+          const fullPath = join(dir, entry.name)
+          const relativePath = relative(baseDir, fullPath)
+
+          if (entry.isDirectory()) {
+            // 递归读取子目录
+            files.push(...getAllFiles(fullPath, baseDir))
+          } else if (entry.isFile()) {
+            files.push({ path: fullPath, relativePath })
+          }
+        }
+
+        return files
+      }
+
+      const allFiles = getAllFiles(patchFileDir)
+      let hasDeleteFileList = false
+      let deleteFileList: string[] = []
+
+      // 第一步：先查找并读取 DeleteFileList.dat（如果存在）
+      for (const file of allFiles) {
+        const relativePath = file.relativePath
+        const normalizedPath = relativePath.replace(/\\/g, '/').toLowerCase()
+
+        if (normalizedPath.endsWith('deletefilelist.dat')) {
+          hasDeleteFileList = true
+          console.log(`[Main] 检测到 DeleteFileList.dat: ${relativePath}`)
+
+          // 读取 DeleteFileList.dat 内容（从补丁目录中读取，还未复制到游戏目录）
+          try {
+            const deleteFileListContent = readFileSync(file.path, 'utf-8')
+            deleteFileList = deleteFileListContent
+              .split(/\r?\n/)
+              .map((line) => line.trim())
+              .filter((line) => line && !line.startsWith('#') && !line.startsWith(';'))
+
+            console.log(
+              `[Main] 预读取 DeleteFileList.dat，包含 ${deleteFileList.length} 个待删除文件`
+            )
+            console.log('[Main] 待删除文件列表:', deleteFileList)
+          } catch (error) {
+            console.warn('[Main] 预读取 DeleteFileList.dat 失败:', error)
+          }
+          break
+        }
+      }
+
+      // 第二步：复制所有补丁文件，在复制前先删除目标文件（如果在删除列表中或已存在且被锁定）
+      for (const file of allFiles) {
+        const src = file.path
+        const relativePath = file.relativePath
+
+        // 处理相对路径，如 "PatchInfo\DeleteFileList.dat" 或 "PatchInfo/DeleteFileList.dat"
+        let destDir = gamePath
+        let destFileName = relativePath
+
+        // 检查相对路径是否包含路径分隔符
+        if (relativePath.includes('\\') || relativePath.includes('/')) {
+          // 使用 path 模块解析路径
+          const pathParts = relativePath.split(/[\\/]/)
+          destFileName = pathParts[pathParts.length - 1] // 最后一部分是文件名
+
+          // 前面的部分是目录路径
+          if (pathParts.length > 1) {
+            const dirParts = pathParts.slice(0, -1) // 除了最后一部分，都是目录
+            destDir = join(gamePath, ...dirParts)
+
+            // 确保目标目录存在
+            if (!existsSync(destDir)) {
+              mkdirSync(destDir, { recursive: true })
+              console.log(`[Main] 已创建目录: ${destDir}`)
+            }
+          }
+        }
+
+        const dest = join(destDir, destFileName)
+
+        // 在复制前，检查目标文件是否需要删除
+        // 1. 如果文件在 DeleteFileList.dat 中，先删除
+        // 2. 如果目标文件已存在且可能被锁定，尝试先删除再复制
+        const normalizedRelativePath = relativePath.replace(/[\\/]/g, '/')
+        const shouldDelete = deleteFileList.some((deletePath) => {
+          const normalizedDeletePath = deletePath.replace(/[\\/]/g, '/')
+          return (
+            normalizedRelativePath === normalizedDeletePath ||
+            normalizedRelativePath.endsWith('/' + normalizedDeletePath) ||
+            normalizedDeletePath === normalizedRelativePath
+          )
+        })
+
+        if (shouldDelete || existsSync(dest)) {
+          // 检查目标文件是否在删除列表中（精确匹配）
+          const isInDeleteList = deleteFileList.some((deletePath) => {
+            const normalizedDeletePath = deletePath.replace(/[\\/]/g, '/')
+            const normalizedDestPath = relativePath.replace(/[\\/]/g, '/')
+            return normalizedDestPath === normalizedDeletePath
+          })
+
+          if (isInDeleteList || existsSync(dest)) {
+            try {
+              if (existsSync(dest)) {
+                const stat = statSync(dest)
+                if (stat.isFile()) {
+                  console.log(`[Main] 复制前删除目标文件: ${dest}`)
+                  unlinkSync(dest)
+                  // 等待一小段时间，确保文件句柄释放
+                  await new Promise((resolve) => setTimeout(resolve, 100))
+                }
+              }
+            } catch (deleteError) {
+              // 如果删除失败（文件被锁定），记录警告但继续尝试复制
+              console.warn(`[Main] 无法删除目标文件（可能正在使用）: ${dest}`, deleteError)
+              // 对于 EBUSY 错误，尝试重试几次
+              if ((deleteError as NodeJS.ErrnoException).code === 'EBUSY') {
+                console.log(`[Main] 文件被锁定，尝试等待后重试删除: ${dest}`)
+                let retryCount = 0
+                const maxRetries = 5
+                while (retryCount < maxRetries) {
+                  await new Promise((resolve) => setTimeout(resolve, 500))
+                  try {
+                    unlinkSync(dest)
+                    console.log(`[Main] 重试删除成功: ${dest}`)
+                    break
+                  } catch {
+                    retryCount++
+                    if (retryCount >= maxRetries) {
+                      console.error(`[Main] 重试 ${maxRetries} 次后仍无法删除文件: ${dest}`)
+                      throw new Error(`无法删除被锁定的文件: ${dest}`)
+                    }
+                  }
+                }
+              } else {
+                throw deleteError
+              }
+            }
+          }
+        }
+
+        // 复制文件（带重试机制处理 EBUSY）
+        let copySuccess = false
+        let copyRetryCount = 0
+        const maxCopyRetries = 3
+
+        while (!copySuccess && copyRetryCount < maxCopyRetries) {
+          try {
+            copyFileSync(src, dest)
+            console.log(`[Main] 已复制补丁文件: ${relativePath} -> ${dest}`)
+            copySuccess = true
+          } catch (copyError) {
+            const err = copyError as NodeJS.ErrnoException
+            if (err.code === 'EBUSY' && copyRetryCount < maxCopyRetries - 1) {
+              copyRetryCount++
+              console.warn(
+                `[Main] 复制文件被锁定，等待后重试 (${copyRetryCount}/${maxCopyRetries}): ${dest}`
+              )
+              // 尝试再次删除并等待
+              try {
+                if (existsSync(dest)) {
+                  unlinkSync(dest)
+                }
+              } catch {
+                // 忽略删除错误
+              }
+              await new Promise((resolve) => setTimeout(resolve, 500))
+            } else {
+              throw copyError
+            }
+          }
+        }
       }
 
       // 更新 PatchInfo/Patch.ini 中的版本号
@@ -989,11 +1171,91 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw error
       }
 
+      // 根据 DeleteFileList.dat 清空不再需要的文件
+      // 注意：已经在复制阶段处理了在补丁文件中的文件，这里只处理不在补丁文件中的其他文件
+      if (hasDeleteFileList && deleteFileList.length > 0) {
+        try {
+          console.log('[Main] 开始处理 DeleteFileList.dat 中剩余的待删除文件')
+
+          // 获取所有已复制的补丁文件的相对路径（用于排除）
+          const copiedFiles = new Set<string>()
+          for (const file of allFiles) {
+            const normalizedPath = file.relativePath.replace(/[\\/]/g, '/')
+            copiedFiles.add(normalizedPath)
+          }
+
+          // 在 gamePath 根目录中查找并删除这些文件
+          for (const filePath of deleteFileList) {
+            try {
+              // 规范化路径分隔符（统一使用系统分隔符）
+              const normalizedFilePath = filePath.replace(/[\\/]/g, '/')
+
+              // 跳过已经在复制阶段处理过的文件
+              if (copiedFiles.has(normalizedFilePath)) {
+                console.log(`[Main] 跳过已处理的文件: ${filePath}`)
+                continue
+              }
+
+              const pathParts = normalizedFilePath.split('/').filter((p) => p) // 过滤空字符串
+
+              // 从 gamePath 根目录查找
+              const targetPath = join(gamePath, ...pathParts)
+
+              console.log(`[Main] 尝试删除文件: ${filePath} -> ${targetPath}`)
+
+              if (existsSync(targetPath)) {
+                // 检查是否是文件（不是目录）
+                const stat = statSync(targetPath)
+                if (stat.isFile()) {
+                  // 对于可能被锁定的文件，添加重试机制
+                  let deleteSuccess = false
+                  let deleteRetryCount = 0
+                  const maxDeleteRetries = 5
+
+                  while (!deleteSuccess && deleteRetryCount < maxDeleteRetries) {
+                    try {
+                      unlinkSync(targetPath)
+                      console.log(`[Main] ✓ 已删除文件: ${targetPath}`)
+                      deleteSuccess = true
+                    } catch (deleteError) {
+                      const err = deleteError as NodeJS.ErrnoException
+                      if (err.code === 'EBUSY' && deleteRetryCount < maxDeleteRetries - 1) {
+                        deleteRetryCount++
+                        console.warn(
+                          `[Main] 文件被锁定，等待后重试删除 (${deleteRetryCount}/${maxDeleteRetries}): ${targetPath}`
+                        )
+                        await new Promise((resolve) => setTimeout(resolve, 500))
+                      } else {
+                        throw deleteError
+                      }
+                    }
+                  }
+                } else {
+                  console.warn(`[Main] 跳过删除（是目录而非文件）: ${targetPath}`)
+                }
+              } else {
+                console.warn(`[Main] 文件不存在，跳过删除: ${targetPath}`)
+              }
+            } catch (error) {
+              console.error(`[Main] 删除文件失败: ${filePath}`, error)
+              // 继续处理其他文件，不中断整个流程
+            }
+          }
+          console.log('[Main] DeleteFileList.dat 处理完成')
+        } catch (error) {
+          console.error('[Main] 处理 DeleteFileList.dat 失败:', error)
+          // 不抛出错误，允许继续执行
+        }
+      } else {
+        console.log('[Main] 本次更新不包含 DeleteFileList.dat，跳过文件删除')
+      }
+
       // 清空 patch 目录
       try {
         rmSync(patchRoot, { recursive: true, force: true })
       } catch (error) {
         console.warn('[Main] 清空 patch 目录失败（忽略）：', error)
+        throw new Error('[Main] 清空 patch 目录失败')
       }
 
       return { success: true }
@@ -1033,16 +1295,25 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       // 节流控制：默认 2 秒上报一次进度
       let lastProgressTime = 0
+      const totalFiles = patches.length
+      let completedFiles = 0
 
       const emitProgress = (
         stage: 'download' | 'decompress' | 'skip',
-        downloadFraction: number,
-        decompressFraction: number,
+        currentFileDownloadFraction: number,
+        currentFileDecompressFraction: number,
         targetFileName?: string,
         message?: string
       ) => {
-        const overall = downloadFraction * 0.5 + decompressFraction * 0.5
-        const percent = Number((overall * 100).toFixed(2))
+        // 计算当前文件的进度（下载占50%，解压占50%）
+        const currentFileProgress =
+          currentFileDownloadFraction * 0.5 + currentFileDecompressFraction * 0.5
+
+        // 计算总体进度：
+        // - 已完成文件占 (completedFiles / totalFiles)
+        // - 当前文件占 (currentFileProgress / totalFiles)
+        const overallProgress = (completedFiles + currentFileProgress) / totalFiles
+        const percent = Math.min(100, Number((overallProgress * 100).toFixed(2)))
 
         const now = Date.now()
         // 始终允许 100% 上报；其余情况 2 秒节流一次
@@ -1069,7 +1340,30 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           continue
         }
 
-        const outPath = join(targetDir, targetFileName)
+        // 处理文件名可能包含路径的情况，如 "PatchInfo\DeleteFileList.dat"
+        let outDir = targetDir
+        let outFileName = targetFileName
+
+        // 检查文件名是否包含路径分隔符
+        if (targetFileName.includes('\\') || targetFileName.includes('/')) {
+          // 解析路径
+          const pathParts = targetFileName.split(/[\\/]/)
+          outFileName = pathParts[pathParts.length - 1] // 最后一部分是文件名
+
+          // 前面的部分是目录路径
+          if (pathParts.length > 1) {
+            const dirParts = pathParts.slice(0, -1) // 除了最后一部分，都是目录
+            outDir = join(targetDir, ...dirParts)
+
+            // 确保目标目录存在
+            if (!existsSync(outDir)) {
+              mkdirSync(outDir, { recursive: true })
+              console.log(`[Main] 已创建目录: ${outDir}`)
+            }
+          }
+        }
+
+        const outPath = join(outDir, outFileName)
 
         // 若目标文件已存在，则跳过
         if (existsSync(outPath)) {
@@ -1083,10 +1377,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             targetFileName,
             '目标文件已存在，跳过'
           )
+          completedFiles++
           continue
         }
 
-        const tmpPath = join(targetDir, patch.patchFileName || `${targetFileName}.lzma`)
+        // 临时文件保存在相同的目录结构中
+        const tmpPath = join(outDir, patch.patchFileName || `${outFileName}.lzma`)
         console.log('[Main] 开始下载补丁文件:', patch.downloadUrl)
 
         try {
@@ -1212,12 +1508,19 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             targetFileName,
             '补丁解压完成'
           )
+          completedFiles++
         } catch (error) {
           const errorMsg = `处理补丁文件失败: ${patch.downloadUrl} - ${error instanceof Error ? error.message : String(error)}`
           console.error('[Main]', errorMsg)
           throw new Error(errorMsg)
         }
       }
+
+      // 确保所有文件处理完成后，进度为 100%
+      if (completedFiles < totalFiles) {
+        completedFiles = totalFiles
+      }
+      emitProgress('decompress', 1, 1, undefined, '所有补丁文件处理完成')
 
       return {
         success: true
