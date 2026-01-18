@@ -273,6 +273,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         return dateB - dateA // 降序排列
       })
 
+      console.error('[Main] 已获取最新系统公告:')
+      console.log(allAnnouncements)
+
       return allAnnouncements
     } catch (error) {
       console.error('[Main] 获取公告失败:', error)
@@ -322,7 +325,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       const latest = userOpenLines[userOpenLines.length - 1]
 
-      console.log(`当前最新版本号 ${latest}`)
+      console.log(`[Main] 当前最新版本号 ${latest}`)
 
       return { success: true, version: latest }
     } catch (error) {
