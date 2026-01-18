@@ -758,7 +758,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    */
   ipcMain.handle(
     'download-patch-lists',
-    async (_event, versions: string[], options?: { keepLatestOnly?: boolean }) => {
+    async (_event, versions: string[], keepLatestOnly: boolean = true) => {
       try {
         if (!Array.isArray(versions) || versions.length === 0) {
           throw new Error('版本列表为空')
@@ -871,9 +871,6 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             throw new Error(errorMsg)
           }
         }
-
-        // 根据配置选择是否只保留同名补丁中的最新版本（默认 true）
-        const keepLatestOnly = options?.keepLatestOnly !== false
 
         if (keepLatestOnly && patches.length > 0) {
           // 以目标文件名（例如 Game.exe）作为“同名文件”的判断依据
