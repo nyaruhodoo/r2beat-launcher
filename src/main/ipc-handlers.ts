@@ -200,7 +200,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         if (!response.ok) {
           console.error('[Main] 获取公告详情失败:', response.status, response.statusText)
-          return { success: false, error: '获取公告详情失败' }
+          throw new Error('获取公告详情失败')
         }
 
         const result = (await response.json()) as Announcementlist
@@ -209,7 +209,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         const target = list.find((item) => item.idx === idx)
         if (!target) {
           console.warn('[Main] 未找到匹配的公告详情，idx:', idx)
-          return { success: false, error: '未找到公告详情' }
+          throw new Error('未找到公告详情')
         }
 
         return { success: true, data: target }
@@ -292,7 +292,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const response = await fetch(url)
       if (!response.ok) {
         console.error('[Main] 获取远程版本失败:', response.status, response.statusText)
-        return { success: false, error: '远程版本请求失败' }
+        throw new Error('远程版本请求失败')
       }
 
       const text = await response.text()
@@ -300,7 +300,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       const userOpenIndex = lines.findIndex((line) => line.toLowerCase() === '[useropen]')
       if (userOpenIndex === -1) {
-        return { success: false, error: '未找到 [useropen] 段落' }
+        throw new Error('未找到 [useropen] 段落')
       }
 
       // 查找 useropen 段结束位置（masteropen 或 versionend）
@@ -318,10 +318,11 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         .filter((line) => line && !line.startsWith('['))
 
       if (userOpenLines.length === 0) {
-        return { success: false, error: 'useropen 段中没有有效版本行' }
+        throw new Error('[useropen] 段中没有有效版本行')
       }
 
       const latest = userOpenLines[userOpenLines.length - 1]
+
       return { success: true, version: latest }
     } catch (error) {
       console.error('[Main] 获取远程版本异常:', error)

@@ -120,7 +120,10 @@ const hasGameExe = computed<boolean | null>(() => {
   return patches.some((p) => p.targetFileName?.toLowerCase() === 'game.exe')
 })
 
-const updateStatus = (): string[] => {
+/**
+ * 计算是否有新版本
+ */
+const updateStatus = () => {
   const local = currentVersion.value
   const remote = latestVersion.value
 
@@ -171,8 +174,7 @@ const loadLocalVersion = async () => {
     if (result?.success && result.data) {
       currentVersion.value = result.data.patch.version.toString().padStart(5, '0')
     } else {
-      currentVersion.value = '读取失败'
-      console.error('读取 Patch.ini 失败:', result?.error)
+      throw new Error(result?.error)
     }
   } catch (error) {
     console.error('读取本地版本失败:', error)
@@ -185,6 +187,7 @@ const loadLocalVersion = async () => {
 
 // 获取远程版本
 const loadRemoteVersion = async (isLoading?: boolean) => {
+  // 避免二次刷新时UI闪烁
   if (isLoading) {
     isVersionSectionLoading.value = true
   }
@@ -206,6 +209,9 @@ const loadRemoteVersion = async (isLoading?: boolean) => {
   }
 }
 
+/**
+ * 获取预下载文件列表
+ */
 const getPreDownloadList = async () => {
   const updateList = updateStatus()
   if (!updateList.length) {
