@@ -1,113 +1,59 @@
 <template>
-  <Transition name="modal" appear>
-    <div v-if="visible" class="login-modal-overlay" @click.self="handleClose">
-      <div class="login-modal">
-        <div class="modal-header">
-          <h2 class="modal-title">
-            <span class="title-icon">🔐</span>
-            登录
-          </h2>
-          <button class="close-btn" @click="handleClose">✕</button>
-        </div>
-
-        <div class="modal-content">
-          <div class="login-form">
-            <!-- 已保存账号下拉框 -->
-            <div v-if="(accountList?.length ?? 0) > 0" class="form-item">
-              <label class="form-label">选择账号</label>
-              <div ref="accountSelectRef" class="account-select-wrapper">
-                <div class="account-select-trigger" @click.stop="toggleAccountDropdown">
-                  <span class="account-select-value">
-                    {{
-                      selectedAccount?.remark ||
-                      selectedAccount?.username ||
-                      '请选择账号或输入新账号'
-                    }}
-                  </span>
-                  <div class="account-select-arrow" :class="{ rotated: isAccountDropdownOpen }">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path
-                        d="M3 4.5L6 7.5L9 4.5"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <Transition name="dropdown">
-                  <div v-if="isAccountDropdownOpen" class="account-select-dropdown" @click.stop>
-                    <div
-                      v-for="account in accountList"
-                      :key="account.username"
-                      class="account-select-option"
-                      :class="{ active: account.username === selectedAccount?.username }"
-                      @click="selectSavedAccount(account)"
-                    >
-                      <div class="account-option-info">
-                        <span class="account-option-username">{{
-                          account.remark || account.username
-                        }}</span>
-                        <span class="account-option-badge">🔒</span>
-                      </div>
-                      <button
-                        class="account-delete-btn"
-                        title="删除账号"
-                        @click.stop="handleDeleteAccount(account)"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path
-                            d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </Transition>
-              </div>
-            </div>
-
-            <div class="form-item">
-              <label class="form-label">用户名</label>
-              <input
-                v-model="formData.username"
-                type="text"
-                class="form-input"
-                placeholder="请输入用户名"
-                @keyup.enter="handleLogin"
-              />
-            </div>
-
-            <div class="form-item">
-              <label class="form-label">密码</label>
-              <div class="password-input-wrapper">
-                <input
-                  v-model="formData.password"
-                  :type="showPassword ? 'text' : 'password'"
-                  class="form-input password-input"
-                  placeholder="请输入密码"
-                  @keyup.enter="handleLogin"
+  <Modal
+    :visible="visible"
+    title="登录"
+    title-icon="🔐"
+    cancel-text="取消"
+    confirm-text="登录"
+    :show-confirm="false"
+    :show-cancel="false"
+    max-width="450px"
+    @close="handleClose"
+  >
+    <div class="login-form">
+      <!-- 已保存账号下拉框 -->
+      <div v-if="(accountList?.length ?? 0) > 0" class="form-item">
+        <label class="form-label">选择账号</label>
+        <div ref="accountSelectRef" class="account-select-wrapper">
+          <div class="account-select-trigger" @click.stop="toggleAccountDropdown">
+            <span class="account-select-value">
+              {{ selectedAccount?.remark || selectedAccount?.username || '请选择账号或输入新账号' }}
+            </span>
+            <div class="account-select-arrow" :class="{ rotated: isAccountDropdownOpen }">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path
+                  d="M3 4.5L6 7.5L9 4.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
                 />
+              </svg>
+            </div>
+          </div>
+          <Transition name="dropdown">
+            <div v-if="isAccountDropdownOpen" class="account-select-dropdown" @click.stop>
+              <div
+                v-for="account in accountList"
+                :key="account.username"
+                class="account-select-option"
+                :class="{ active: account.username === selectedAccount?.username }"
+                @click="selectSavedAccount(account)"
+              >
+                <div class="account-option-info">
+                  <span class="account-option-username">{{
+                    account.remark || account.username
+                  }}</span>
+                  <span class="account-option-badge">🔒</span>
+                </div>
                 <button
-                  type="button"
-                  class="password-toggle-btn"
-                  :title="showPassword ? '隐藏密码' : '显示密码'"
-                  @click="showPassword = !showPassword"
+                  class="account-delete-btn"
+                  title="删除账号"
+                  @click.stop="handleDeleteAccount(account)"
                 >
-                  <svg v-if="showPassword" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path
-                      d="M9 3.75C5.25 3.75 2.0475 6.0975 0.75 9.375C2.0475 12.6525 5.25 15 9 15C12.75 15 15.9525 12.6525 17.25 9.375C15.9525 6.0975 12.75 3.75 9 3.75ZM9 13.125C6.93 13.125 5.25 11.445 5.25 9.375C5.25 7.305 6.93 5.625 9 5.625C11.07 5.625 12.75 7.305 12.75 9.375C12.75 11.445 11.07 13.125 9 13.125ZM9 7.125C7.755 7.125 6.75 8.13 6.75 9.375C6.75 10.62 7.755 11.625 9 11.625C10.245 11.625 11.25 10.62 11.25 9.375C11.25 8.13 10.245 7.125 9 7.125Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  <svg v-else width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path
-                      d="M1.5 1.5L16.5 16.5M7.425 7.425C7.0725 7.7775 6.75 8.205 6.75 8.625C6.75 9.87 7.755 10.875 9 10.875C9.42 10.875 9.8475 10.5525 10.2 10.2M13.5 13.5C12.2475 14.3025 10.65 14.625 9 14.625C5.25 14.625 2.0475 12.2775 0.75 9C1.305 7.5225 2.19 6.2475 3.3 5.25M6.75 3.75C7.5 3.5625 8.25 3.375 9 3.375C12.75 3.375 15.9525 5.7225 17.25 9C16.695 10.4775 15.81 11.7525 14.7 12.75L13.5 13.5"
+                      d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5"
                       stroke="currentColor"
                       stroke-width="1.5"
                       stroke-linecap="round"
@@ -117,35 +63,81 @@
                 </button>
               </div>
             </div>
-
-            <div class="form-item">
-              <label class="form-label">备注（可选）</label>
-              <input
-                v-model="formData.remark"
-                type="text"
-                class="form-input"
-                placeholder="为账号添加备注，方便识别"
-                @keyup.enter="handleLogin"
-              />
-            </div>
-
-            <div class="form-options">
-              <Checkbox v-model="rememberPassword" label="记住密码" />
-            </div>
-          </div>
+          </Transition>
         </div>
+      </div>
 
-        <div class="modal-footer">
-          <button class="btn btn-cancel" @click="handleClose">取消</button>
-          <button class="btn btn-login" :disabled="isLoading || countdown > 0" @click="handleLogin">
-            <span v-if="isLoading">登录中...</span>
-            <span v-else-if="countdown > 0">请等待 {{ countdown }} 秒后重试</span>
-            <span v-else>登录</span>
+      <div class="form-item">
+        <label class="form-label">用户名</label>
+        <input
+          v-model="formData.username"
+          type="text"
+          class="form-input"
+          placeholder="请输入用户名"
+          @keyup.enter="handleLogin"
+        />
+      </div>
+
+      <div class="form-item">
+        <label class="form-label">密码</label>
+        <div class="password-input-wrapper">
+          <input
+            v-model="formData.password"
+            :type="showPassword ? 'text' : 'password'"
+            class="form-input password-input"
+            placeholder="请输入密码"
+            @keyup.enter="handleLogin"
+          />
+          <button
+            type="button"
+            class="password-toggle-btn"
+            :title="showPassword ? '隐藏密码' : '显示密码'"
+            @click="showPassword = !showPassword"
+          >
+            <svg v-if="showPassword" width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M9 3.75C5.25 3.75 2.0475 6.0975 0.75 9.375C2.0475 12.6525 5.25 15 9 15C12.75 15 15.9525 12.6525 17.25 9.375C15.9525 6.0975 12.75 3.75 9 3.75ZM9 13.125C6.93 13.125 5.25 11.445 5.25 9.375C5.25 7.305 6.93 5.625 9 5.625C11.07 5.625 12.75 7.305 12.75 9.375C12.75 11.445 11.07 13.125 9 13.125ZM9 7.125C7.755 7.125 6.75 8.13 6.75 9.375C6.75 10.62 7.755 11.625 9 11.625C10.245 11.625 11.25 10.62 11.25 9.375C11.25 8.13 10.245 7.125 9 7.125Z"
+                fill="currentColor"
+              />
+            </svg>
+            <svg v-else width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path
+                d="M1.5 1.5L16.5 16.5M7.425 7.425C7.0725 7.7775 6.75 8.205 6.75 8.625C6.75 9.87 7.755 10.875 9 10.875C9.42 10.875 9.8475 10.5525 10.2 10.2M13.5 13.5C12.2475 14.3025 10.65 14.625 9 14.625C5.25 14.625 2.0475 12.2775 0.75 9C1.305 7.5225 2.19 6.2475 3.3 5.25M6.75 3.75C7.5 3.5625 8.25 3.375 9 3.375C12.75 3.375 15.9525 5.7225 17.25 9C16.695 10.4775 15.81 11.7525 14.7 12.75L13.5 13.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </button>
         </div>
       </div>
+
+      <div class="form-item">
+        <label class="form-label">备注（可选）</label>
+        <input
+          v-model="formData.remark"
+          type="text"
+          class="form-input"
+          placeholder="为账号添加备注，方便识别"
+          @keyup.enter="handleLogin"
+        />
+      </div>
+
+      <div class="form-options">
+        <Checkbox v-model="rememberPassword" label="记住密码" />
+      </div>
     </div>
-  </Transition>
+
+    <template #footer>
+      <button class="btn btn-cancel" @click="handleClose">取消</button>
+      <button class="btn btn-login" :disabled="isLoading || countdown > 0" @click="handleLogin">
+        <span v-if="isLoading">登录中...</span>
+        <span v-else-if="countdown > 0">请等待 {{ countdown }} 秒后重试</span>
+        <span v-else>登录</span>
+      </button>
+    </template>
+  </Modal>
 
   <!-- 确认删除对话框 -->
   <ConfirmDialog
@@ -161,6 +153,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
+import Modal from './Modal.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import Checkbox from './Checkbox.vue'
 import { useToast } from '@renderer/composables/useToast'
@@ -390,142 +383,6 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--modal-bg-overlay);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  transition:
-    background var(--transition-normal),
-    --modal-bg-overlay var(--transition-normal);
-  border-radius: var(--border-radius-app);
-  overflow: hidden;
-}
-
-.login-modal {
-  background: var(--modal-bg);
-  border-radius: 20px;
-  width: 90%;
-  max-width: 450px;
-  overflow: hidden;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-lg);
-  transition:
-    background var(--transition-normal),
-    border-color var(--transition-normal),
-    box-shadow var(--transition-normal),
-    --modal-bg var(--transition-normal);
-}
-
-/* 弹窗过渡动画 - 使用纯 transition 避免闪烁 */
-.modal-enter-active {
-  transition: opacity 0.3s ease;
-}
-
-.modal-enter-active .login-modal {
-  transition:
-    transform 0.3s ease,
-    opacity 0.3s ease;
-}
-
-.modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.modal-leave-active .login-modal {
-  transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.modal-enter-from {
-  opacity: 0;
-}
-
-.modal-enter-from .login-modal {
-  transform: translateY(30px);
-  opacity: 0;
-}
-
-.modal-enter-to {
-  opacity: 1;
-}
-
-.modal-enter-to .login-modal {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-.modal-leave-from {
-  opacity: 1;
-}
-
-.modal-leave-from .login-modal {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-leave-to .login-modal {
-  transform: translateY(30px);
-  opacity: 0;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg-card);
-}
-
-.modal-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-primary);
-  margin: 0;
-}
-
-.title-icon {
-  font-size: 20px;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: var(--color-text-tertiary);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.close-btn:hover {
-  background: var(--color-bg-card-hover);
-  color: var(--color-primary);
-}
-
-.modal-content {
-  padding: 30px;
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
 /* 账号选择下拉框 */
 .account-select-wrapper {
   position: relative;
@@ -803,15 +660,6 @@ const handleLogin = async () => {
   color: var(--color-error);
   font-size: 13px;
   text-align: center;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-  padding: 12px 24px;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-bg-card);
 }
 
 .btn {

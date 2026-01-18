@@ -47,6 +47,7 @@ const handleChange = (event: Event) => {
   padding: 10px 15px;
   border-radius: 8px;
   background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
 
   &:hover {
     background: var(--color-bg-card-hover);
