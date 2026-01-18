@@ -102,16 +102,17 @@
                 <span>启动游戏后关闭启动器</span>
               </label>
             </div>
-            <!-- <div class="setting-item" style="margin-top: 20px">
+            <div class="setting-item" style="margin-top: 20px">
               <label class="setting-label">命令行参数</label>
               <input
                 v-model="settings.launchArgs"
                 type="text"
                 class="path-input"
-                placeholder="例如: -windowed -novid"
+                placeholder="默认值是 xyxOpen"
               />
               <p class="setting-hint">启动游戏时传递的自定义命令行参数（可选）</p>
-            </div> -->
+              <p class="setting-hint">普通玩家请勿调整，除非你知道自己在做什么</p>
+            </div>
           </div>
 
           <!-- 作者模块 -->
