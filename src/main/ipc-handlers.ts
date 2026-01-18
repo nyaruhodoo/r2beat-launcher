@@ -240,10 +240,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             const response = await fetch(url)
 
             if (!response.ok) {
-              console.error(
+              throw new Error(
                 `[Main] Failed to fetch ${url}: ${response.status} ${response.statusText}`
               )
-              return []
             }
 
             const result = (await response.json()) as {
@@ -322,6 +321,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       const latest = userOpenLines[userOpenLines.length - 1]
+
+      console.log(`当前最新版本号 ${latest}`)
 
       return { success: true, version: latest }
     } catch (error) {
@@ -659,11 +660,11 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     async (_, gamePath: string, configJson: Record<string, Record<string, unknown>>) => {
       try {
         if (!gamePath || gamePath.trim() === '') {
-          return { success: false, error: '游戏路径未设置' }
+          throw new Error('游戏路径未设置')
         }
 
         if (!configJson) {
-          return { success: false, error: '配置数据为空' }
+          throw new Error('配置数据为空')
         }
 
         const configIniPath = join(gamePath, 'config.ini')
@@ -693,14 +694,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   ipcMain.handle('read-patch-info', async (_, gamePath: string) => {
     try {
       if (!gamePath || gamePath.trim() === '') {
-        return { success: false, error: '游戏路径未设置' }
+        throw new Error('游戏路径未设置')
       }
 
       const patchIniPath = join(gamePath, 'PatchInfo', 'Patch.ini')
-
       // 检查文件是否存在
       if (!existsSync(patchIniPath)) {
-        return { success: false, error: `找不到 Patch.ini 文件: ${patchIniPath}` }
+        throw new Error(`找不到 Patch.ini 文件: ${patchIniPath}`)
       }
 
       // 读取文件内容
