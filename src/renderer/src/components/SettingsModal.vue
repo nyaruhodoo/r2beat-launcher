@@ -35,10 +35,7 @@
               <label class="setting-label">分辨率</label>
               <div class="resolution-group">
                 <CustomSelect v-model="resolution" :options="resolutionOptions" />
-                <label class="fullscreen-checkbox">
-                  <input v-model="fullscreen" type="checkbox" class="checkbox-input" />
-                  <span>全屏</span>
-                </label>
+                <Checkbox v-model="fullscreen">全屏</Checkbox>
               </div>
             </div>
 
@@ -46,14 +43,8 @@
               <label class="setting-label">声音</label>
 
               <div class="checkbox-group">
-                <label class="audio-checkbox">
-                  <input v-model="audioEffects" type="checkbox" class="checkbox-input" />
-                  <span>特效音乐</span>
-                </label>
-                <label class="audio-checkbox">
-                  <input v-model="backgroundMusic" type="checkbox" class="checkbox-input" />
-                  <span>背景音乐</span>
-                </label>
+                <Checkbox v-model="audioEffects">特效音乐</Checkbox>
+                <Checkbox v-model="backgroundMusic">背景音乐</Checkbox>
               </div>
             </div>
 
@@ -61,10 +52,7 @@
               <label class="setting-label">图像质量</label>
 
               <div class="checkbox-group">
-                <label class="audio-checkbox">
-                  <input v-model="graphicsQuality" type="checkbox" class="checkbox-input" />
-                  <span>描边</span>
-                </label>
+                <Checkbox v-model="graphicsQuality">描边</Checkbox>
               </div>
             </div>
           </div>
@@ -79,28 +67,19 @@
                   :options="processPriorityOptions"
                 />
 
-                <label class="fullscreen-checkbox">
-                  <input
-                    v-model="settings.lowerNPPriority"
-                    type="checkbox"
-                    class="checkbox-input"
-                  />
-                  <span>降低NP优先级</span>
-                </label>
+                <Checkbox
+                  :model-value="settings.lowerNPPriority ?? false"
+                  @update:model-value="(val) => (settings.lowerNPPriority = val)"
+                  >降低NP优先级</Checkbox
+                >
               </div>
 
               <p class="setting-hint">经常顿卡的玩家，该配置可能有一些作用</p>
               <p class="setting-hint">降低NP优先级会影响启动速度，但可以降低对CPU的占用率</p>
             </div>
             <div class="checkbox-group">
-              <label class="setting-label checkbox-label">
-                <input v-model="settings.autoUpdate" type="checkbox" class="checkbox-input" />
-                <span>自动更新</span>
-              </label>
-              <label class="setting-label checkbox-label">
-                <input v-model="settings.closeOnLaunch" type="checkbox" class="checkbox-input" />
-                <span>启动游戏后关闭启动器</span>
-              </label>
+              <Checkbox v-model="settings.autoUpdate">自动更新</Checkbox>
+              <Checkbox v-model="settings.closeOnLaunch">启动游戏后关闭启动器</Checkbox>
             </div>
             <div class="setting-item" style="margin-top: 20px">
               <label class="setting-label">命令行参数</label>
@@ -151,6 +130,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import CustomSelect from './CustomSelect.vue'
+import Checkbox from './Checkbox.vue'
 import { AppConfig, GameSettings } from '@types'
 import qrcode from '@renderer/imgs/qrcode.jpg'
 import { useToast } from '@renderer/composables/useToast'
@@ -232,7 +212,7 @@ const graphicsQuality = computed({
     if (!configIniJson.value?.VIDEO) return true
     return configIniJson.value.VIDEO.OUTLINING === 1
   },
-  set: (value: number) => {
+  set: (value: boolean) => {
     if (!configIniJson.value) return
     if (!configIniJson.value.VIDEO)
       configIniJson.value.VIDEO = {
@@ -577,81 +557,6 @@ onUnmounted(() => {
   margin-bottom: 8px;
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  margin-bottom: 0;
-  padding: 10px 15px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  transition: all var(--transition-normal);
-  position: relative;
-  overflow: hidden;
-  user-select: none;
-  width: 100%;
-  min-width: 0;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--gradient-card);
-    opacity: 0;
-    transition: opacity var(--transition-normal);
-    z-index: 0;
-  }
-
-  &:hover {
-    background: var(--color-bg-card-hover);
-    border-color: var(--color-primary);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-card-hover);
-
-    &::before {
-      opacity: 1;
-    }
-
-    span {
-      color: var(--color-primary);
-    }
-  }
-
-  &:active {
-    transform: translateY(0) scale(0.98);
-  }
-
-  span {
-    position: relative;
-    z-index: 1;
-    font-size: 14px;
-    color: var(--color-text-primary);
-    transition: color var(--transition-normal);
-  }
-
-  .checkbox-input {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: var(--color-primary);
-    transition: all var(--transition-normal);
-    position: relative;
-    z-index: 1;
-
-    &:hover {
-      transform: scale(1.1);
-    }
-
-    &:checked {
-      transform: scale(1.05);
-    }
-  }
-}
 
 .path-input-group {
   display: flex;
@@ -695,91 +600,19 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 15px;
+
+  .custom-select-wrapper {
+    flex: 1;
+  }
+
 }
 
-.resolution-group .custom-select-wrapper {
-  flex: 1;
-}
-
-.fullscreen-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  padding: 12px 16px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  transition: all var(--transition-normal);
-  position: relative;
-  overflow: hidden;
-  min-height: 44px;
-}
-
-.fullscreen-checkbox::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-card);
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-  z-index: 0;
-}
-
-.fullscreen-checkbox:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-card-hover);
-}
-
-.fullscreen-checkbox:hover::before {
-  opacity: 1;
-}
-
-.fullscreen-checkbox:active {
-  transform: translateY(0) scale(0.98);
-}
-
-.fullscreen-checkbox .checkbox-input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--color-primary);
-  transition: all var(--transition-normal);
-  position: relative;
-  z-index: 1;
-}
-
-.fullscreen-checkbox .checkbox-input:hover {
-  transform: scale(1.1);
-}
-
-.fullscreen-checkbox .checkbox-input:checked {
-  transform: scale(1.05);
-}
-
-.fullscreen-checkbox span {
-  font-size: 14px;
-  color: var(--color-text-primary);
-  transition: color var(--transition-normal);
-  position: relative;
-  z-index: 1;
-}
-
-.fullscreen-checkbox:hover span {
-  color: var(--color-primary);
-}
 
 .checkbox-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+
 }
 
 @media (max-width: 768px) {
@@ -788,81 +621,6 @@ onUnmounted(() => {
   }
 }
 
-.audio-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  user-select: none;
-  padding: 12px 18px;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  transition: all var(--transition-normal);
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  min-width: 0;
-}
-
-.audio-checkbox::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--gradient-card);
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-  z-index: 0;
-}
-
-.audio-checkbox:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-primary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-card-active);
-}
-
-.audio-checkbox:hover::before {
-  opacity: 1;
-}
-
-.audio-checkbox:active {
-  transform: translateY(0) scale(0.98);
-}
-
-.audio-checkbox .checkbox-input {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  accent-color: var(--color-primary);
-  transition: all var(--transition-normal);
-  position: relative;
-  z-index: 1;
-}
-
-.audio-checkbox .checkbox-input:hover {
-  transform: scale(1.15);
-}
-
-.audio-checkbox .checkbox-input:checked {
-  transform: scale(1.1);
-}
-
-.audio-checkbox span {
-  font-size: 14px;
-  color: var(--color-text-primary);
-  font-weight: 500;
-  transition: color var(--transition-normal);
-  position: relative;
-  z-index: 1;
-}
-
-.audio-checkbox:hover span {
-  color: var(--color-primary);
-}
 
 .setting-hint {
   font-size: 12px;

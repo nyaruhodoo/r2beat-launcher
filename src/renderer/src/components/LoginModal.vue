@@ -130,10 +130,7 @@
             </div>
 
             <div class="form-options">
-              <label class="checkbox-label">
-                <input v-model="rememberPassword" type="checkbox" class="checkbox-input" />
-                <span class="checkbox-text">记住密码</span>
-              </label>
+              <Checkbox v-model="rememberPassword" label="记住密码" />
             </div>
           </div>
         </div>
@@ -165,6 +162,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import ConfirmDialog from './ConfirmDialog.vue'
+import Checkbox from './Checkbox.vue'
 import { useToast } from '@renderer/composables/useToast'
 import { UserInfo } from '@types'
 
@@ -795,54 +793,6 @@ const handleLogin = async () => {
 .form-options {
   display: flex;
   align-items: center;
-  margin-top: -10px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  user-select: none;
-  padding: 6px 10px;
-  border-radius: 8px;
-  transition: all var(--transition-normal);
-  position: relative;
-
-  &:hover {
-    background: var(--color-bg-card);
-
-    .checkbox-text {
-      color: var(--color-text-primary);
-    }
-  }
-
-  &:active {
-    transform: scale(0.98);
-  }
-
-  .checkbox-input {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: var(--color-primary);
-    transition: all var(--transition-normal);
-    position: relative;
-
-    &:hover {
-      transform: scale(1.1);
-    }
-
-    &:checked {
-      transform: scale(1.05);
-    }
-  }
-
-  .checkbox-text {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-    transition: color var(--transition-normal);
-  }
 }
 
 .error-message {
