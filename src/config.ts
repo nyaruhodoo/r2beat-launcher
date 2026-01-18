@@ -26,7 +26,7 @@ export const checkAnnouncementsCacheTime = minutesToMilliseconds(5)
 /**
  * 服务端状态检测间隔时间(正常)
  */
-export const checkServerStatusTime = minutesToMilliseconds(5)
+export const checkServerStatusTime = minutesToMilliseconds(10)
 
 /**
  * 服务端状态检测间隔时间(维护)
@@ -40,4 +40,3 @@ export const windowWidth = 1280 * 0.9
 export const windowHeight = 720 * 0.9
 export const minWindowWidth = 1024
 export const minWindowHeight = 768
-
