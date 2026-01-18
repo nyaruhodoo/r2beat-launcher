@@ -23,7 +23,6 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'continue'): void
-  (e: 'auto-login'): void
   (e: 'cancel'): void
 }>()
 

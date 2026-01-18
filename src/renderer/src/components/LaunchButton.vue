@@ -15,14 +15,17 @@
     <div class="server-status" :class="`status-${serverStatus}`">
       <span class="status-dot"></span>
       <span class="status-text">{{ getStatusText(serverStatus) }}</span>
-      <span v-if="autoLoginEnabled" class="status-text">(自动检测中)</span>
     </div>
+
+    <!-- 自动登录复选框 -->
+    <Checkbox v-if="serverStatus === 'unknown'" v-model="autoLoginEnabled"
+      >服务器正常后自动登录</Checkbox
+    >
 
     <!-- 服务端状态异常对话框 -->
     <ServerStatusDialog
       :visible="showStatusDialog"
       @continue="handleContinueLogin"
-      @auto-login="handleAutoLogin"
       @cancel="handleCancelDialog"
     />
   </div>
@@ -33,6 +36,7 @@ import { GameSettings, UserInfo } from '@types'
 import { ref, onMounted, computed } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
 import { useToast } from '../composables/useToast'
+import Checkbox from './Checkbox.vue'
 import ServerStatusDialog from './ServerStatusDialog.vue'
 import { checkServerStatusTime, checkUnknownServerStatusTime } from '@config'
 
@@ -215,13 +219,6 @@ const executeLaunch = async () => {
 const handleContinueLogin = () => {
   showStatusDialog.value = false
   executeLaunch()
-}
-
-// 处理自动登录
-const handleAutoLogin = () => {
-  showStatusDialog.value = false
-  autoLoginEnabled.value = true
-  showSuccess('已启用自动登录，服务端恢复正常后将自动启动游戏')
 }
 
 // 处理取消对话框
