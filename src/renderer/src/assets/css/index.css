@@ -1,0 +1,224 @@
+@import './base.css';
+
+:root {
+  /* 二次元粉色系主题色 */
+  --color-primary: #ffb6c1;
+  --color-primary-dark: #ff6b9d;
+  --color-primary-light: #ffe4e1;
+  --color-secondary: #dda0dd;
+  --color-accent: #ff69b4;
+
+  /* 错误/警告颜色 */
+  --color-error: #ff6b6b;
+  --color-error-bg: rgba(255, 107, 107, 0.1);
+  --color-error-border: rgba(255, 107, 107, 0.3);
+  --color-error-hover-bg: rgba(255, 107, 107, 0.3);
+  --color-error-text: #ff6b6b;
+  --color-success: #4caf50;
+  --color-success-bg: rgba(76, 175, 80, 0.1);
+  --color-success-border: rgba(76, 175, 80, 0.3);
+  --color-warning: #ffc107;
+  --color-warning-bg: rgba(255, 193, 7, 0.1);
+  --color-warning-border: rgba(255, 193, 7, 0.3);
+
+  /* 模态框背景 */
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-overlay-light: rgba(0, 0, 0, 0.4);
+
+  /* 渐变背景 */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --gradient-primary-dark: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    #c44569 50%,
+    var(--color-primary) 100%
+  );
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(255, 182, 193, 0.1) 0%,
+    rgba(221, 160, 221, 0.1) 100%
+  );
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+
+  /* 文字阴影 */
+  --text-shadow-primary: 0 0 10px rgba(255, 182, 193, 0.5);
+
+  /* 过渡动画 */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* 圆角 */
+  --border-radius-app: 8px;
+}
+
+:root,
+:root.dark-theme {
+  /* 背景色 */
+  --color-bg-primary: #1a1a2e;
+  --color-bg-secondary: #16213e;
+  --color-bg-tertiary: #0f3460;
+  --color-bg-card: rgba(255, 182, 193, 0.1);
+  --color-bg-card-hover: rgba(255, 182, 193, 0.15);
+
+  /* #app 背景颜色变量 - 使用纯色替代渐变，支持过渡效果 */
+  --app-bg: #16213e; /* 主背景色（原渐变的中间色，作为纯色背景） */
+
+  /* 模态框背景颜色变量 - 支持过渡效果 */
+  --modal-bg: #16213e;
+  --modal-bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* Toast 错误提示框颜色 - 暗色模式 */
+  --toast-error-bg: rgba(26, 26, 46, 0.95);
+  --toast-error-border: rgba(255, 107, 107, 0.4);
+  --toast-error-text: #ff9999;
+  --toast-error-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 107, 107, 0.1);
+
+  /* 文字颜色 */
+  --color-text-primary: rgba(255, 255, 255, 0.95);
+  --color-text-secondary: rgba(255, 255, 255, 0.8);
+  --color-text-tertiary: rgba(255, 255, 255, 0.6);
+  --color-text-muted: rgba(255, 255, 255, 0.4);
+
+  /* 边框颜色 */
+  --color-border: rgba(255, 182, 193, 0.3);
+  --color-border-hover: rgba(255, 182, 193, 0.5);
+
+  /* 阴影 - 使用黑色阴影，更柔和 */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --shadow-glow: 0 0 20px rgba(255, 182, 193, 0.3);
+  --shadow-card-hover: 0 2px 8px rgba(255, 182, 193, 0.2);
+  --shadow-card-active: 0 4px 12px rgba(255, 182, 193, 0.25);
+  --shadow-button-hover: 0 4px 15px rgba(255, 182, 193, 0.3);
+  --shadow-button-active: 0 2px 8px rgba(255, 182, 193, 0.2);
+  --shadow-input-focus: 0 0 0 3px rgba(255, 182, 193, 0.1);
+  --shadow-input-focus-light: 0 0 0 3px rgba(255, 107, 157, 0.15);
+}
+
+:root.light-theme {
+  /* 背景色 */
+  --color-bg-primary: #f5f5f8;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #e8e8f0;
+  --color-bg-card: rgba(255, 107, 157, 0.08);
+  --color-bg-card-hover: rgba(255, 107, 157, 0.12);
+
+  /* #app 背景颜色变量 - 使用纯色替代渐变，支持过渡效果 */
+  --app-bg: #f5f5f8; /* 主背景色（原渐变的起始色，作为纯色背景） */
+
+  /* 模态框背景颜色变量 - 支持过渡效果 */
+  --modal-bg: #ffffff;
+  --modal-bg-overlay: rgba(0, 0, 0, 0.4);
+
+  /* Toast 错误提示框颜色 - 日间模式 */
+  --toast-error-bg: rgba(255, 255, 255, 0.95);
+  --toast-error-border: rgba(255, 107, 107, 0.3);
+  --toast-error-text: #ff6b6b;
+  --toast-error-shadow: 0 4px 20px rgba(255, 107, 107, 0.1);
+
+  /* 文字颜色 */
+  --color-text-primary: rgba(30, 30, 40, 0.95);
+  --color-text-secondary: rgba(30, 30, 40, 0.8);
+  --color-text-tertiary: rgba(30, 30, 40, 0.6);
+  --color-text-muted: rgba(30, 30, 40, 0.4);
+
+  /* 边框颜色 */
+  --color-border: rgba(255, 107, 157, 0.25);
+  --color-border-hover: rgba(255, 107, 157, 0.4);
+
+  /* 阴影 */
+  --shadow-sm: 0 2px 10px rgba(255, 107, 157, 0.08);
+  --shadow-md: 0 4px 20px rgba(255, 107, 157, 0.12);
+  --shadow-lg: 0 8px 30px rgba(255, 107, 157, 0.15);
+  --shadow-glow: 0 0 20px rgba(255, 107, 157, 0.3);
+  --shadow-card-hover: 0 2px 8px rgba(255, 182, 193, 0.15);
+  --shadow-card-active: 0 4px 12px rgba(255, 182, 193, 0.2);
+  --shadow-button-hover: 0 4px 15px rgba(255, 182, 193, 0.3);
+  --shadow-button-active: 0 2px 8px rgba(255, 182, 193, 0.2);
+  --shadow-input-focus: 0 0 0 3px rgba(255, 182, 193, 0.1);
+  --shadow-input-focus-light: 0 0 0 3px rgba(255, 107, 157, 0.15);
+}
+
+#app {
+  border-radius: var(--border-radius-app);
+  overflow: hidden;
+  height: 100%;
+  color: var(--color-text-primary);
+  /* 使用纯色替代渐变，支持平滑过渡效果 */
+  background-color: var(--app-bg);
+  transition:
+    color var(--transition-normal),
+    background-color var(--transition-normal);
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+}
+
+/* 动画关键帧 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: var(--shadow-glow);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 182, 193, 0.6);
+  }
+}
