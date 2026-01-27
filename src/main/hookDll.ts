@@ -1,4 +1,7 @@
-import frida from 'frida'
+import frida, { Script, Session } from 'frida'
+
+let currentSession: Session | null = null
+let currentScript: Script | null = null
 
 const createFridaScriptTemplate = () => {
   return /*js*/ `
@@ -72,11 +75,14 @@ const createFridaScriptTemplate = () => {
                 
                 // 打印日志以便调试
                 console.log("✅ Hook hio_write: Modified offset 8 to 0x05");
+
+                console.log("✅ Hook 已完成，通知主进程断开连接...");
+                send({ type: 'ready_to_detach' });
               }
             }
           });
 
-          console.log("✅ Hook 设置完成。");
+          console.log("✅ Hook 添加成功。");
         }
 
       
@@ -92,8 +98,30 @@ export async function hookDll(pid: number) {
     const session = await frida.attach(pid)
     const script = await session.createScript(createFridaScriptTemplate())
     await script.load()
+
+    currentSession = session
+    currentScript = script
+
+    script.message.connect((message) => {
+      if (message.type === 'send' && message.payload.type === 'ready_to_detach') {
+        cleanupFrida().then(() => {
+          // 这里 detach 后，Frida 助手进程会消失，
+          // 但 Hook 已经留在了游戏的内存空间里。
+        })
+      }
+    })
   } catch (e) {
     console.error(`[Main] frida 注入失败`)
     console.log(e)
+  }
+}
+
+export async function cleanupFrida() {
+  try {
+    if (currentScript) await currentScript.unload().catch(() => {})
+    if (currentSession) await currentSession.detach().catch(() => {})
+  } finally {
+    currentScript = null
+    currentSession = null
   }
 }

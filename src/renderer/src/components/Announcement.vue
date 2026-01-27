@@ -53,6 +53,8 @@ const [announcementsCache, setAnnouncementsCache] = useLocalStorageState<Announc
 )
 
 const announcements = ref<AnnouncementData[]>([])
+// 记录上一次公告列表中第一条公告的 idx，用于判断是否有新公告
+const lastFirstAnnouncementIdx = ref<number | null>(null)
 const loading = ref(true)
 
 // 格式化日期时间（24小时制，显示到秒）
@@ -112,6 +114,16 @@ const fetchAnnouncements = async () => {
     const data = await window.api.getAnnouncements?.()
 
     if (Array.isArray(data)) {
+      // 只根据“第一条公告是否变化”来判断是否有新公告
+      const first = data[0]
+
+      if (first && lastFirstAnnouncementIdx.value !== null) {
+        if (first.idx !== lastFirstAnnouncementIdx.value) {
+          window.api.showNotification?.('有新的系统公告', first.title)
+        }
+      }
+
+      lastFirstAnnouncementIdx.value = first?.idx ?? null
       announcements.value = data
 
       // 保存到缓存

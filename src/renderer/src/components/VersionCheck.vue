@@ -82,6 +82,7 @@ const { error: showError, success: showSuccess } = useToast()
 
 const currentVersion = ref('--')
 const latestVersion = ref('--')
+const lastNotifiedRemoteVersion = ref<string | null>(null)
 const needsUpdate = ref(false)
 const isLoading = ref(false)
 
@@ -195,7 +196,20 @@ const loadRemoteVersion = async (isLoading?: boolean) => {
   try {
     const result = await window.api.getRemoteVersion?.()
     if (result?.success && result.version) {
-      latestVersion.value = result.version
+      const newRemote = result.version
+      const oldRemote = lastNotifiedRemoteVersion.value
+
+      latestVersion.value = newRemote
+
+      // 首次加载不提示；仅在后续轮询中检测到远程版本变化时提醒
+      if (oldRemote && newRemote !== oldRemote) {
+        window.api.showNotification?.(
+          '发现新的游戏版本',
+          `远程版本已更新至 ${newRemote}，建议尽快更新游戏客户端。`
+        )
+      }
+
+      lastNotifiedRemoteVersion.value = newRemote
     } else {
       throw new Error(result?.error)
     }

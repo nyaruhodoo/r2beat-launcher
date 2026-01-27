@@ -220,7 +220,7 @@ const executeLaunch = async () => {
       // `xyxOpen|${generateCommandLine(props.userInfo.username?.length + props.userInfo.password.length + 10)}`,
       // 使用指定格式的则会发起完整登录流程 (抄他妈的！)
       `xyxOpen|${props.userInfo.username}|||0|1|${props.userInfo.password}|3|4|`,
-      latestSettings.closeOnLaunch || false,
+      latestSettings.minimizeToTrayOnLaunch || false,
       latestSettings.processPriority || 'normal',
       latestSettings.lowerNPPriority || false
     )

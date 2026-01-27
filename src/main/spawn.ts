@@ -177,8 +177,14 @@ export function spawnGameProcess(
       })
     }
 
-    // 进程启动成功后立即 resolve
-    // 使用 setImmediate 确保进程已经启动
+    // 在 detached 模式下，主进程不应该被子进程“挂住”，
+    // 这里统一调用一次 unref，保证 Electron 主进程可以独立退出。
+    if (child.unref) {
+      child.unref()
+    }
+
+    // 进程启动成功后立即 resolve（下一轮事件循环再返回），
+    // 避免调用方在同步代码中误以为进程尚未创建完成。
     setImmediate(() => {
       resolve(child)
     })

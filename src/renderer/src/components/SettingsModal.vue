@@ -74,7 +74,7 @@
       </div>
       <div class="checkbox-group">
         <Checkbox v-model="settings.autoUpdate">自动更新</Checkbox>
-        <Checkbox v-model="settings.closeOnLaunch">启动游戏后关闭启动器</Checkbox>
+        <Checkbox v-model="settings.minimizeToTrayOnLaunch">启动游戏后最小化到托盘</Checkbox>
       </div>
     </div>
 
@@ -129,7 +129,7 @@ const { error: showError } = useToast()
 const settings = ref<GameSettings>({
   gamePath: '',
   autoUpdate: true,
-  closeOnLaunch: false,
+  minimizeToTrayOnLaunch: true,
   processPriority: 'normal',
   lowerNPPriority: false
 })

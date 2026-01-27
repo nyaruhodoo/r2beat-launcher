@@ -23,7 +23,8 @@ export type ProcessPriority = 'realtime' | 'high' | 'abovenormal' | 'normal' | '
 export interface GameSettings {
   gamePath: string
   autoUpdate: boolean
-  closeOnLaunch: boolean
+  /** 启动游戏后最小化到系统托盘 */
+  minimizeToTrayOnLaunch: boolean
   processPriority: ProcessPriority
   lowerNPPriority?: boolean // 降低NP优先级（GameMon检测）
 }
@@ -281,6 +282,7 @@ export interface ContextBridgeApi {
   windowShow?: () => void
   windowMinimize?: () => void
   windowClose?: () => void
+  showNotification?: (title: string, body: string) => void
   getAnnouncements?: () => Promise<AnnouncementData[]>
   getAnnouncementDetail?: (
     path: string,
@@ -294,7 +296,7 @@ export interface ContextBridgeApi {
   launchGame?: (
     gamePath: string,
     launchArgs?: string,
-    closeOnLaunch?: boolean,
+    minimizeToTrayOnLaunch?: boolean,
     processPriority?: ProcessPriority,
     lowerNPPriority?: boolean
   ) => Promise<{ success: boolean; error?: string }>

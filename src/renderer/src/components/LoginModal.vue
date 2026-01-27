@@ -74,6 +74,7 @@
           type="text"
           class="form-input"
           placeholder="请输入用户名"
+          spellcheck="false"
           @keyup.enter="handleLogin"
         />
       </div>

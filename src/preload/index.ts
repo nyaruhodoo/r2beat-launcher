@@ -13,6 +13,9 @@ const api = {
   windowClose: () => {
     ipcRenderer.send('window-close')
   },
+  showNotification: (title: string, body: string) => {
+    ipcRenderer.send('show-notification', { title, body })
+  },
   getAnnouncements: () => {
     const result = ipcRenderer.invoke('get-announcements')
     return result
@@ -28,7 +31,7 @@ const api = {
   launchGame: async (
     gamePath: string,
     launchArgs?: string,
-    closeOnLaunch?: boolean,
+    minimizeToTrayOnLaunch?: boolean,
     processPriority?: string,
     lowerNPPriority?: boolean
   ) => {
@@ -36,7 +39,7 @@ const api = {
       'launch-game',
       gamePath,
       launchArgs,
-      closeOnLaunch,
+      minimizeToTrayOnLaunch,
       processPriority,
       lowerNPPriority
     )

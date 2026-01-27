@@ -120,7 +120,7 @@ const [gameSettings, setGameSettings] = useLocalStorageState<GameSettings>('r2be
   defaultValue: {
     gamePath: '',
     autoUpdate: false,
-    closeOnLaunch: false,
+    minimizeToTrayOnLaunch: true,
     processPriority: 'normal',
     lowerNPPriority: false
   }

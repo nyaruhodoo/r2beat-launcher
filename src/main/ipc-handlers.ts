@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, dialog } from 'electron'
+import { BrowserWindow, ipcMain, dialog, Notification } from 'electron'
 import { join, relative } from 'path'
 import { homedir } from 'os'
 import {
@@ -32,7 +32,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     mainWindow?.minimize()
   })
 
-  ipcMain.on('window-close', () => {
+  ipcMain.on('window-close', async () => {
+    // 主窗口关闭按钮：走与 Alt+F4 一致的逻辑，由主进程的 window.on('close') 统一处理
     mainWindow?.close()
   })
 
@@ -46,6 +47,49 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     win?.close()
   })
+
+  /**
+   * 展示系统通知（Windows 原生通知）
+   */
+  ipcMain.on(
+    'show-notification',
+    (_event, payload: { title?: string; body?: string } | undefined | null) => {
+      try {
+        const title = payload?.title || '提示'
+        const body = payload?.body || ''
+
+        // 在部分平台上 Notification 可能不可用，做一次能力判断
+        if (Notification.isSupported()) {
+          const notification = new Notification({
+            title,
+            body,
+            silent: false
+          })
+
+          // 点击通知时唤醒主窗口
+          notification.on('click', () => {
+            if (mainWindow) {
+              // 让窗口重新出现在任务栏并聚焦
+              mainWindow.setSkipTaskbar(false)
+              if (!mainWindow.isVisible()) {
+                mainWindow.show()
+              }
+              if (mainWindow.isMinimized()) {
+                mainWindow.restore()
+              }
+              mainWindow.focus()
+            }
+          })
+
+          notification.show()
+        } else {
+          console.log('[Main] 当前平台不支持系统通知:', { title, body })
+        }
+      } catch (error) {
+        console.error('[Main] 展示系统通知失败:', error)
+      }
+    }
+  )
 
   /**
    * 打开充值中心窗口
@@ -377,7 +421,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       _,
       gamePath: string,
       launchArgs?: string,
-      closeOnLaunch?: boolean,
+      minimizeToTrayOnLaunch?: boolean,
       processPriority?: ProcessPriority,
       lowerNPPriority?: boolean
     ) => {
@@ -574,19 +618,17 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           console.error('[Main] 调整进程优先级时发生错误:', error)
         }
 
-        if (closeOnLaunch) {
-          // 在 Windows 上，需要调用 unref() 来让父进程可以退出
-          if (gameProcess.unref) {
-            gameProcess.unref()
-          }
-
-          console.log('[Main] 关闭启动器（根据用户设置）')
+        if (minimizeToTrayOnLaunch) {
+          console.log('[Main] 启动游戏后最小化到托盘（根据用户设置）')
+          // 与主进程 hideToTray 保持一致：只做「最小化 + 隐藏任务栏图标」，避免调用 hide() 导致窗口状态异常
           if (mainWindow) {
-            mainWindow.close()
+            mainWindow.setSkipTaskbar(true)
+            if (!mainWindow.isMinimized()) {
+              mainWindow.minimize()
+            }
           }
         } else {
-          // 不关闭启动器时，保持进程引用，防止主进程意外退出
-          console.log('[Main] 保持启动器运行（根据用户设置）')
+          console.log('[Main] 启动游戏后保持启动器窗口可见（根据用户设置）')
         }
 
         return { success: true }
