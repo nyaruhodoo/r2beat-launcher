@@ -82,7 +82,7 @@ const { error: showError, success: showSuccess } = useToast()
 
 const currentVersion = ref('--')
 const latestVersion = ref('--')
-const lastNotifiedRemoteVersion = ref<string | null>(null)
+const lastNotifiedRemoteVersion = ref<string>()
 const needsUpdate = ref(false)
 const isLoading = ref(false)
 

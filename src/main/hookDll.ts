@@ -76,7 +76,6 @@ const createFridaScriptTemplate = () => {
                 // 打印日志以便调试
                 console.log("✅ Hook hio_write: Modified offset 8 to 0x05");
 
-                console.log("✅ Hook 已完成，通知主进程断开连接...");
                 send({ type: 'ready_to_detach' });
               }
             }
@@ -104,10 +103,7 @@ export async function hookDll(pid: number) {
 
     script.message.connect((message) => {
       if (message.type === 'send' && message.payload.type === 'ready_to_detach') {
-        cleanupFrida().then(() => {
-          // 这里 detach 后，Frida 助手进程会消失，
-          // 但 Hook 已经留在了游戏的内存空间里。
-        })
+        cleanupFrida()
       }
     })
   } catch (e) {
@@ -116,6 +112,9 @@ export async function hookDll(pid: number) {
   }
 }
 
+/**
+ * 该函数实际上作用不大，对于初始化进程会被 np 给断开，导致无法正常卸载
+ */
 export async function cleanupFrida() {
   try {
     if (currentScript) await currentScript.unload().catch(() => {})
