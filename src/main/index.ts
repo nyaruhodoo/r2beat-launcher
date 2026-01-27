@@ -156,7 +156,7 @@ if (!gotTheLock) {
 
   app.whenReady().then(() => {
     // Set app user model id for windows
-    electronApp.setAppUserModelId('com.electron')
+    electronApp.setAppUserModelId('R2Beat-Launcher')
 
     app.on('browser-window-created', (_, window) => {
       // 仍然保留 electron-toolkit 提供的快捷键（如 Ctrl+Shift+I 等）
