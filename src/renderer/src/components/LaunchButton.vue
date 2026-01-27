@@ -99,11 +99,17 @@ const checkServerStatus = async () => {
       // 登录成功，服务正常
       serverStatus.value = 'normal'
 
-      // 如果之前是异常状态，现在恢复正常，且启用了自动登录，则自动启动游戏
-      if (previousStatus === 'unknown' && autoLoginEnabled.value) {
-        autoLoginEnabled.value = false
-        showSuccess('服务端已恢复正常，正在启动游戏...')
-        executeLaunch()
+      // 如果之前是异常状态，现在恢复正常：
+      if (previousStatus === 'unknown') {
+        if (autoLoginEnabled.value) {
+          // 开启了自动登录：自动启动游戏，但不弹系统通知
+          autoLoginEnabled.value = false
+          showSuccess('服务端已恢复正常，正在启动游戏...')
+          executeLaunch()
+        } else {
+          // 未开启自动登录：仅通过系统通知告知用户服务已恢复
+          window.api.showNotification?.('服务器状态已恢复正常', '现在可以尝试重新启动游戏。')
+        }
       }
     } else {
       throw new Error(result?.message)
