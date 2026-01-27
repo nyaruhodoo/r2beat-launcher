@@ -293,8 +293,6 @@ export interface ContextBridgeApi {
   selectFolder?: (currentPath?: string) => Promise<string | null>
   launchGame?: (
     gamePath: string,
-    username: string,
-    password: string,
     launchArgs?: string,
     closeOnLaunch?: boolean,
     processPriority?: ProcessPriority,

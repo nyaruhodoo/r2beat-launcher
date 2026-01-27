@@ -376,8 +376,6 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     async (
       _,
       gamePath: string,
-      username: string,
-      password: string,
       launchArgs?: string,
       closeOnLaunch?: boolean,
       processPriority?: ProcessPriority,
@@ -386,10 +384,6 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       try {
         if (!gamePath || gamePath.trim() === '') {
           throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
-        }
-
-        if (!username || !password) {
-          throw new Error('用户名和密码不能为空')
         }
 
         const gameExePath = join(gamePath, 'Game.exe')
@@ -421,7 +415,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         )
 
         if (gameProcess.pid) {
-          hookDll(gameProcess.pid, { username, password })
+          hookDll(gameProcess.pid)
         }
 
         /**

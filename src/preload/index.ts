@@ -27,8 +27,6 @@ const api = {
   },
   launchGame: async (
     gamePath: string,
-    username: string,
-    password: string,
     launchArgs?: string,
     closeOnLaunch?: boolean,
     processPriority?: string,
@@ -37,8 +35,6 @@ const api = {
     const result = await ipcRenderer.invoke(
       'launch-game',
       gamePath,
-      username,
-      password,
       launchArgs,
       closeOnLaunch,
       processPriority,

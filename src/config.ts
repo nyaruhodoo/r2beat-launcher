@@ -42,3 +42,8 @@ export const minWindowWidth = 1024
 export const minWindowHeight = 768
 
 
+
+
+
+
+

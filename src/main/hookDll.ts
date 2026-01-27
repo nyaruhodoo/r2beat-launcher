@@ -1,7 +1,6 @@
 import frida from 'frida'
-import { createLoginPacket } from './tcp-login'
 
-const createFridaScriptTemplate = (loginPackage: string) => {
+const createFridaScriptTemplate = () => {
   return /*js*/ `
       try {
         const moduleName = "hv.dll";
@@ -20,7 +19,6 @@ const createFridaScriptTemplate = (loginPackage: string) => {
           // hio_write(hio_t* io, buf, len)
           const addrWrite = hvDll.base.add(0xBB30);
           
-
           // --- Hook hio_connect ---
           Interceptor.attach(addrConnect, {
             onEnter(args) {
@@ -62,32 +60,18 @@ const createFridaScriptTemplate = (loginPackage: string) => {
               const originalLen = args[2].toUInt32();
 
               // 1. 快速检查开头 FF 01
-              if (originalLen < 2) return;
+              if (originalLen < 8) return;
               const firstTwo = buf.readByteArray(2);
               const view = new Uint8Array(firstTwo);
 
               if (view[0] === 0xFF && view[1] === 0x01) {
                 console.log("🎯 发现 FF 01，开始原地覆盖...");
 
-                // 2. 准备新数据 (72字符 = 36字节)
-                const hexStr = ${JSON.stringify(loginPackage)};
+                // 直接修改内存：将偏移 8 的位置改为 0x05
+                buf.add(8).writeU8(0x05);
                 
-                // 将 hexString 转为 Uint8Array
-                const newBytes = [];
-                for (let i = 0; i < hexStr.length; i += 2) {
-                  newBytes.push(parseInt(hexStr.substr(i, 2), 16));
-                }
-
-                // 3. 计算实际可写入的长度 (取原长度和新数据长度的最小值)
-                // 这样可以绝对保证不会发生内存越界溢出
-                const writeLen = Math.min(originalLen, newBytes.length);
-
-                // 4. 执行原地覆盖
-                buf.writeByteArray(newBytes.slice(0, writeLen));
-
-                // 5. 打印结果确认
-                console.log("✅ 原地覆盖完成! 目标长度: " + originalLen + " | 实际写入: " + writeLen);
-                console.log(hexdump(buf, { length: writeLen, header: true, ansi: true }));
+                // 打印日志以便调试
+                console.log("✅ Hook hio_write: Modified offset 8 to 0x05");
               }
             }
           });
@@ -103,17 +87,10 @@ const createFridaScriptTemplate = (loginPackage: string) => {
   `
 }
 
-export async function hookDll(
-  pid: number,
-  userInfo: {
-    username: string
-    password: string
-  }
-) {
+export async function hookDll(pid: number) {
   try {
-    const packageStr = createLoginPacket(userInfo.username, userInfo.password).toString('hex')
     const session = await frida.attach(pid)
-    const script = await session.createScript(createFridaScriptTemplate(packageStr))
+    const script = await session.createScript(createFridaScriptTemplate())
     await script.load()
   } catch (e) {
     console.error(`[Main] frida 注入失败`)

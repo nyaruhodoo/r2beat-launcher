@@ -138,29 +138,29 @@ const { error: showError, success: showSuccess } = useToast()
 /**
  * 根据目标TCP包总长度，生成以mujica填充的命令行参数
  */
-function generateCommandLine(totalTcpLength: number): string {
-  // 核心规则：填充字符串长度 = TCP总长度 - 12
-  const requiredStrLength = totalTcpLength - 12
+// function generateCommandLine(totalTcpLength: number): string {
+//   // 核心规则：填充字符串长度 = TCP总长度 - 12
+//   const requiredStrLength = totalTcpLength - 12
 
-  // 边界校验：确保填充字符串长度为正整数
-  if (!Number.isInteger(totalTcpLength) || totalTcpLength < 12) {
-    throw new Error(`目标长度需为大于12的整数，当前输入为${totalTcpLength}`)
-  }
+//   // 边界校验：确保填充字符串长度为正整数
+//   if (!Number.isInteger(totalTcpLength) || totalTcpLength < 12) {
+//     throw new Error(`目标长度需为大于12的整数，当前输入为${totalTcpLength}`)
+//   }
 
-  // 定义填充的核心字符串
-  const fillWord = 'mujica'
-  const fillWordLen = fillWord.length
+//   // 定义填充的核心字符串
+//   const fillWord = 'mujica'
+//   const fillWordLen = fillWord.length
 
-  // 循环拼接mujica并截取到目标长度
-  let filledStr = ''
-  const repeatTimes = Math.floor(requiredStrLength / fillWordLen)
-  const remainLength = requiredStrLength % fillWordLen
-  // 拼接完整重复的部分 + 剩余部分
-  filledStr = fillWord.repeat(repeatTimes) + fillWord.slice(0, remainLength)
+//   // 循环拼接mujica并截取到目标长度
+//   let filledStr = ''
+//   const repeatTimes = Math.floor(requiredStrLength / fillWordLen)
+//   const remainLength = requiredStrLength % fillWordLen
+//   // 拼接完整重复的部分 + 剩余部分
+//   filledStr = fillWord.repeat(repeatTimes) + fillWord.slice(0, remainLength)
 
-  // 生成最终命令行参数
-  return `${filledStr}|1`
-}
+//   // 生成最终命令行参数
+//   return `${filledStr}|1`
+// }
 
 const handleLaunch = async () => {
   if (isLaunching.value || isDisabled.value) return
@@ -216,9 +216,10 @@ const executeLaunch = async () => {
   try {
     const result = await window.api.launchGame?.(
       latestSettings.gamePath,
-      props.userInfo.username || '',
-      props.userInfo.password || '',
-      `xyxOpen|${generateCommandLine(props.userInfo.username?.length + props.userInfo.password.length + 10)}`,
+      // 单纯生成占位符只会发起登陆包，不会进一步请求，或许需要调整更多逻辑
+      // `xyxOpen|${generateCommandLine(props.userInfo.username?.length + props.userInfo.password.length + 10)}`,
+      // 使用指定格式的则会发起完整登录流程 (抄他妈的！)
+      `xyxOpen|${props.userInfo.username}|||0|1|${props.userInfo.password}|3|4|`,
       latestSettings.closeOnLaunch || false,
       latestSettings.processPriority || 'normal',
       latestSettings.lowerNPPriority || false
