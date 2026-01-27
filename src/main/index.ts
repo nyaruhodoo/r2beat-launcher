@@ -48,12 +48,23 @@ function createTray(window: BrowserWindow) {
       label: '退出',
       click: () => {
         isQuitting = true
-        // 先关闭主窗口，再退出应用，确保触发正常的清理逻辑
-        if (mainWindow) {
-          mainWindow.close()
-        } else {
-          app.quit()
-        }
+        // exec(`taskkill /F /T /PID ${process.pid}`, () => {
+        //   // 这行通常不会执行，因为进程已经被系统抹除了
+        //   process.exit(0)
+        // })
+
+        // 1. 销毁所有窗口
+        BrowserWindow.getAllWindows().forEach((w) => w.destroy())
+
+        // 2. 释放托盘（防止图标残留）
+        if (tray) tray.destroy()
+
+        // 3. 释放单实例锁（非常关键，这能解决第二次启动没缓存的问题）
+        app.releaseSingleInstanceLock()
+
+        // 4. 仅杀掉当前进程本身，不触碰子进程
+        // 在 Windows 上，process.kill(process.pid) 相当于只针对该 PID 执行 taskkill /F
+        process.kill(process.pid)
       }
     }
   ])
@@ -131,7 +142,7 @@ function createWindow() {
 const gotTheLock = app.requestSingleInstanceLock()
 
 if (!gotTheLock) {
-  app.quit()
+  app.exit(0)
 } else {
   app.on('second-instance', () => {
     // 当运行第二个实例时，唤醒现有窗口

@@ -104,7 +104,6 @@ const checkServerStatus = async () => {
         if (autoLoginEnabled.value) {
           // 开启了自动登录：自动启动游戏，但不弹系统通知
           autoLoginEnabled.value = false
-          showSuccess('服务端已恢复正常，正在启动游戏...')
           executeLaunch()
         } else {
           // 未开启自动登录：仅通过系统通知告知用户服务已恢复
@@ -231,7 +230,7 @@ const executeLaunch = async () => {
       latestSettings.lowerNPPriority || false
     )
 
-    if (result?.success) {
+    if (result?.success && !props.gameSettings?.minimizeToTrayOnLaunch) {
       showSuccess('游戏启动成功！')
     } else {
       throw new Error(result?.error)
