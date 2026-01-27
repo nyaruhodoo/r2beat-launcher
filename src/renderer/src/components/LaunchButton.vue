@@ -230,13 +230,14 @@ const executeLaunch = async () => {
       latestSettings.lowerNPPriority || false
     )
 
-    if (result?.success && !props.gameSettings?.minimizeToTrayOnLaunch) {
-      showSuccess('游戏启动成功！')
+    if (result?.success) {
+      !props.gameSettings?.minimizeToTrayOnLaunch && showSuccess('游戏启动成功！')
     } else {
       throw new Error(result?.error)
     }
   } catch (error) {
     if (error instanceof Error) {
+      console.log(error)
       if (error.message.includes('EACCES')) {
         showError('权限不足，请以管理员身份运行')
       } else {
