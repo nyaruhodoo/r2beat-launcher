@@ -1,7 +1,4 @@
-import frida, { Script, Session } from 'frida'
-
-let currentSession: Session | null = null
-let currentScript: Script | null = null
+import frida from 'frida'
 
 const createFridaScriptTemplate = () => {
   return /*js*/ `
@@ -62,13 +59,12 @@ const createFridaScriptTemplate = () => {
               const buf = args[1];
               const originalLen = args[2].toUInt32();
 
-              // 1. 快速检查开头 FF 01
               if (originalLen < 8) return;
-              const firstTwo = buf.readByteArray(2);
-              const view = new Uint8Array(firstTwo);
+              const fullBuffer = buf.readByteArray(originalLen);
+              const view = new Uint8Array(fullBuffer);
 
-              if (view[0] === 0xFF && view[1] === 0x01) {
-                console.log("🎯 发现 FF 01，开始原地覆盖...");
+              if (view[0] === 0xFF && view[1] === 0x01 && view[8] === 0x00 && view[view.length - 1] === 0x33) {
+                console.log("🎯 发现登陆包，开始原地覆盖...");
 
                 // 直接修改内存：将偏移 8 的位置改为 0x05
                 buf.add(8).writeU8(0x05);
@@ -97,30 +93,8 @@ export async function hookDll(pid: number) {
     const session = await frida.attach(pid)
     const script = await session.createScript(createFridaScriptTemplate())
     await script.load()
-
-    currentSession = session
-    currentScript = script
-
-    script.message.connect((message) => {
-      if (message.type === 'send' && message.payload.type === 'ready_to_detach') {
-        cleanupFrida()
-      }
-    })
   } catch (e) {
     console.error(`[Main] frida 注入失败`)
     console.log(e)
-  }
-}
-
-/**
- * 该函数实际上作用不大，对于初始化进程会被 np 给断开，导致无法正常卸载
- */
-export async function cleanupFrida() {
-  try {
-    if (currentScript) await currentScript.unload().catch(() => {})
-    if (currentSession) await currentSession.detach().catch(() => {})
-  } finally {
-    currentScript = null
-    currentSession = null
   }
 }
