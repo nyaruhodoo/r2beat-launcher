@@ -73,7 +73,7 @@
         <p class="setting-hint">降低NP优先级会影响启动速度，但可以降低对CPU的占用率</p>
       </div>
       <div class="checkbox-group">
-        <Checkbox v-model="settings.autoUpdate">自动更新</Checkbox>
+        <Checkbox v-model="settings.autoUpdate">自动更新游戏</Checkbox>
         <Checkbox v-model="settings.minimizeToTrayOnLaunch">启动游戏后最小化到托盘</Checkbox>
       </div>
     </div>
