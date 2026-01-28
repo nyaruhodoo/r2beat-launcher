@@ -95,6 +95,16 @@
         </div>
       </a>
     </div>
+    <div class="author-section">
+      <a
+        href="https://pan.baidu.com/s/1QLBIswxrGXZncMOExZDVow?pwd=yj4s"
+        target="_blank"
+        class="author-link"
+        rel="noopener noreferrer"
+      >
+        版本更新/使用说明
+      </a>
+    </div>
 
     <div class="author-section qrcode">
       <p>滑到底干嘛，难道你想给我打钱？</p>
@@ -602,7 +612,7 @@ useEventListener('keydown', (event) => {
 
   &.qrcode {
     flex-direction: column;
-    padding-top: 600px;
+    padding-top: 800px;
 
     img {
       width: 50%;
