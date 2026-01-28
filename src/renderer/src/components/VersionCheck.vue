@@ -236,7 +236,7 @@ const getPreDownloadList = async () => {
     const res = await window.api.downloadPatchLists?.(updateList)
 
     if (!res?.success) {
-      throw new Error(res?.error || '下载补丁列表失败')
+      throw new Error(res?.error)
     }
 
     preDownloadList.value = {
@@ -259,8 +259,7 @@ const getPreDownloadList = async () => {
 const handleUpdate = async () => {
   // 根据预下载列表触发实际补丁下载与解压
   if (!preDownloadList.value || !preDownloadList.value.patches?.length) {
-    showError('暂无可用的补丁信息，请先检查版本')
-    return
+    throw new Error('暂无可用的补丁信息，请先检查版本')
   }
 
   // 安全检查：不支持包含 .diff 后缀的二进制补丁
