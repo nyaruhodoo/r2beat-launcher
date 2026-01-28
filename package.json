@@ -21,7 +21,7 @@
     "build:linux": "npm run build && electron-builder --linux"
   },
   "build": {
-    "appId": "com.yourcompany.r2beat-launcher",
+    "appId": "com.r2beat-launcher",
     "win": {
       "target": "nsis",
       "icon": "build/game.ico"
