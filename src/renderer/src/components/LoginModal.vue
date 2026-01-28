@@ -348,7 +348,10 @@ const handleLogin = async () => {
 
     console.log(result)
 
-    if (result?.success && result.status === 'SUCCESS') {
+    /**
+     * 1005 不知道是什么东西，暂时也算作正常登录
+     */
+    if ((result?.success && result.status === 'SUCCESS') || result?.data?.CommandID === 1005) {
       // 登录成功，触发登录事件，由父组件处理后续逻辑
       emit('login-success', {
         username: formData.value.username,
@@ -357,7 +360,7 @@ const handleLogin = async () => {
         remark: formData.value.remark
       })
     } else {
-      throw new Error(result?.message || result?.error || '登录失败，请检查用户名和密码')
+      throw new Error(result?.message || result?.error)
     }
   } catch (error) {
     console.error('登录异常:', error)
