@@ -50,11 +50,24 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
   /**
    * 展示系统通知（Windows 原生通知）
+   * 只有在窗口在托盘（不可见或最小化）时才显示通知
    */
   ipcMain.on(
     'show-notification',
     (_event, payload: { title?: string; body?: string } | undefined | null) => {
       try {
+        // 检查窗口状态：如果窗口可见且未最小化，则不显示通知
+        if (mainWindow) {
+          const isVisible = mainWindow.isVisible()
+          const isMinimized = mainWindow.isMinimized()
+
+          // 窗口可见且未最小化，说明不在托盘，不显示通知
+          if (isVisible && !isMinimized) {
+            console.log('[Main] 窗口可见，跳过系统通知')
+            return
+          }
+        }
+
         const title = payload?.title || '提示'
         const body = payload?.body || ''
 
