@@ -1,5 +1,5 @@
-import { BrowserWindow, ipcMain, dialog, Notification } from 'electron'
-import { join, relative } from 'path'
+import { BrowserWindow, ipcMain, dialog, Notification, shell } from 'electron'
+import { join, relative, dirname } from 'path'
 import { homedir } from 'os'
 import {
   existsSync,
@@ -386,6 +386,58 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     } catch (error) {
       console.error('[Main] 获取远程版本异常:', error)
       return { success: false, error: '获取远程版本时发生异常' }
+    }
+  })
+
+  /**
+   * 获取 R2beat 游戏路径（通过读取快捷方式）
+   * @param shortcutPath 快捷方式文件路径（可选，默认使用系统默认路径）
+   * @returns 返回目标目录路径或错误信息
+   */
+  ipcMain.handle('get-r2beat-path', async (_, shortcutPath?: string) => {
+    try {
+      // 如果没有提供快捷方式路径，使用默认路径
+      let finalShortcutPath = shortcutPath
+      if (!finalShortcutPath) {
+        const appData = process.env.APPDATA
+        if (!appData) {
+          throw new Error('无法获取 APPDATA 路径')
+        }
+        finalShortcutPath = join(
+          appData,
+          'Microsoft\\Windows\\Start Menu\\Programs\\R2beat\\音速觉醒.lnk'
+        )
+      }
+
+      // 判断快捷方式文件是否存在
+      if (!existsSync(finalShortcutPath)) {
+        throw new Error(`找不到快捷方式文件: ${finalShortcutPath}`)
+      }
+
+      // 读取快捷方式的目标路径
+      const shortcutDetails = shell.readShortcutLink(finalShortcutPath)
+      if (!shortcutDetails.target) {
+        throw new Error('快捷方式中没有目标路径')
+      }
+
+      // 获取目标目录（不带文件名）
+      const targetDir = dirname(shortcutDetails.target)
+
+      // 验证目录是否存在
+      if (!existsSync(targetDir)) {
+        throw new Error(`目标目录不存在: ${targetDir}`)
+      }
+
+      return {
+        success: true,
+        path: targetDir
+      }
+    } catch (error) {
+      console.error('[Main] 获取 R2beat 路径失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '获取 R2beat 路径失败'
+      }
     }
   })
 

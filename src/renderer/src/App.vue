@@ -230,12 +230,25 @@ const handleSaveSettings = (settings: GameSettings) => {
   console.log('保存设置:', settings)
 }
 
+const searchGamePath = async () => {
+  const res = await window.api.getR2beatPath?.()
+  if (res?.path && res.success && !gameSettings.value?.gamePath) {
+    setGameSettings({
+      ...gameSettings.value!,
+      gamePath: res.path
+    })
+  }
+}
+
 onMounted(() => {
+  // 延迟创建窗口，否则会闪一下很烦
   nextTick(() => {
     setTimeout(() => {
       window.api.windowShow?.()
     }, 200)
   })
+
+  searchGamePath()
 })
 </script>
 

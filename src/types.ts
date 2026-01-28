@@ -26,7 +26,7 @@ export interface GameSettings {
   /** 启动游戏后最小化到系统托盘 */
   minimizeToTrayOnLaunch: boolean
   processPriority: ProcessPriority
-  lowerNPPriority?: boolean // 降低NP优先级（GameMon检测）
+  lowerNPPriority: boolean // 降低NP优先级（GameMon检测）
 }
 
 /**
@@ -349,6 +349,11 @@ export interface ContextBridgeApi {
       EncryptionKey?: number
       UserID?: number
     }
+    error?: string
+  }>
+  getR2beatPath?: (shortcutPath?: string) => Promise<{
+    success: boolean
+    path?: string
     error?: string
   }>
 }

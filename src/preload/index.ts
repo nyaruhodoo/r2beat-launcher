@@ -102,6 +102,10 @@ const api = {
     ipcRenderer.on('patch-progress', (_event, payload: PatchProgressPayload) => {
       callback(payload)
     })
+  },
+  getR2beatPath: async (shortcutPath?: string) => {
+    const result = await ipcRenderer.invoke('get-r2beat-path', shortcutPath)
+    return result
   }
 }
 
