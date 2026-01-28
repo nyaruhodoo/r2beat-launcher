@@ -1,6 +1,6 @@
 {
   "name": "r2beat-launcher",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "An Electron application with Vue and TypeScript",
   "main": "./out/main/index.js",
   "author": "https://github.com/nyaruhodoo",
@@ -26,6 +26,7 @@
       "target": "nsis",
       "icon": "build/game.ico"
     },
+    "productName": "R2Beat-Launcher",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
