@@ -35,12 +35,11 @@ const createFridaScriptTemplate = () => {
                       const currentIp = uint8Array[0] + "." + uint8Array[1] + "." + uint8Array[2] + "." + uint8Array[3];
                       const port = (pPeerAddr.add(2).readU8() << 8) | pPeerAddr.add(3).readU8();
                       
-                      const fullAddr = currentIp + ":" + port;
-
+  
                       // 2. 判断并覆盖
-                      if (fullAddr === "203.107.63.136:28004") {
+                      if (currentIp === "203.107.63.136") {
                           console.log("⚠️ 检测到目标地址，正在进行重定向...");
-                          console.log("原地址: " + fullAddr);
+                          console.log("原地址: " + currentIp);
 
                           // 写入新 IP: 114.117.135.111
                           // 114 -> 0x72, 117 -> 0x75, 135 -> 0x87, 111 -> 0x6F
