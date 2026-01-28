@@ -93,6 +93,9 @@ const patchProgressPercent = ref<number | null>(null)
 const patchProgressStage = ref<PatchProgressPayload['stage']>()
 const patchProgressFileName = ref<string>('')
 
+// 记录更新是否出错，如果出错则不再自动更新
+const hasUpdateError = ref(false)
+
 // 底部版本信息区域加载状态（远程版本 + 预下载列表）
 const isVersionSectionLoading = ref(true)
 
@@ -230,6 +233,8 @@ const getPreDownloadList = async () => {
   const updateList = updateStatus()
   if (!updateList.length) {
     preDownloadList.value = undefined
+    // 重置错误状态，因为已经没有需要更新的版本了
+    hasUpdateError.value = false
     return
   }
   try {
@@ -244,7 +249,10 @@ const getPreDownloadList = async () => {
       patches: res.patches
     }
 
-    props.gameSettings?.autoUpdate && handleUpdate()
+    // 只有在自动更新开启且之前没有更新错误时才自动更新
+    if (props.gameSettings?.autoUpdate && !hasUpdateError.value) {
+      handleUpdate()
+    }
   } catch (error) {
     console.error('下载补丁列表异常:', error)
 
@@ -300,9 +308,13 @@ const handleUpdate = async () => {
 
     await loadLocalVersion()
 
+    // 更新成功，重置错误状态
+    hasUpdateError.value = false
     showSuccess('已更新到最新版本')
   } catch (error) {
     console.error('[Renderer] 更新失败:', error)
+    // 更新失败，记录错误状态，后续不再自动更新
+    hasUpdateError.value = true
     showError(error instanceof Error ? error.message : '更新失败')
   } finally {
     patchProgressPercent.value = null
