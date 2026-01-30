@@ -17,7 +17,7 @@
       @dragleave.prevent="handleDragLeave"
       @drop.prevent="handleDrop"
     >
-      <p class="pak-desc">勾选表示启用该补丁，取消勾选表示停用该补丁。</p>
+      <p class="pak-desc">你可以通过拖拽文件来快速安装补丁</p>
       <div v-if="mergedPaks.length > 0" class="pak-list">
         <div v-for="item in mergedPaks" :key="item.name" class="pak-item-row">
           <Checkbox v-model="selected[item.name]">
@@ -334,10 +334,13 @@ watch(
 
 .pak-section {
   position: relative;
+  min-height: 0;
 }
 
 .pak-section.is-dragging {
-  border: 2px dashed var(--color-primary);
+  /* 使用 outline 替代 border，避免影响布局高度 */
+  outline: 2px dashed var(--color-primary);
+  outline-offset: -2px;
   border-radius: 12px;
   background: var(--color-bg-card-hover);
 }
@@ -411,17 +414,15 @@ watch(
 
 .pak-drag-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
-  border-radius: 12px;
+  border-radius: inherit;
   z-index: 10;
+  pointer-events: none;
 }
 
 .pak-drag-content {
