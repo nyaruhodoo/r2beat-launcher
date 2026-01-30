@@ -224,7 +224,7 @@ const executeLaunch = async () => {
       // 单纯生成占位符只会发起登陆包，不会进一步请求，或许需要调整更多逻辑
       // `xyxOpen|${generateCommandLine(props.userInfo.username?.length + props.userInfo.password.length + 10)}`,
       // 使用指定格式的则会发起完整登录流程 (抄他妈的！)
-      `xyxOpen|${props.userInfo.username}|||0|1|${props.userInfo.password}|3|4|`,
+      `xyxOpen|${props.userInfo.username}|0|1|${props.userInfo.password}|3|4`,
       latestSettings.minimizeToTrayOnLaunch || false,
       latestSettings.processPriority || 'normal',
       latestSettings.lowerNPPriority || false
