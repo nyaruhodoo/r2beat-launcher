@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import CustomTitleBar from './components/CustomTitleBar.vue'
-import { AnnouncementData } from '@types'
+import type { AnnouncementData } from '@types'
 
 const detail = ref<AnnouncementData | null>(null)
 const contentHtml = ref('')

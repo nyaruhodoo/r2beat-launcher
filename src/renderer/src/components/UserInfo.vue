@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { UserInfo } from '@types'
+import type { UserInfo } from '@types'
 import { ref, computed, watch } from 'vue'
 import type { CSSProperties } from 'vue'
 

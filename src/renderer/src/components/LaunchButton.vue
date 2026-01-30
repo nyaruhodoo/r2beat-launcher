@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { GameSettings, UserInfo } from '@types'
+import type { GameSettings, UserInfo } from '@types'
 import { ref, onMounted, computed } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
 import { useToast } from '../composables/useToast'
@@ -220,9 +220,10 @@ const executeLaunch = async () => {
 
   try {
     // 根据避免二次登录设置决定启动参数
-    const launchArgs = latestSettings?.avoidSecondLogin !== false
-      ? `xyxOpen|${props.userInfo.username}|0|1|${props.userInfo.password}|3|4`
-      : 'xyxOpen'
+    const launchArgs =
+      latestSettings?.avoidSecondLogin !== false
+        ? `xyxOpen|${props.userInfo.username}|0|1|${props.userInfo.password}|3|4`
+        : 'xyxOpen'
 
     const result = await window.api.launchGame?.(
       latestSettings.gamePath,

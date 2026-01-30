@@ -158,7 +158,7 @@ import Modal from './Modal.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
 import Checkbox from './Checkbox.vue'
 import { useToast } from '@renderer/composables/useToast'
-import { UserInfo } from '@types'
+import type { UserInfo } from '@types'
 import useEventListener from 'vue-hooks-plus/lib/useEventListener'
 
 const props = defineProps<{

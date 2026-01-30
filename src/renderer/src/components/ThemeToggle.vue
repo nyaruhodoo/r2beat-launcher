@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { Theme } from '@types'
+import type { Theme } from '@types'
 
 interface Props {
   theme?: Theme
