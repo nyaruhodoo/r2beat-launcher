@@ -62,16 +62,14 @@ const createFridaScriptTemplate = () => {
               const fullBuffer = buf.readByteArray(originalLen);
               const view = new Uint8Array(fullBuffer);
 
-              if (view[0] === 0xFF && view[1] === 0x01 && view[8] === 0x00 && view[view.length - 1] === 0x33) {
+              if (view[0] === 0xFF && view[1] === 0x01) {
                 console.log("🎯 发现登陆包，开始原地覆盖...");
-
+ 
                 // 直接修改内存：将偏移 8 的位置改为 0x05
                 buf.add(8).writeU8(0x05);
                 
                 // 打印日志以便调试
                 console.log("✅ Hook hio_write: Modified offset 8 to 0x05");
-
-                send({ type: 'ready_to_detach' });
               }
             }
           });
