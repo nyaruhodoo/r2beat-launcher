@@ -1,12 +1,10 @@
 <template>
-  <Teleport to="body">
-    <TransitionGroup name="toast" tag="div" class="toast-container">
-      <div v-for="toast in toasts" :key="toast.id" class="toast" :class="[`toast-${toast.type}`]">
-        <span class="toast-icon">{{ getIcon(toast.type) }}</span>
-        <span class="toast-message">{{ toast.message }}</span>
-      </div>
-    </TransitionGroup>
-  </Teleport>
+  <TransitionGroup name="toast" tag="div" class="toast-container">
+    <div v-for="toast in toasts" :key="toast.id" class="toast" :class="[`toast-${toast.type}`]">
+      <span class="toast-icon">{{ getIcon(toast.type) }}</span>
+      <span class="toast-message">{{ toast.message }}</span>
+    </div>
+  </TransitionGroup>
 </template>
 
 <script setup lang="ts">

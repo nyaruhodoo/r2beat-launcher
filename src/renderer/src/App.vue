@@ -89,9 +89,6 @@
       @login-success="handleLoginSuccess"
     />
 
-    <!-- Toast 提示 -->
-    <Toast />
-
     <!-- FIX 拖拽 -->
     <WindowResizer></WindowResizer>
   </div>
@@ -106,7 +103,6 @@ import VersionCheck from './components/VersionCheck.vue'
 import LaunchButton from './components/LaunchButton.vue'
 import SettingsModal from './components/SettingsModal.vue'
 import LoginModal from './components/LoginModal.vue'
-import Toast from './components/Toast.vue'
 import ThemeToggle from './components/ThemeToggle.vue'
 import UserInfoCom from './components/UserInfo.vue'
 import GamePreview from './components/GamePreview.vue'
