@@ -280,6 +280,39 @@ export interface ApplyPatchFilesResult {
   error?: string
 }
 
+export interface CopyPakToGameResult {
+  success: boolean
+  destPath?: string
+  error?: string
+}
+
+export interface MovePakToModsResult {
+  success: boolean
+  destPath?: string
+  error?: string
+}
+
+export interface DeletePakResult {
+  success: boolean
+  error?: string
+}
+
+export interface PakFileInfo {
+  /** 文件名（含扩展名） */
+  name: string
+  /** 文件的完整路径（绝对路径） */
+  path: string
+}
+
+export interface GetPaksResult {
+  success: boolean
+  /** 游戏安装目录下的补丁（名称包含中文的 .pak） */
+  gamePaks: PakFileInfo[]
+  /** 启动器根目录 mods 目录下的本地补丁（若目录不存在则为空数组） */
+  modsPaks: PakFileInfo[]
+  error?: string
+}
+
 export interface ContextBridgeApi {
   windowShow?: () => void
   windowMinimize?: () => void
@@ -360,6 +393,11 @@ export interface ContextBridgeApi {
     path?: string
     error?: string
   }>
+  getPaks?: (gamePath: string) => Promise<GetPaksResult>
+  copyPakToGame?: (srcPath: string, gamePath: string) => Promise<CopyPakToGameResult>
+  savePakToGame?: (fileName: string, fileData: Uint8Array, gamePath: string) => Promise<CopyPakToGameResult>
+  movePakToMods?: (srcPath: string) => Promise<MovePakToModsResult>
+  deletePak?: (srcPath: string) => Promise<DeletePakResult>
 }
 
 export interface Announcementlist {

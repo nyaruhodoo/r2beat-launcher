@@ -9,6 +9,5 @@ An Electron application with Vue and TypeScript
 - [x] 系统公告预览
 - [x] 进程优先级调整
 - [x] 快速启动
-- [x] 无限保存账号密码 
+- [x] 无限保存账号密码
 - [ ] MOD 管理工具
-- [ ] 回退 `game.exe`

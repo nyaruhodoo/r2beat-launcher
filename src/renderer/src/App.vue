@@ -30,6 +30,11 @@
           </button>
         </a>
 
+        <button class="nav-btn" @click="showPakModal = true">
+          <img :src="budingImg" />
+          <span class="nav-text">补丁</span>
+        </button>
+
         <button class="nav-btn" @click="handleNavClick('settings')">
           <img :src="shezhiImg" />
           <span class="nav-text">设置</span>
@@ -68,6 +73,13 @@
       @save="handleSaveSettings"
     />
 
+    <!-- 补丁模态框 -->
+    <PakModal
+      :visible="showPakModal"
+      :game-path="gameSettings?.gamePath"
+      @close="showPakModal = false"
+    />
+
     <!-- 登录模态框 -->
     <LoginModal
       :visible="showLoginModal"
@@ -98,17 +110,20 @@ import Toast from './components/Toast.vue'
 import ThemeToggle from './components/ThemeToggle.vue'
 import UserInfoCom from './components/UserInfo.vue'
 import GamePreview from './components/GamePreview.vue'
+import PakModal from './components/PakModal.vue'
 import { GameSettings, Theme, UserInfo } from '../../types'
 import mangheImg from '@renderer/assets/imgs/manghe.png'
 import zuanshiImg from '@renderer/assets/imgs/zuanshi.png'
 import shezhiImg from '@renderer/assets/imgs/shezhi.png'
 import aixinImg from '@renderer/assets/imgs/aixin.png'
+import budingImg from '@renderer/assets/imgs/buding.png'
 import WindowResizer from './components/WindowResizer.vue'
 
 // ========== 状态管理 ==========
 const showSettings = ref(false)
 const showLoginModal = ref(false)
 const showLogoutConfirm = ref(false)
+const showPakModal = ref(false)
 
 /* 当前登录账号 */
 const [userInfo, setUseInfo] = useLocalStorageState<UserInfo>('r2beat_user')

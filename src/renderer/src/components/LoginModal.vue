@@ -140,24 +140,14 @@
     </template>
   </Modal>
 
-  <!-- 确认删除对话框 -->
-  <ConfirmDialog
-    :visible="showDeleteConfirm"
-    title="删除账号"
-    :message="deleteConfirmMessage"
-    confirm-text="删除"
-    cancel-text="取消"
-    @confirm="confirmDeleteAccount"
-    @cancel="cancelDeleteAccount"
-  />
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
 import Modal from './Modal.vue'
-import ConfirmDialog from './ConfirmDialog.vue'
 import Checkbox from './Checkbox.vue'
 import { useToast } from '@renderer/composables/useToast'
+import { confirm } from '@renderer/composables/useConfirm'
 import type { UserInfo } from '@types'
 import useEventListener from 'vue-hooks-plus/lib/useEventListener'
 
@@ -189,9 +179,6 @@ const showPassword = ref(false)
 const isLoading = ref(false)
 const isAccountDropdownOpen = ref(false)
 const accountSelectRef = ref<HTMLElement>()
-const showDeleteConfirm = ref(false)
-const pendingDeleteUsername = ref<string>('')
-const deleteConfirmMessage = ref<string>('')
 // 倒计时相关状态
 const countdown = ref<number>(0)
 const countdownTimer = ref<ReturnType<typeof setInterval> | null>(null)
@@ -224,12 +211,7 @@ watch(
 // ESC 键关闭弹框
 useEventListener('keydown', (event) => {
   if (event.key === 'Escape' && props.visible) {
-    // 如果确认删除对话框打开，先关闭它
-    if (showDeleteConfirm.value) {
-      cancelDeleteAccount()
-    } else {
-      handleClose()
-    }
+    handleClose()
   }
 })
 // 点击外部关闭下拉框
@@ -266,34 +248,31 @@ const selectSavedAccount = (userInfo: UserInfo) => {
   closeAccountDropdown()
 }
 
-// 唤醒删除账号弹窗
-const handleDeleteAccount = (userInfo: UserInfo) => {
-  deleteConfirmMessage.value = `确定要删除账号 "${userInfo?.remark || userInfo.username}" 吗？`
-  pendingDeleteUsername.value = userInfo.username ?? ''
-  showDeleteConfirm.value = true
-}
+// 删除账号
+const handleDeleteAccount = async (userInfo: UserInfo) => {
+  const username = userInfo.username ?? ''
+  const displayName = userInfo?.remark || userInfo.username || ''
 
-// 确认删除账号
-const confirmDeleteAccount = () => {
-  const username = pendingDeleteUsername.value
-  const wasSelected = formData.value.username === username
+  try {
+    await confirm({
+      title: '删除账号',
+      message: `确定要删除账号 "${displayName}" 吗？`,
+      confirmText: '删除',
+      cancelText: '取消'
+    })
 
-  props.deleteAccount(username)
+    const wasSelected = formData.value.username === username
 
-  // 如果删除的是当前选中的账号，清空表单
-  if (wasSelected) {
-    formData.value = { username: '', password: '', remark: '' }
-    rememberPassword.value = false
+    props.deleteAccount(username)
+
+    // 如果删除的是当前选中的账号，清空表单
+    if (wasSelected) {
+      formData.value = { username: '', password: '', remark: '' }
+      rememberPassword.value = false
+    }
+  } catch {
+    // 用户取消操作，无需处理
   }
-
-  showDeleteConfirm.value = false
-  pendingDeleteUsername.value = ''
-}
-
-// 取消删除账号
-const cancelDeleteAccount = () => {
-  showDeleteConfirm.value = false
-  pendingDeleteUsername.value = ''
 }
 
 const handleClose = () => {

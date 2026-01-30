@@ -110,6 +110,26 @@ const api = {
   getR2beatPath: async (shortcutPath?: string) => {
     const result = await ipcRenderer.invoke('get-r2beat-path', shortcutPath)
     return result
+  },
+  getPaks: async (gamePath: string) => {
+    const result = await ipcRenderer.invoke('get-paks', gamePath)
+    return result
+  },
+  copyPakToGame: async (srcPath: string, gamePath: string) => {
+    const result = await ipcRenderer.invoke('copy-pak-to-game', srcPath, gamePath)
+    return result
+  },
+  savePakToGame: async (fileName: string, fileData: Uint8Array, gamePath: string) => {
+    const result = await ipcRenderer.invoke('save-pak-to-game', fileName, fileData, gamePath)
+    return result
+  },
+  movePakToMods: async (srcPath: string) => {
+    const result = await ipcRenderer.invoke('move-pak-to-mods', srcPath)
+    return result
+  },
+  deletePak: async (srcPath: string) => {
+    const result = await ipcRenderer.invoke('delete-pak', srcPath)
+    return result
   }
 }
 
