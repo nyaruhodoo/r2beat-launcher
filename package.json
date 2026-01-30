@@ -34,11 +34,12 @@
     }
   },
   "dependencies": {
+    "vue": "^3.5.25",
+    "vue-hooks-plus": "^2.4.1",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "frida": "^17.6.0",
-    "lzma-native": "^8.0.6",
-    "vue-hooks-plus": "^2.4.1"
+    "lzma-native": "^8.0.6"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "3.0.0",
@@ -55,7 +56,6 @@
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
     "vite-plugin-vue-devtools": "^8.0.5",
-    "vue": "^3.5.25",
     "vue-eslint-parser": "^10.2.0",
     "vue-tsc": "^3.1.6"
   },
