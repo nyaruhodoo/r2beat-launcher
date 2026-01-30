@@ -544,7 +544,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
 
-        hookDll(gameProcess.pid)
+        if (launchArgs !== 'xyxOpen') {
+          hookDll(gameProcess.pid)
+        }
 
         /**
          * 等待优先级相关操作结果
