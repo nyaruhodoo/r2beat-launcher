@@ -4,8 +4,8 @@
       <template #nav>
         <UserInfoCom
           :user-info="userInfo"
-          @login-click="handleShowLogin"
-          @switch-account="handleSwitchAccount"
+          @login-click="showLoginModal = true"
+          @switch-account="showLoginModal = true"
           @show-logout-confirm="showLogoutConfirm = true"
         />
         <a href="https://r2beat.xiyouxi.com/gift/draw" target="_blank">
@@ -70,7 +70,7 @@
       :visible="showSettings"
       :game-settings="gameSettings"
       @close="showSettings = false"
-      @save="handleSaveSettings"
+      @save="setGameSettings"
     />
 
     <!-- 补丁模态框 -->
@@ -85,7 +85,7 @@
       :visible="showLoginModal"
       :account-list="savedAccounts"
       :delete-account="deleteAccount"
-      @close="handleCloseLoginModal"
+      @close="showLoginModal = false"
       @login-success="handleLoginSuccess"
     />
 
@@ -125,9 +125,6 @@ const showLoginModal = ref(false)
 const showLogoutConfirm = ref(false)
 const showPakModal = ref(false)
 
-/* 当前登录账号 */
-const [userInfo, setUseInfo] = useLocalStorageState<UserInfo>('r2beat_user')
-
 /**
  * 一些基础配置
  */
@@ -149,6 +146,13 @@ const [savedAccounts, setSavedAccounts] = useLocalStorageState<UserInfo[]>(
     defaultValue: []
   }
 )
+
+/* 当前登录账号 - 应用内状态，不永久存储 */
+const userInfo = ref<UserInfo | undefined>(savedAccounts.value?.[0])
+const setUseInfo = (info?: UserInfo) => {
+  userInfo.value = info
+}
+
 // 账号管理方法
 const saveAccount = (userInfo: UserInfo): void => {
   const filteredAccounts =
@@ -197,21 +201,6 @@ const toggleTheme = () => {
   setTheme(newTheme)
 }
 
-// 显示登录模态框
-const handleShowLogin = () => {
-  showLoginModal.value = true
-}
-
-// 关闭登录模态框
-const handleCloseLoginModal = () => {
-  showLoginModal.value = false
-}
-
-// 唤醒切换账号弹窗
-const handleSwitchAccount = () => {
-  showLoginModal.value = true
-}
-
 /**
  * 登录成功，只存储到本地即可
  */
@@ -234,11 +223,6 @@ const handleNavClick = (type: 'website' | 'recharge' | 'settings') => {
   } else if (type === 'recharge') {
     window.api.openRechargeCenter?.(userInfo.value?.username)
   }
-}
-
-const handleSaveSettings = (settings: GameSettings) => {
-  setGameSettings(settings)
-  console.log('保存设置:', settings)
 }
 
 const searchGamePath = async () => {
