@@ -542,16 +542,16 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           }
         )
 
-        if (gameProcess.pid) {
-          hookDll(gameProcess.pid)
-        }
+        if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
+
+        hookDll(gameProcess.pid)
 
         /**
          * 等待优先级相关操作结果
          */
         try {
           await new Promise((res) => {
-            if (process.platform !== 'win32' || !gameProcess.pid) {
+            if (process.platform !== 'win32') {
               return res(undefined)
             }
 
