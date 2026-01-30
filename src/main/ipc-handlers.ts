@@ -1,19 +1,19 @@
 import { BrowserWindow, ipcMain, dialog, Notification, shell } from 'electron'
 import { join, relative, dirname } from 'path'
 import { homedir } from 'os'
+import { createReadStream, createWriteStream } from 'fs'
 import {
-  existsSync,
-  readFileSync,
-  writeFileSync,
-  readdirSync,
-  mkdirSync,
-  createReadStream,
-  createWriteStream,
-  unlinkSync,
-  statSync
-} from 'fs'
+  access,
+  readFile,
+  writeFile,
+  readdir,
+  mkdir,
+  unlink,
+  stat,
+  copyFile,
+  rm
+} from 'fs/promises'
 import { get as httpGet } from 'http'
-import { copyFileSync, rmSync } from 'fs'
 import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
 import { AnnouncementData, Announcementlist, PatchUpdateInfo, ProcessPriority } from '@types'
 import { sendTcpLoginRequest } from './tcp-login'
@@ -24,6 +24,16 @@ import { hookDll } from './hookDll'
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
+  // 异步判断文件/目录是否存在，避免同步阻塞
+  const exists = async (path: string) => {
+    try {
+      await access(path)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   ipcMain.on('window-show', () => {
     mainWindow?.show()
   })
@@ -410,7 +420,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       // 判断快捷方式文件是否存在
-      if (!existsSync(finalShortcutPath)) {
+      if (!(await exists(finalShortcutPath))) {
         throw new Error(`找不到快捷方式文件: ${finalShortcutPath}`)
       }
 
@@ -424,7 +434,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const targetDir = dirname(shortcutDetails.target)
 
       // 验证目录是否存在
-      if (!existsSync(targetDir)) {
+      if (!(await exists(targetDir))) {
         throw new Error(`目标目录不存在: ${targetDir}`)
       }
 
@@ -498,7 +508,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         }
 
         const gameExePath = join(gamePath, 'Game.exe')
-        if (!existsSync(gameExePath)) {
+        if (!(await exists(gameExePath))) {
           throw new Error(`找不到游戏文件: ${gameExePath}\n请检查游戏安装目录是否正确`)
         }
 
@@ -511,7 +521,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         if (username && username.trim()) {
           const xyxIdFilePath = join(gamePath, 'xyxID.txt')
           try {
-            writeFileSync(xyxIdFilePath, username.trim(), 'utf-8')
+            await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
             console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
           } catch (error) {
             console.error('[Main] 写入 xyxID.txt 失败:', error)
@@ -739,14 +749,14 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       const configIniPath = join(gamePath, 'config.ini')
-      const exists = existsSync(configIniPath)
+      const iniExists = await exists(configIniPath)
 
-      if (!exists) {
+      if (!iniExists) {
         return { success: true, exists: false }
       }
 
       // 读取文件内容
-      const fileContent = readFileSync(configIniPath, 'utf-8')
+      const fileContent = await readFile(configIniPath, 'utf-8')
 
       // 使用 ini-json-converter 转换为 JSON
       const jsonData = parseIniToJson(fileContent)
@@ -784,8 +794,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         // 使用 ini-json-converter 转换为 INI 字符串
         const iniContent = stringifyJsonToIni(configJson)
 
-        // 写入文件
-        writeFileSync(configIniPath, iniContent, 'utf-8')
+        // 写入文件（异步）
+        await writeFile(configIniPath, iniContent, 'utf-8')
 
         console.log('[Main] config.ini 保存成功:', configIniPath)
         return { success: true }
@@ -811,12 +821,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       const patchIniPath = join(gamePath, 'PatchInfo', 'Patch.ini')
       // 检查文件是否存在
-      if (!existsSync(patchIniPath)) {
+      if (!(await exists(patchIniPath))) {
         throw new Error(`找不到 Patch.ini 文件: ${patchIniPath}`)
       }
 
       // 读取文件内容
-      const fileContent = readFileSync(patchIniPath, 'utf-8')
+      const fileContent = await readFile(patchIniPath, 'utf-8')
       const patchInfo = parseIniToJson(fileContent)
 
       return { success: true, data: patchInfo }
@@ -884,9 +894,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         // 确保目录存在
         try {
-          if (!existsSync(targetDir)) {
-            // 使用 fs.mkdirSync 递归创建目录
-            mkdirSync(targetDir, { recursive: true })
+          if (!(await exists(targetDir))) {
+            // 使用 fs.promises.mkdir 递归创建目录
+            await mkdir(targetDir, { recursive: true })
           }
         } catch (error) {
           console.error('[Main] 创建 patch/lst 目录失败:', error)
@@ -901,7 +911,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           const filePath = join(targetDir, fileName)
 
           // 如果已经存在同名文件，则跳过下载
-          if (existsSync(filePath)) {
+          if (await exists(filePath)) {
             console.log(`[Main] 补丁列表已存在，跳过: ${fileName}`)
             localFiles.push({ version, filePath })
             continue
@@ -919,7 +929,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
           const arrayBuffer = await response.arrayBuffer()
           const buffer = Buffer.from(arrayBuffer)
-          writeFileSync(filePath, buffer)
+          await writeFile(filePath, buffer)
           localFiles.push({ version, filePath })
           console.log('[Main] 补丁列表下载完成:', filePath)
         }
@@ -939,7 +949,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         for (const { version, filePath } of localFiles) {
           try {
-            const content = readFileSync(filePath, 'utf-8')
+            const content = await readFile(filePath, 'utf-8')
             const lines = content
               .split(/\r?\n/)
               .map((line) => line.trim())
@@ -1078,17 +1088,17 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const patchRoot = join(appRoot, 'patch')
       const patchFileDir = join(patchRoot, 'file')
 
-      if (!existsSync(patchFileDir)) {
+      if (!(await exists(patchFileDir))) {
         throw new Error('未找到补丁文件目录')
       }
 
       // 递归读取所有补丁文件
-      const getAllFiles = (
+      const getAllFiles = async (
         dir: string,
         baseDir: string = dir
-      ): Array<{ path: string; relativePath: string }> => {
+      ): Promise<Array<{ path: string; relativePath: string }>> => {
         const files: Array<{ path: string; relativePath: string }> = []
-        const entries = readdirSync(dir, { withFileTypes: true })
+        const entries = await readdir(dir, { withFileTypes: true })
 
         for (const entry of entries) {
           const fullPath = join(dir, entry.name)
@@ -1096,7 +1106,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
           if (entry.isDirectory()) {
             // 递归读取子目录
-            files.push(...getAllFiles(fullPath, baseDir))
+            const subFiles = await getAllFiles(fullPath, baseDir)
+            files.push(...subFiles)
           } else if (entry.isFile()) {
             files.push({ path: fullPath, relativePath })
           }
@@ -1105,7 +1116,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         return files
       }
 
-      const allFiles = getAllFiles(patchFileDir)
+      const allFiles = await getAllFiles(patchFileDir)
       let hasDeleteFileList = false
       let deleteFileList: string[] = []
 
@@ -1120,7 +1131,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
           // 读取 DeleteFileList.dat 内容（从补丁目录中读取，还未复制到游戏目录）
           try {
-            const deleteFileListContent = readFileSync(file.path, 'utf-8')
+            const deleteFileListContent = await readFile(file.path, 'utf-8')
             deleteFileList = deleteFileListContent
               .split(/\r?\n/)
               .map((line) => line.trim())
@@ -1158,8 +1169,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             destDir = join(gamePath, ...dirParts)
 
             // 确保目标目录存在
-            if (!existsSync(destDir)) {
-              mkdirSync(destDir, { recursive: true })
+             if (!(await exists(destDir))) {
+              await mkdir(destDir, { recursive: true })
               console.log(`[Main] 已创建目录: ${destDir}`)
             }
           }
@@ -1180,7 +1191,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           )
         })
 
-        if (shouldDelete || existsSync(dest)) {
+        if (shouldDelete || (await exists(dest))) {
           // 检查目标文件是否在删除列表中（精确匹配）
           const isInDeleteList = deleteFileList.some((deletePath) => {
             const normalizedDeletePath = deletePath.replace(/[\\/]/g, '/')
@@ -1188,13 +1199,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             return normalizedDestPath === normalizedDeletePath
           })
 
-          if (isInDeleteList || existsSync(dest)) {
+          if (isInDeleteList || (await exists(dest))) {
             try {
-              if (existsSync(dest)) {
-                const stat = statSync(dest)
-                if (stat.isFile()) {
+              if (await exists(dest)) {
+                const statResult = await stat(dest)
+                if (statResult.isFile()) {
                   console.log(`[Main] 复制前删除目标文件: ${dest}`)
-                  unlinkSync(dest)
+                  await unlink(dest)
                   // 等待一小段时间，确保文件句柄释放
                   await new Promise((resolve) => setTimeout(resolve, 100))
                 }
@@ -1210,7 +1221,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
                 while (retryCount < maxRetries) {
                   await new Promise((resolve) => setTimeout(resolve, 500))
                   try {
-                    unlinkSync(dest)
+                    await unlink(dest)
                     console.log(`[Main] 重试删除成功: ${dest}`)
                     break
                   } catch {
@@ -1235,7 +1246,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         while (!copySuccess && copyRetryCount < maxCopyRetries) {
           try {
-            copyFileSync(src, dest)
+            await copyFile(src, dest)
             console.log(`[Main] 已复制补丁文件: ${relativePath} -> ${dest}`)
             copySuccess = true
           } catch (copyError) {
@@ -1247,8 +1258,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               )
               // 尝试再次删除并等待
               try {
-                if (existsSync(dest)) {
-                  unlinkSync(dest)
+                if (await exists(dest)) {
+                  await unlink(dest)
                 }
               } catch {
                 // 忽略删除错误
@@ -1264,8 +1275,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       // 更新 PatchInfo/Patch.ini 中的版本号
       try {
         const patchIniPath = join(gamePath, 'PatchInfo', 'Patch.ini')
-        if (existsSync(patchIniPath)) {
-          const iniContent = readFileSync(patchIniPath, 'utf-8')
+        if (await exists(patchIniPath)) {
+          const iniContent = await readFile(patchIniPath, 'utf-8')
           const json = parseIniToJson(iniContent)
           const versionNum = Number(latestVersion)
           if (!Number.isNaN(versionNum)) {
@@ -1274,7 +1285,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             // @ts-expect-error  忽略错误
             json.patch.version = latestVersion
             const newIni = stringifyJsonToIni(json)
-            writeFileSync(patchIniPath, newIni, 'utf-8')
+            await writeFile(patchIniPath, newIni, 'utf-8')
           }
         }
       } catch (error) {
@@ -1284,7 +1295,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       // 根据 DeleteFileList.dat 清空不再需要的文件
       // 注意：已经在复制阶段处理了在补丁文件中的文件，这里只处理不在补丁文件中的其他文件
-      if (hasDeleteFileList && deleteFileList.length > 0) {
+       if (hasDeleteFileList && deleteFileList.length > 0) {
         try {
           console.log('[Main] 开始处理 DeleteFileList.dat 中剩余的待删除文件')
 
@@ -1310,14 +1321,14 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               const pathParts = normalizedFilePath.split('/').filter((p) => p) // 过滤空字符串
 
               // 从 gamePath 根目录查找
-              const targetPath = join(gamePath, ...pathParts)
+               const targetPath = join(gamePath, ...pathParts)
 
               console.log(`[Main] 尝试删除文件: ${filePath} -> ${targetPath}`)
 
-              if (existsSync(targetPath)) {
+               if (await exists(targetPath)) {
                 // 检查是否是文件（不是目录）
-                const stat = statSync(targetPath)
-                if (stat.isFile()) {
+                const statResult = await stat(targetPath)
+                if (statResult.isFile()) {
                   // 对于可能被锁定的文件，添加重试机制
                   let deleteSuccess = false
                   let deleteRetryCount = 0
@@ -1325,7 +1336,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
                   while (!deleteSuccess && deleteRetryCount < maxDeleteRetries) {
                     try {
-                      unlinkSync(targetPath)
+                          await unlink(targetPath)
                       console.log(`[Main] ✓ 已删除文件: ${targetPath}`)
                       deleteSuccess = true
                     } catch (deleteError) {
@@ -1362,8 +1373,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       // 清空 patch 目录
-      try {
-        rmSync(patchRoot, { recursive: true, force: true })
+       try {
+        await rm(patchRoot, { recursive: true, force: true })
       } catch (error) {
         console.warn('[Main] 清空 patch 目录失败（忽略）：', error)
         throw new Error('[Main] 清空 patch 目录失败')
@@ -1396,8 +1407,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const targetDir = join(appRoot, 'patch', 'file')
 
       try {
-        if (!existsSync(targetDir)) {
-          mkdirSync(targetDir, { recursive: true })
+        if (!(await exists(targetDir))) {
+          await mkdir(targetDir, { recursive: true })
         }
       } catch (error) {
         console.error('[Main] 创建 patch/file 目录失败:', error)
@@ -1467,8 +1478,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             outDir = join(targetDir, ...dirParts)
 
             // 确保目标目录存在
-            if (!existsSync(outDir)) {
-              mkdirSync(outDir, { recursive: true })
+            if (!(await exists(outDir))) {
+              await mkdir(outDir, { recursive: true })
               console.log(`[Main] 已创建目录: ${outDir}`)
             }
           }
@@ -1477,7 +1488,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         const outPath = join(outDir, outFileName)
 
         // 若目标文件已存在，则跳过
-        if (existsSync(outPath)) {
+        if (await exists(outPath)) {
           console.log('[Main] 目标文件已存在，跳过下载与解压:', outPath)
           downloadFraction = 1
           decompressFraction = 1
@@ -1568,19 +1579,20 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           )
 
           // 使用流的方式解压 .lzma 到目标文件
+          let totalDecompressBytes = 0
+          try {
+            const statResult = await stat(tmpPath)
+            totalDecompressBytes = statResult.size
+          } catch {
+            totalDecompressBytes = 0
+          }
+
           await new Promise<void>((resolve, reject) => {
             const decoder = lzma.createDecompressor()
             const source = createReadStream(tmpPath)
             const dest = createWriteStream(outPath)
 
             let decompressedBytes = 0
-            let totalDecompressBytes = 0
-            try {
-              const stat = statSync(tmpPath)
-              totalDecompressBytes = stat.size
-            } catch {
-              totalDecompressBytes = 0
-            }
 
             source.on('data', (chunk) => {
               decompressedBytes += chunk.length
@@ -1603,9 +1615,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             source.pipe(decoder).pipe(dest)
           })
 
-          // 解压完成后删除临时压缩包
+          // 解压完成后删除临时压缩包（异步）
           try {
-            unlinkSync(tmpPath)
+            await unlink(tmpPath)
           } catch (error) {
             console.warn('[Main] 删除临时补丁文件失败（可忽略）:', tmpPath, error)
           }

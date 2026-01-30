@@ -20,6 +20,9 @@ importers:
       lzma-native:
         specifier: ^8.0.6
         version: 8.0.6
+      vue:
+        specifier: ^3.5.25
+        version: 3.5.27(typescript@5.9.3)
       vue-hooks-plus:
         specifier: ^2.4.1
         version: 2.4.1(vue@3.5.27(typescript@5.9.3))
@@ -33,6 +36,9 @@ importers:
       '@electron-toolkit/tsconfig':
         specifier: ^2.0.0
         version: 2.0.0(@types/node@22.19.7)
+      '@types/lzma-native':
+        specifier: ^4.0.4
+        version: 4.0.4
       '@types/node':
         specifier: ^22.19.1
         version: 22.19.7
@@ -66,9 +72,6 @@ importers:
       vite-plugin-vue-devtools:
         specifier: ^8.0.5
         version: 8.0.5(vite@7.3.1(@types/node@22.19.7)(jiti@2.6.1))(vue@3.5.27(typescript@5.9.3))
-      vue:
-        specifier: ^3.5.25
-        version: 3.5.27(typescript@5.9.3)
       vue-eslint-parser:
         specifier: ^10.2.0
         version: 10.2.0(eslint@9.39.2(jiti@2.6.1))
@@ -894,6 +897,9 @@ packages:
 
   '@types/keyv@3.1.4':
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
+
+  '@types/lzma-native@4.0.4':
+    resolution: {integrity: sha512-9nwec86WAT3wUhjx9iV0AQ06xyDyiN/D9CAk3ZzNLb8zFjjo4EDBliN2uo7CFcBDJ64oXfX4sa+p6fpGpzy/4A==}
 
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
@@ -3551,6 +3557,10 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/keyv@3.1.4':
+    dependencies:
+      '@types/node': 22.19.7
+
+  '@types/lzma-native@4.0.4':
     dependencies:
       '@types/node': 22.19.7
 
