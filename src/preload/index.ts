@@ -33,7 +33,9 @@ const api = {
     launchArgs?: string,
     minimizeToTrayOnLaunch?: boolean,
     processPriority?: string,
-    lowerNPPriority?: boolean
+    lowerNPPriority?: boolean,
+    username?: string,
+    password?: string
   ) => {
     const result = await ipcRenderer.invoke(
       'launch-game',
@@ -41,7 +43,9 @@ const api = {
       launchArgs,
       minimizeToTrayOnLaunch,
       processPriority,
-      lowerNPPriority
+      lowerNPPriority,
+      username,
+      password
     )
     return result
   },

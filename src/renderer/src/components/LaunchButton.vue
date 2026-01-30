@@ -219,15 +219,19 @@ const executeLaunch = async () => {
   isDisabled.value = true
 
   try {
+    // 根据避免二次登录设置决定启动参数
+    const launchArgs = latestSettings?.avoidSecondLogin !== false
+      ? `xyxOpen|${props.userInfo.username}|0|1|${props.userInfo.password}|3|4`
+      : 'xyxOpen'
+
     const result = await window.api.launchGame?.(
       latestSettings.gamePath,
-      // 单纯生成占位符只会发起登陆包，不会进一步请求，或许需要调整更多逻辑
-      // `xyxOpen|${generateCommandLine(props.userInfo.username?.length + props.userInfo.password.length + 10)}`,
-      // 使用指定格式的则会发起完整登录流程 (抄他妈的！)
-      `xyxOpen|${props.userInfo.username}|0|1|${props.userInfo.password}|3|4`,
+      launchArgs,
       latestSettings.minimizeToTrayOnLaunch || false,
       latestSettings.processPriority || 'normal',
-      latestSettings.lowerNPPriority || false
+      latestSettings.lowerNPPriority || false,
+      props.userInfo.username,
+      props.userInfo.password
     )
 
     if (result?.success) {

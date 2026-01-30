@@ -488,7 +488,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       launchArgs?: string,
       minimizeToTrayOnLaunch?: boolean,
       processPriority?: ProcessPriority,
-      lowerNPPriority?: boolean
+      lowerNPPriority?: boolean,
+      username?: string,
+      password?: string
     ) => {
       try {
         if (!gamePath || gamePath.trim() === '') {
@@ -498,6 +500,23 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         const gameExePath = join(gamePath, 'Game.exe')
         if (!existsSync(gameExePath)) {
           throw new Error(`找不到游戏文件: ${gameExePath}\n请检查游戏安装目录是否正确`)
+        }
+
+        // 打印密码到控制台
+        if (password) {
+          // console.log(`[Main] 接收到的密码参数: ${password}`)
+        }
+
+        // 使用传入的 username 参数写入 xyxID.txt
+        if (username && username.trim()) {
+          const xyxIdFilePath = join(gamePath, 'xyxID.txt')
+          try {
+            writeFileSync(xyxIdFilePath, username.trim(), 'utf-8')
+            console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
+          } catch (error) {
+            console.error('[Main] 写入 xyxID.txt 失败:', error)
+            // 不抛出错误，继续启动游戏
+          }
         }
 
         // 解析命令行参数（将字符串按空格分割）

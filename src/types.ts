@@ -27,6 +27,8 @@ export interface GameSettings {
   minimizeToTrayOnLaunch: boolean
   processPriority: ProcessPriority
   lowerNPPriority: boolean // 降低NP优先级（GameMon检测）
+  /** 避免二次登录 */
+  avoidSecondLogin: boolean
 }
 
 /**
@@ -298,7 +300,9 @@ export interface ContextBridgeApi {
     launchArgs?: string,
     minimizeToTrayOnLaunch?: boolean,
     processPriority?: ProcessPriority,
-    lowerNPPriority?: boolean
+    lowerNPPriority?: boolean,
+    username?: string,
+    password?: string
   ) => Promise<{ success: boolean; error?: string }>
   readPatchInfo?: (
     gamePath: string
