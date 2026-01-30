@@ -10,4 +10,4 @@ An Electron application with Vue and TypeScript
 - [x] 进程优先级调整
 - [x] 快速启动
 - [x] 无限保存账号密码
-- [ ] MOD 管理工具
+- [x] MOD 管理工具
