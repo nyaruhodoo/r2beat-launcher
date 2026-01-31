@@ -1,5 +1,5 @@
 <template>
-  <div class="dropdown-wrapper" ref="wrapperRef">
+  <div ref="wrapperRef" class="dropdown-wrapper">
     <div ref="triggerRef" @click.stop="toggleMenu">
       <slot name="trigger" :is-open="showMenu" />
     </div>
@@ -23,7 +23,17 @@
         >
           <span v-if="item.icon" class="menu-icon">
             <img
-              v-if="typeof item.icon === 'string' && (item.icon.endsWith('.png') || item.icon.endsWith('.jpg') || item.icon.endsWith('.jpeg') || item.icon.endsWith('.svg') || item.icon.endsWith('.gif') || item.icon.endsWith('.webp') || item.icon.startsWith('data:') || item.icon.startsWith('http'))"
+              v-if="
+                typeof item.icon === 'string' &&
+                (item.icon.endsWith('.png') ||
+                  item.icon.endsWith('.jpg') ||
+                  item.icon.endsWith('.jpeg') ||
+                  item.icon.endsWith('.svg') ||
+                  item.icon.endsWith('.gif') ||
+                  item.icon.endsWith('.webp') ||
+                  item.icon.startsWith('data:') ||
+                  item.icon.startsWith('http'))
+              "
               :src="item.icon"
               alt=""
             />
@@ -52,7 +62,7 @@ export interface DropdownItem {
 
 const props = withDefaults(
   defineProps<{
-    items: DropdownItem[]
+    items?: DropdownItem[]
   }>(),
   {
     items: () => []
@@ -61,7 +71,6 @@ const props = withDefaults(
 
 const showMenu = ref(false)
 const triggerRef = ref<HTMLElement | null>(null)
-const wrapperRef = ref<HTMLElement | null>(null)
 const menuRef = ref<HTMLElement | null>(null)
 const menuWidth = ref<number>(0)
 
@@ -280,4 +289,3 @@ watch(showMenu, (newVal) => {
   flex: 1;
 }
 </style>
-
