@@ -1699,7 +1699,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         console.log('[Main] 开始下载补丁文件:', patch.downloadUrl)
 
         try {
-          await Utils.downloadFile(patch.downloadUrl, tmpPath, (downloaded, total, progress) => {
+          await Utils.downloadFile(patch.downloadUrl, tmpPath, (_downloaded, _total, progress) => {
             downloadFraction = progress
             emitProgress(
               'download',
