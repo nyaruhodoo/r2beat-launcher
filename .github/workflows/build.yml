@@ -28,10 +28,7 @@ jobs:
         # 建议使用 --frozen-lockfile 确保构建环境与本地依赖完全一致
         run: pnpm install --frozen-lockfile
 
-      - name: Compile Source Code
-        run: pnpm run build
-
       - name: Build and Publish
-        run: npx electron-builder --win --publish always
+        run: pnpm run build:win --publish always
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
