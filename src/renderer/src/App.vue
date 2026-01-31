@@ -114,6 +114,9 @@ import shezhiImg from '@renderer/assets/imgs/shezhi.png'
 import aixinImg from '@renderer/assets/imgs/aixin.png'
 import budingImg from '@renderer/assets/imgs/buding.png'
 import WindowResizer from './components/WindowResizer.vue'
+import { useToast } from './composables/useToast'
+
+const { info } = useToast()
 
 // ========== 状态管理 ==========
 const showSettings = ref(false)
@@ -240,6 +243,19 @@ onMounted(() => {
   })
 
   searchGamePath()
+
+  // 检查应用更新
+  window.api
+    .checkAppUpdate?.()
+    .then((result) => {
+      if (result) {
+        info(`发现新版本 ${result.latestVersion}，可以前往网盘或github下载最新版`, 5000)
+        // downloadUrl 已保存在 result.downloadUrl 中，可供后续使用
+      }
+    })
+    .catch((error) => {
+      console.error('[App] 检查更新失败:', error)
+    })
 })
 </script>
 

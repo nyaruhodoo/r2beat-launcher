@@ -130,6 +130,10 @@ const api = {
   deletePak: async (srcPath: string) => {
     const result = await ipcRenderer.invoke('delete-pak', srcPath)
     return result
+  },
+  checkAppUpdate: async () => {
+    const result = await ipcRenderer.invoke('check-app-update')
+    return result
   }
 }
 

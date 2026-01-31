@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, dialog, Notification, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, Notification, shell } from 'electron'
 import { join, relative, dirname, basename } from 'path'
 import { homedir } from 'os'
 import { createReadStream, createWriteStream } from 'fs'
@@ -1797,6 +1797,56 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         success: false,
         error: error instanceof Error ? error.message : '下载并解压补丁文件时发生未知错误'
       }
+    }
+  })
+
+  /**
+   * 检查应用更新
+   * 检查 GitHub releases 版本是否和当前一致
+   * 如果有更新返回更新信息，否则返回 undefined
+   */
+  ipcMain.handle('check-app-update', async () => {
+    try {
+      const repoOwner = 'nyaruhodoo'
+      const repoName = 'r2beat-launcher'
+      const currentVersion = app.getVersion()
+      console.log(`[Main] 当前应用版本: ${currentVersion}`)
+
+      const result = await Utils.checkLatestVersion(repoOwner, repoName)
+
+      if (!result.success || !result.latestVersion || !result.downloadUrl) {
+        console.warn(`[Main] 检查更新失败: ${result.error || '未知错误'}`)
+        return undefined
+      }
+
+      const latestVersion = result.latestVersion
+      const downloadUrl = result.downloadUrl
+      console.log(`[Main] GitHub 最新版本: ${latestVersion}`)
+
+      const comparison = Utils.compareVersions(currentVersion, latestVersion)
+
+      if (comparison > 0) {
+        console.log(
+          `[Main] ✨ 发现新版本！当前版本: ${currentVersion}, 最新版本: ${latestVersion}`
+        )
+        return {
+          currentVersion,
+          latestVersion,
+          downloadUrl
+        }
+      } else {
+        if (comparison < 0) {
+          console.log(
+            `[Main] ⚠️ 当前版本 (${currentVersion}) 比 GitHub 最新版本 (${latestVersion}) 更新（可能是开发版本）`
+          )
+        } else {
+          console.log(`[Main] ✓ 当前版本 (${currentVersion}) 已是最新版本`)
+        }
+        return undefined
+      }
+    } catch (error) {
+      console.error('[Main] 检查更新时发生异常:', error)
+      return undefined
     }
   })
 }

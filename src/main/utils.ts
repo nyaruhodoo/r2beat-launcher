@@ -99,4 +99,94 @@ export class Utils {
       }
     })
   }
+
+  /**
+   * 检查 GitHub releases 最新版本
+   * @param repoOwner 仓库所有者，例如 "nyaruhodoo"
+   * @param repoName 仓库名称，例如 "r2beat-launcher"
+   * @returns Promise<{ success: boolean; latestVersion?: string; downloadUrl?: string; error?: string }>
+   */
+  static async checkLatestVersion(
+    repoOwner: string,
+    repoName: string
+  ): Promise<{
+    success: boolean
+    latestVersion?: string
+    downloadUrl?: string
+    error?: string
+  }> {
+    const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`
+
+    try {
+      const response = await fetch(apiUrl, {
+        headers: {
+          'User-Agent': 'r2beat-launcher',
+          Accept: 'application/vnd.github.v3+json'
+        }
+      })
+
+      if (!response.ok) {
+        const errorMsg = `GitHub API 请求失败: ${response.status} ${response.statusText}`
+        console.error('[Utils]', errorMsg)
+        return { success: false, error: errorMsg }
+      }
+
+      const data = (await response.json()) as {
+        tag_name?: string
+        name?: string
+        html_url?: string
+        assets?: Array<{ browser_download_url?: string }>
+      }
+      const latestVersion = data.tag_name || data.name
+
+      if (!latestVersion) {
+        const errorMsg = 'GitHub API 响应中未找到版本号'
+        console.error('[Utils]', errorMsg)
+        return { success: false, error: errorMsg }
+      }
+
+      // 移除版本号前缀的 'v'（如果有）
+      const cleanVersion = latestVersion.startsWith('v') ? latestVersion.slice(1) : latestVersion
+
+      // 获取下载地址：优先使用 html_url（releases 页面），如果没有则使用第一个 asset 的下载地址
+      let downloadUrl = data.html_url || undefined
+      if (!downloadUrl && data.assets && data.assets.length > 0) {
+        downloadUrl = data.assets[0].browser_download_url || undefined
+      }
+      // 如果都没有，使用 releases/latest 页面地址
+      if (!downloadUrl) {
+        downloadUrl = `https://github.com/${repoOwner}/${repoName}/releases/latest`
+      }
+
+      return { success: true, latestVersion: cleanVersion, downloadUrl }
+    } catch (error) {
+      const errorMsg = `检查更新失败: ${error instanceof Error ? error.message : String(error)}`
+      console.error('[Utils]', errorMsg)
+      return { success: false, error: errorMsg }
+    }
+  }
+
+  /**
+   * 比较两个版本号
+   * @param currentVersion 当前版本号，例如 "1.1.3"
+   * @param latestVersion 最新版本号，例如 "1.1.4"
+   * @returns 如果 latestVersion > currentVersion 返回 1，相等返回 0，小于返回 -1
+   */
+  static compareVersions(currentVersion: string, latestVersion: string): number {
+    const currentParts = currentVersion.split('.').map(Number)
+    const latestParts = latestVersion.split('.').map(Number)
+
+    const maxLength = Math.max(currentParts.length, latestParts.length)
+
+    for (let i = 0; i < maxLength; i++) {
+      const current = currentParts[i] || 0
+      const latest = latestParts[i] || 0
+
+      if (latest > current) return 1
+      if (latest < current) return -1
+    }
+
+    return 0
+  }
+
 }

@@ -398,6 +398,14 @@ export interface ContextBridgeApi {
   savePakToGame?: (fileName: string, fileData: Uint8Array, gamePath: string) => Promise<CopyPakToGameResult>
   movePakToMods?: (srcPath: string) => Promise<MovePakToModsResult>
   deletePak?: (srcPath: string) => Promise<DeletePakResult>
+  checkAppUpdate?: () => Promise<
+    | {
+        currentVersion: string
+        latestVersion: string
+        downloadUrl: string
+      }
+    | undefined
+  >
 }
 
 export interface Announcementlist {
