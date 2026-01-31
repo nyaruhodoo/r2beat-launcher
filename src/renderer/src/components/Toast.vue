@@ -113,9 +113,7 @@ const getIcon = (type: 'success' | 'error' | 'warning' | 'info') => {
 
 .toast-info {
   border-color: var(--color-primary);
-  background: var(--color-bg-card);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: var(--color-bg-secondary);
 
   .toast-message {
     color: var(--color-primary);
