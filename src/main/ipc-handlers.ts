@@ -13,7 +13,6 @@ import {
   copyFile,
   rm
 } from 'fs/promises'
-import { get as httpGet } from 'http'
 import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
 import { AnnouncementData, Announcementlist, PatchUpdateInfo, ProcessPriority } from '@types'
 import { sendTcpLoginRequest } from './tcp-login'
@@ -908,30 +907,33 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 如果目标文件已存在，会自动覆盖
    * fileData 可以是 Buffer 或 Uint8Array
    */
-  ipcMain.handle('save-pak-to-game', async (_, fileName: string, fileData: Buffer | Uint8Array, gamePath: string) => {
-    try {
-      if (!fileName || !fileData || !gamePath) {
-        throw new Error('文件名、文件数据或游戏路径为空')
-      }
+  ipcMain.handle(
+    'save-pak-to-game',
+    async (_, fileName: string, fileData: Buffer | Uint8Array, gamePath: string) => {
+      try {
+        if (!fileName || !fileData || !gamePath) {
+          throw new Error('文件名、文件数据或游戏路径为空')
+        }
 
-      if (!(await exists(gamePath))) {
-        throw new Error(`游戏目录不存在: ${gamePath}`)
-      }
+        if (!(await exists(gamePath))) {
+          throw new Error(`游戏目录不存在: ${gamePath}`)
+        }
 
-      const destPath = join(gamePath, fileName)
-      // 如果 fileData 是 Uint8Array，转换为 Buffer
-      const buffer = Buffer.isBuffer(fileData) ? fileData : Buffer.from(fileData)
-      await writeFile(destPath, buffer)
+        const destPath = join(gamePath, fileName)
+        // 如果 fileData 是 Uint8Array，转换为 Buffer
+        const buffer = Buffer.isBuffer(fileData) ? fileData : Buffer.from(fileData)
+        await writeFile(destPath, buffer)
 
-      return { success: true, destPath }
-    } catch (error) {
-      console.error('[Main] save-pak-to-game 失败:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '保存补丁到游戏目录时发生未知错误'
+        return { success: true, destPath }
+      } catch (error) {
+        console.error('[Main] save-pak-to-game 失败:', error)
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : '保存补丁到游戏目录时发生未知错误'
+        }
       }
     }
-  })
+  )
 
   /**
    * 将本地补丁（mods 下）复制到游戏目录（保留源文件）
@@ -1112,18 +1114,15 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           const url = `https://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${version}.lst`
           console.log('[Main] 开始下载补丁列表:', url)
 
-          const response = await fetch(url)
-          if (!response.ok) {
-            const errorMsg = `下载补丁列表失败: ${url} (${response.status} ${response.statusText})`
+          try {
+            await Utils.downloadFile(url, filePath)
+            localFiles.push({ version, filePath })
+            console.log('[Main] 补丁列表下载完成:', filePath)
+          } catch (error) {
+            const errorMsg = `下载补丁列表失败: ${url} - ${error instanceof Error ? error.message : String(error)}`
             console.error('[Main]', errorMsg)
             throw new Error(errorMsg)
           }
-
-          const arrayBuffer = await response.arrayBuffer()
-          const buffer = Buffer.from(arrayBuffer)
-          await writeFile(filePath, buffer)
-          localFiles.push({ version, filePath })
-          console.log('[Main] 补丁列表下载完成:', filePath)
         }
         // 解析所有 lst 文件，计算补丁详情与总大小
         let patches: {
@@ -1361,7 +1360,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             destDir = join(gamePath, ...dirParts)
 
             // 确保目标目录存在
-             if (!(await exists(destDir))) {
+            if (!(await exists(destDir))) {
               await mkdir(destDir, { recursive: true })
               console.log(`[Main] 已创建目录: ${destDir}`)
             }
@@ -1487,7 +1486,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       // 根据 DeleteFileList.dat 清空不再需要的文件
       // 注意：已经在复制阶段处理了在补丁文件中的文件，这里只处理不在补丁文件中的其他文件
-       if (hasDeleteFileList && deleteFileList.length > 0) {
+      if (hasDeleteFileList && deleteFileList.length > 0) {
         try {
           console.log('[Main] 开始处理 DeleteFileList.dat 中剩余的待删除文件')
 
@@ -1513,11 +1512,11 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               const pathParts = normalizedFilePath.split('/').filter((p) => p) // 过滤空字符串
 
               // 从 gamePath 根目录查找
-               const targetPath = join(gamePath, ...pathParts)
+              const targetPath = join(gamePath, ...pathParts)
 
               console.log(`[Main] 尝试删除文件: ${filePath} -> ${targetPath}`)
 
-               if (await exists(targetPath)) {
+              if (await exists(targetPath)) {
                 // 检查是否是文件（不是目录）
                 const statResult = await stat(targetPath)
                 if (statResult.isFile()) {
@@ -1528,7 +1527,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
                   while (!deleteSuccess && deleteRetryCount < maxDeleteRetries) {
                     try {
-                          await unlink(targetPath)
+                      await unlink(targetPath)
                       console.log(`[Main] ✓ 已删除文件: ${targetPath}`)
                       deleteSuccess = true
                     } catch (deleteError) {
@@ -1565,7 +1564,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       // 清空 patch 目录
-       try {
+      try {
         await rm(patchRoot, { recursive: true, force: true })
       } catch (error) {
         console.warn('[Main] 清空 patch 目录失败（忽略）：', error)
@@ -1700,63 +1699,15 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         console.log('[Main] 开始下载补丁文件:', patch.downloadUrl)
 
         try {
-          await new Promise<void>((resolve, reject) => {
-            const fileStream = createWriteStream(tmpPath)
-            const req = httpGet(patch.downloadUrl, (res) => {
-              const { statusCode } = res
-              if (!statusCode || statusCode < 200 || statusCode >= 300) {
-                const errorMsg = `下载补丁文件失败: ${patch.downloadUrl} (${statusCode} ${res.statusMessage})`
-                console.error('[Main]', errorMsg)
-                res.resume() // 丢弃数据，避免内存泄漏
-                fileStream.destroy()
-                return reject(new Error(errorMsg))
-              }
-
-              const totalBytes = Number(res.headers['content-length'] || 0)
-              let downloadedBytes = 0
-
-              res.on('data', (chunk: Buffer) => {
-                downloadedBytes += chunk.length
-                fileStream.write(chunk)
-                if (totalBytes > 0) {
-                  downloadFraction = Math.min(1, downloadedBytes / totalBytes)
-                  emitProgress(
-                    'download',
-                    downloadFraction,
-                    decompressFraction,
-                    targetFileName,
-                    '补丁下载中'
-                  )
-                }
-              })
-
-              res.on('end', () => {
-                fileStream.end()
-                if (totalBytes === 0) {
-                  downloadFraction = 1
-                  emitProgress(
-                    'download',
-                    downloadFraction,
-                    decompressFraction,
-                    targetFileName,
-                    '补丁下载完成'
-                  )
-                }
-                resolve()
-              })
-
-              res.on('error', (err) => {
-                fileStream.destroy()
-                reject(err)
-              })
-            })
-
-            req.on('error', (err) => {
-              fileStream.destroy()
-              reject(err)
-            })
-
-            fileStream.on('error', (err) => reject(err))
+          await Utils.downloadFile(patch.downloadUrl, tmpPath, (downloaded, total, progress) => {
+            downloadFraction = progress
+            emitProgress(
+              'download',
+              downloadFraction,
+              decompressFraction,
+              targetFileName,
+              '补丁下载中'
+            )
           })
 
           console.log('[Main] 补丁文件下载完成，开始解压:', tmpPath)
