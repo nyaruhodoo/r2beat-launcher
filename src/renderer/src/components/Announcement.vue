@@ -21,13 +21,13 @@
         v-else
         :key="item.idx || index"
         class="announcement-item"
-        :title="item.title"
+        :title="filterTitle(item.title)"
         @click="handleAnnouncementClick(item)"
       >
         <span class="announcement-time">{{ formatDate(item.created_at) }}</span>
         <div class="announcement-title-box">
           <span v-if="isToday(item.created_at)" class="announcement-new">NEW</span>
-          <span class="announcement-text">{{ item.title }}</span>
+          <span class="announcement-text">{{ filterTitle(item.title) }}</span>
         </div>
       </div>
     </div>
@@ -88,6 +88,12 @@ const isToday = (dateString: string): boolean => {
   } catch {
     return false
   }
+}
+
+// 过滤标题中的"《音速觉醒》"
+const filterTitle = (title: string): string => {
+  if (!title) return title
+  return title.replace(/《音速觉醒》/g, '').trim()
 }
 
 // 获取公告数据
@@ -172,8 +178,7 @@ useInterval(() => {
 <style scoped>
 .announcement-container {
   width: 100%;
-  height: 100%;
-  min-height: 0;
+  height: 340px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -211,8 +216,7 @@ useInterval(() => {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     scrollbar-gutter: stable;
 
     &::-webkit-scrollbar {

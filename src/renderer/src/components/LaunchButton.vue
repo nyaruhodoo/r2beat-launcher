@@ -262,8 +262,7 @@ useInterval(() => {
   justify-content: end;
   align-items: center;
   gap: 12px;
-  height: 100%;
-  min-height: 0;
+  margin-top: auto;
 }
 
 .launch-btn {
