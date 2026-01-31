@@ -29,6 +29,6 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build and Publish
-        run: npx electron-builder --windows --publish always
+        run: pnpm run build:win -- --publish always
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
