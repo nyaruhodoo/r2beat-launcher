@@ -115,6 +115,7 @@ import aixinImg from '@renderer/assets/imgs/aixin.png'
 import budingImg from '@renderer/assets/imgs/buding.png'
 import WindowResizer from './components/WindowResizer.vue'
 import { useToast } from './composables/useToast'
+import { checkUpdateIntervalTime } from '@config'
 
 const { info } = useToast()
 
@@ -177,6 +178,14 @@ const [theme, setTheme] = useLocalStorageState<Theme>('r2beat-launcher-theme', {
   })()
 })
 
+// 上次检查更新的时间（用于缓存，30分钟内不重复检查）
+const [lastUpdateCheckTime, setLastUpdateCheckTime] = useLocalStorageState<number>(
+  'r2beat_last_update_check_time',
+  {
+    defaultValue: 0
+  }
+)
+
 // 监听主题变化
 watch(
   theme,
@@ -234,6 +243,38 @@ const searchGamePath = async () => {
   }
 }
 
+/**
+ * 检查应用更新（带缓存，30分钟内不重复检查）
+ */
+const checkAppUpdate = async () => {
+  const now = Date.now()
+  const timeSinceLastCheck = now - (lastUpdateCheckTime.value || 0)
+
+  if (timeSinceLastCheck >= checkUpdateIntervalTime) {
+    // 距离上次检查已超过30分钟，执行检查
+    try {
+      const result = await window.api.checkAppUpdate?.()
+      // 更新最后检查时间
+      setLastUpdateCheckTime(now)
+
+      if (result) {
+        info(`发现新版本 ${result.latestVersion}，可以前往网盘或github下载最新版`, 5000)
+        // downloadUrl 已保存在 result.downloadUrl 中，可供后续使用
+      }
+    } catch (error) {
+      console.error('[App] 检查更新失败:', error)
+      // 即使失败也更新检查时间，避免频繁失败重试
+      setLastUpdateCheckTime(now)
+    }
+  } else {
+    // 距离上次检查不足30分钟，跳过本次检查
+    const remainingMinutes = Math.ceil((checkUpdateIntervalTime - timeSinceLastCheck) / (60 * 1000))
+    console.log(
+      `[App] 距离上次检查更新不足30分钟，跳过本次检查（还需等待约 ${remainingMinutes} 分钟）`
+    )
+  }
+}
+
 onMounted(() => {
   // 延迟创建窗口，否则会闪一下很烦
   nextTick(() => {
@@ -243,19 +284,7 @@ onMounted(() => {
   })
 
   searchGamePath()
-
-  // 检查应用更新
-  window.api
-    .checkAppUpdate?.()
-    .then((result) => {
-      if (result) {
-        info(`发现新版本 ${result.latestVersion}，可以前往网盘或github下载最新版`, 5000)
-        // downloadUrl 已保存在 result.downloadUrl 中，可供后续使用
-      }
-    })
-    .catch((error) => {
-      console.error('[App] 检查更新失败:', error)
-    })
+  checkAppUpdate()
 })
 </script>
 

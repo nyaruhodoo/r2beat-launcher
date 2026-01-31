@@ -34,21 +34,14 @@ export const checkServerStatusTime = minutesToMilliseconds(5)
 export const checkUnknownServerStatusTime = minutesToMilliseconds(1)
 
 /**
+ * 登录器版本检查间隔时间
+ */
+export const checkUpdateIntervalTime = minutesToMilliseconds(30)
+
+/**
  * 窗口大小
  */
 export const windowWidth = 1280 * 0.9
 export const windowHeight = 720 * 0.9
 export const minWindowWidth = 1024
 export const minWindowHeight = 768
-
-
-
-
-
-
-
-
-
-
-
-
