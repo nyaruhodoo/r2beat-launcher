@@ -8,17 +8,6 @@
           @switch-account="showLoginModal = true"
           @show-logout-confirm="showLogoutConfirm = true"
         />
-        <a href="https://r2beat.xiyouxi.com/gift/draw" target="_blank">
-          <button class="nav-btn">
-            <img :src="mangheImg" />
-            <span class="nav-text">抽奖中心</span>
-          </button>
-        </a>
-
-        <button class="nav-btn" @click="handleNavClick('recharge')">
-          <img :src="zuanshiImg" />
-          <span class="nav-text">充值中心</span>
-        </button>
 
         <a
           href="https://tieba.baidu.com/f?kw=%E9%9F%B3%E9%80%9F%E8%A7%89%E9%86%92&fr=index"
@@ -30,15 +19,47 @@
           </button>
         </a>
 
-        <button class="nav-btn" @click="showPakModal = true">
-          <img :src="budingImg" />
-          <span class="nav-text">补丁</span>
-        </button>
+        <!-- 抽奖中心和充值中心下拉框 -->
+        <Dropdown :items="giftRechargeItems">
+          <template #trigger="{ isOpen }">
+            <button class="nav-btn">
+              <img :src="mangheImg" />
+              <span class="nav-text">充值</span>
+              <div class="dropdown-icon" :class="{ rotated: isOpen }">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M3 4.5L6 7.5L9 4.5"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </button>
+          </template>
+        </Dropdown>
 
-        <button class="nav-btn" @click="handleNavClick('settings')">
-          <img :src="shezhiImg" />
-          <span class="nav-text">设置</span>
-        </button>
+        <!-- 补丁和设置下拉框 -->
+        <Dropdown :items="patchSettingsItems">
+          <template #trigger="{ isOpen }">
+            <button class="nav-btn">
+              <img :src="budingImg" />
+              <span class="nav-text">设置</span>
+              <div class="dropdown-icon" :class="{ rotated: isOpen }">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M3 4.5L6 7.5L9 4.5"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </button>
+          </template>
+        </Dropdown>
         <ThemeToggle :theme="theme" :toggle-theme="toggleTheme" />
       </template>
     </CustomTitleBar>
@@ -95,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, nextTick, computed } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import CustomTitleBar from './components/CustomTitleBar.vue'
 import Announcement from './components/Announcement.vue'
@@ -107,6 +128,8 @@ import ThemeToggle from './components/ThemeToggle.vue'
 import UserInfoCom from './components/UserInfo.vue'
 import GamePreview from './components/GamePreview.vue'
 import PakModal from './components/PakModal.vue'
+import Dropdown from './components/Dropdown.vue'
+import type { DropdownItem } from './components/Dropdown.vue'
 import { GameSettings, Theme, UserInfo } from '../../types'
 import mangheImg from '@renderer/assets/imgs/manghe.png'
 import zuanshiImg from '@renderer/assets/imgs/zuanshi.png'
@@ -124,6 +147,38 @@ const showSettings = ref(false)
 const showLoginModal = ref(false)
 const showLogoutConfirm = ref(false)
 const showPakModal = ref(false)
+
+// ========== 下拉框菜单项 ==========
+// 抽奖中心和充值中心下拉菜单
+const giftRechargeItems = computed<DropdownItem[]>(() => [
+  {
+    label: '抽奖中心',
+    icon: mangheImg,
+    href: 'https://r2beat.xiyouxi.com/gift/draw',
+    target: '_blank'
+  },
+  {
+    label: '充值中心',
+    icon: zuanshiImg,
+    onClick: () => handleNavClick('recharge')
+  }
+])
+
+// 补丁和设置下拉菜单
+const patchSettingsItems = computed<DropdownItem[]>(() => [
+  {
+    label: '补丁',
+    icon: budingImg,
+    onClick: () => {
+      showPakModal.value = true
+    }
+  },
+  {
+    label: '设置',
+    icon: shezhiImg,
+    onClick: () => handleNavClick('settings')
+  }
+])
 
 /**
  * 一些基础配置

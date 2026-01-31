@@ -189,6 +189,22 @@ const handleClose = () => {
   font-size: 12px;
 }
 
+.title-bar-nav :deep(.dropdown-icon) {
+  color: var(--color-text-tertiary);
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  margin-left: 4px;
+
+  &.rotated {
+    transform: rotate(180deg);
+  }
+}
+
 .title-bar-controls {
   display: flex;
   align-items: center;
