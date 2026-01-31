@@ -167,16 +167,16 @@ const giftRechargeItems = computed<DropdownItem[]>(() => [
 // 补丁和设置下拉菜单
 const patchSettingsItems = computed<DropdownItem[]>(() => [
   {
+    label: '设置',
+    icon: shezhiImg,
+    onClick: () => handleNavClick('settings')
+  },
+  {
     label: '补丁',
     icon: budingImg,
     onClick: () => {
       showPakModal.value = true
     }
-  },
-  {
-    label: '设置',
-    icon: shezhiImg,
-    onClick: () => handleNavClick('settings')
   }
 ])
 
