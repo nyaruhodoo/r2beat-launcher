@@ -295,11 +295,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    */
   ipcMain.handle('get-announcements', async () => {
     try {
-      const urls = [
-        'https://external-api.xiyouxi.com/api/lounge/posts/r2beat/Event/latest/6',
-        'https://external-api.xiyouxi.com/api/lounge/posts/r2beat/RuleAndRegulations/latest/6',
-        'https://external-api.xiyouxi.com/api/lounge/posts/r2beat/Notice/latest/6'
-      ]
+      const urls = ['https://external-api.xiyouxi.com/api/lounge/posts/r2beat/all/latest/7']
 
       const responses = await Promise.all(
         urls.map(async (url, index) => {
@@ -1826,9 +1822,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const comparison = Utils.compareVersions(currentVersion, latestVersion)
 
       if (comparison > 0) {
-        console.log(
-          `[Main] ✨ 发现新版本！当前版本: ${currentVersion}, 最新版本: ${latestVersion}`
-        )
+        console.log(`[Main] ✨ 发现新版本！当前版本: ${currentVersion}, 最新版本: ${latestVersion}`)
         return {
           currentVersion,
           latestVersion,
