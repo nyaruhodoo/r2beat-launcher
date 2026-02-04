@@ -111,6 +111,11 @@ const checkServerStatus = async () => {
         }
       }
     } else {
+      // 如果上次是正常状态，则提醒用户一次
+      if (previousStatus === 'normal') {
+        window.api.showNotification?.('服务器状态异常')
+      }
+
       throw new Error(result?.message)
     }
   } catch (error) {
