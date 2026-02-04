@@ -1229,6 +1229,225 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   )
 
   /**
+   * 根据补丁列表信息下载并解压补丁文件到项目根目录 patch/file 目录中
+   * - 下载前检查目标文件是否已存在（根据 targetFileName 判断），存在则跳过
+   * - 下载完成后使用 lzma-native 解压，解压后的文件命名为 targetFileName
+   * - 解压完成后删除压缩包本身
+   */
+  ipcMain.handle('download-patch-files', async (event, info: PatchUpdateInfo) => {
+    try {
+      const patches = info?.patches ?? []
+      if (!Array.isArray(patches) || patches.length === 0) {
+        throw new Error('没有可下载的补丁文件')
+      }
+
+      const appRoot = Utils.getTargetDir()
+      const targetDir = join(appRoot, 'patch', 'file')
+
+      try {
+        if (!(await exists(targetDir))) {
+          await mkdir(targetDir, { recursive: true })
+        }
+      } catch (error) {
+        console.error('[Main] 创建 patch/file 目录失败:', error)
+        throw new Error('创建补丁文件目录失败')
+      }
+
+      // 节流控制：默认 2 秒上报一次进度
+      let lastProgressTime = 0
+      const totalFiles = patches.length
+      let completedFiles = 0
+
+      const emitProgress = (
+        stage: 'download' | 'decompress' | 'skip',
+        currentFileDownloadFraction: number,
+        currentFileDecompressFraction: number,
+        targetFileName?: string,
+        message?: string
+      ) => {
+        // 计算当前文件的进度（下载占50%，解压占50%）
+        const currentFileProgress =
+          currentFileDownloadFraction * 0.5 + currentFileDecompressFraction * 0.5
+
+        // 计算总体进度：
+        // - 已完成文件占 (completedFiles / totalFiles)
+        // - 当前文件占 (currentFileProgress / totalFiles)
+        const overallProgress = (completedFiles + currentFileProgress) / totalFiles
+        const percent = Math.min(100, Number((overallProgress * 100).toFixed(2)))
+
+        const now = Date.now()
+        // 始终允许 100% 上报；其余情况 2 秒节流一次
+        if (percent < 100 && now - lastProgressTime < 2000) {
+          return
+        }
+        lastProgressTime = now
+
+        event.sender.send('patch-progress', {
+          percent,
+          stage,
+          targetFileName,
+          message
+        })
+      }
+
+      emitProgress('download', 0, 0, undefined, '开始更新补丁')
+
+      for (const patch of patches) {
+        let downloadFraction = 0
+        let decompressFraction = 0
+        const targetFileName = patch.targetFileName
+        if (!targetFileName || !patch.downloadUrl) {
+          continue
+        }
+
+        // 处理文件名可能包含路径的情况，如 "PatchInfo\DeleteFileList.dat"
+        let outDir = targetDir
+        let outFileName = targetFileName
+
+        // 检查文件名是否包含路径分隔符
+        if (targetFileName.includes('\\') || targetFileName.includes('/')) {
+          // 解析路径
+          const pathParts = targetFileName.split(/[\\/]/)
+          outFileName = pathParts[pathParts.length - 1] // 最后一部分是文件名
+
+          // 前面的部分是目录路径
+          if (pathParts.length > 1) {
+            const dirParts = pathParts.slice(0, -1) // 除了最后一部分，都是目录
+            outDir = join(targetDir, ...dirParts)
+
+            // 确保目标目录存在
+            if (!(await exists(outDir))) {
+              await mkdir(outDir, { recursive: true })
+              console.log(`[Main] 已创建目录: ${outDir}`)
+            }
+          }
+        }
+
+        const outPath = join(outDir, outFileName)
+
+        // 若目标文件已存在，则跳过
+        if (await exists(outPath)) {
+          console.log('[Main] 目标文件已存在，跳过下载与解压:', outPath)
+          downloadFraction = 1
+          decompressFraction = 1
+          emitProgress(
+            'skip',
+            downloadFraction,
+            decompressFraction,
+            targetFileName,
+            '目标文件已存在，跳过'
+          )
+          completedFiles++
+          continue
+        }
+
+        // 临时文件保存在相同的目录结构中
+        const tmpPath = join(outDir, patch.patchFileName || `${outFileName}.lzma`)
+        console.log('[Main] 开始下载补丁文件:', patch.downloadUrl)
+
+        try {
+          await Utils.downloadFile(patch.downloadUrl, tmpPath, (_downloaded, _total, progress) => {
+            downloadFraction = progress
+            emitProgress(
+              'download',
+              downloadFraction,
+              decompressFraction,
+              targetFileName,
+              '补丁下载中'
+            )
+          })
+
+          console.log('[Main] 补丁文件下载完成，开始解压:', tmpPath)
+
+          downloadFraction = 1
+          emitProgress(
+            'download',
+            downloadFraction,
+            decompressFraction,
+            targetFileName,
+            '补丁下载完成'
+          )
+
+          // 使用流的方式解压 .lzma 到目标文件
+          let totalDecompressBytes = 0
+          try {
+            const statResult = await stat(tmpPath)
+            totalDecompressBytes = statResult.size
+          } catch {
+            totalDecompressBytes = 0
+          }
+
+          await new Promise<void>((resolve, reject) => {
+            const decoder = lzma.createDecompressor()
+            const source = createReadStream(tmpPath)
+            const dest = createWriteStream(outPath)
+
+            let decompressedBytes = 0
+
+            source.on('data', (chunk) => {
+              decompressedBytes += chunk.length
+              if (totalDecompressBytes > 0) {
+                decompressFraction = Math.min(1, decompressedBytes / totalDecompressBytes)
+                emitProgress(
+                  'decompress',
+                  downloadFraction,
+                  decompressFraction,
+                  targetFileName,
+                  '补丁解压中'
+                )
+              }
+            })
+
+            source.on('error', (err) => reject(err))
+            dest.on('error', (err) => reject(err))
+            dest.on('finish', () => resolve())
+
+            source.pipe(decoder).pipe(dest)
+          })
+
+          // 解压完成后删除临时压缩包（异步）
+          try {
+            await unlink(tmpPath)
+          } catch (error) {
+            console.warn('[Main] 删除临时补丁文件失败（可忽略）:', tmpPath, error)
+          }
+
+          console.log('[Main] 补丁解压完成:', outPath)
+          decompressFraction = 1
+          emitProgress(
+            'decompress',
+            downloadFraction,
+            decompressFraction,
+            targetFileName,
+            '补丁解压完成'
+          )
+          completedFiles++
+        } catch (error) {
+          const errorMsg = `处理补丁文件失败: ${patch.downloadUrl} - ${error instanceof Error ? error.message : String(error)}`
+          console.error('[Main]', errorMsg)
+          throw new Error(errorMsg)
+        }
+      }
+
+      // 确保所有文件处理完成后，进度为 100%
+      if (completedFiles < totalFiles) {
+        completedFiles = totalFiles
+      }
+      emitProgress('decompress', 1, 1, undefined, '所有补丁文件处理完成')
+
+      return {
+        success: true
+      }
+    } catch (error) {
+      console.error('[Main] download-patch-files 处理失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '下载并解压补丁文件时发生未知错误'
+      }
+    }
+  })
+
+  /**
    * 应用补丁文件到游戏目录：
    * 1. 将 patch/file 下的文件复制并覆盖到 gamePath
    * 2. 更新 PatchInfo/Patch.ini 中的 patch.version 为最新版本
@@ -1573,225 +1792,6 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       return {
         success: false,
         error: error instanceof Error ? error.message : '应用补丁文件时发生未知错误'
-      }
-    }
-  })
-
-  /**
-   * 根据补丁列表信息下载并解压补丁文件到项目根目录 patch/file 目录中
-   * - 下载前检查目标文件是否已存在（根据 targetFileName 判断），存在则跳过
-   * - 下载完成后使用 lzma-native 解压，解压后的文件命名为 targetFileName
-   * - 解压完成后删除压缩包本身
-   */
-  ipcMain.handle('download-patch-files', async (event, info: PatchUpdateInfo) => {
-    try {
-      const patches = info?.patches ?? []
-      if (!Array.isArray(patches) || patches.length === 0) {
-        throw new Error('没有可下载的补丁文件')
-      }
-
-      const appRoot = Utils.getTargetDir()
-      const targetDir = join(appRoot, 'patch', 'file')
-
-      try {
-        if (!(await exists(targetDir))) {
-          await mkdir(targetDir, { recursive: true })
-        }
-      } catch (error) {
-        console.error('[Main] 创建 patch/file 目录失败:', error)
-        throw new Error('创建补丁文件目录失败')
-      }
-
-      // 节流控制：默认 2 秒上报一次进度
-      let lastProgressTime = 0
-      const totalFiles = patches.length
-      let completedFiles = 0
-
-      const emitProgress = (
-        stage: 'download' | 'decompress' | 'skip',
-        currentFileDownloadFraction: number,
-        currentFileDecompressFraction: number,
-        targetFileName?: string,
-        message?: string
-      ) => {
-        // 计算当前文件的进度（下载占50%，解压占50%）
-        const currentFileProgress =
-          currentFileDownloadFraction * 0.5 + currentFileDecompressFraction * 0.5
-
-        // 计算总体进度：
-        // - 已完成文件占 (completedFiles / totalFiles)
-        // - 当前文件占 (currentFileProgress / totalFiles)
-        const overallProgress = (completedFiles + currentFileProgress) / totalFiles
-        const percent = Math.min(100, Number((overallProgress * 100).toFixed(2)))
-
-        const now = Date.now()
-        // 始终允许 100% 上报；其余情况 2 秒节流一次
-        if (percent < 100 && now - lastProgressTime < 2000) {
-          return
-        }
-        lastProgressTime = now
-
-        event.sender.send('patch-progress', {
-          percent,
-          stage,
-          targetFileName,
-          message
-        })
-      }
-
-      emitProgress('download', 0, 0, undefined, '开始更新补丁')
-
-      for (const patch of patches) {
-        let downloadFraction = 0
-        let decompressFraction = 0
-        const targetFileName = patch.targetFileName
-        if (!targetFileName || !patch.downloadUrl) {
-          continue
-        }
-
-        // 处理文件名可能包含路径的情况，如 "PatchInfo\DeleteFileList.dat"
-        let outDir = targetDir
-        let outFileName = targetFileName
-
-        // 检查文件名是否包含路径分隔符
-        if (targetFileName.includes('\\') || targetFileName.includes('/')) {
-          // 解析路径
-          const pathParts = targetFileName.split(/[\\/]/)
-          outFileName = pathParts[pathParts.length - 1] // 最后一部分是文件名
-
-          // 前面的部分是目录路径
-          if (pathParts.length > 1) {
-            const dirParts = pathParts.slice(0, -1) // 除了最后一部分，都是目录
-            outDir = join(targetDir, ...dirParts)
-
-            // 确保目标目录存在
-            if (!(await exists(outDir))) {
-              await mkdir(outDir, { recursive: true })
-              console.log(`[Main] 已创建目录: ${outDir}`)
-            }
-          }
-        }
-
-        const outPath = join(outDir, outFileName)
-
-        // 若目标文件已存在，则跳过
-        if (await exists(outPath)) {
-          console.log('[Main] 目标文件已存在，跳过下载与解压:', outPath)
-          downloadFraction = 1
-          decompressFraction = 1
-          emitProgress(
-            'skip',
-            downloadFraction,
-            decompressFraction,
-            targetFileName,
-            '目标文件已存在，跳过'
-          )
-          completedFiles++
-          continue
-        }
-
-        // 临时文件保存在相同的目录结构中
-        const tmpPath = join(outDir, patch.patchFileName || `${outFileName}.lzma`)
-        console.log('[Main] 开始下载补丁文件:', patch.downloadUrl)
-
-        try {
-          await Utils.downloadFile(patch.downloadUrl, tmpPath, (_downloaded, _total, progress) => {
-            downloadFraction = progress
-            emitProgress(
-              'download',
-              downloadFraction,
-              decompressFraction,
-              targetFileName,
-              '补丁下载中'
-            )
-          })
-
-          console.log('[Main] 补丁文件下载完成，开始解压:', tmpPath)
-
-          downloadFraction = 1
-          emitProgress(
-            'download',
-            downloadFraction,
-            decompressFraction,
-            targetFileName,
-            '补丁下载完成'
-          )
-
-          // 使用流的方式解压 .lzma 到目标文件
-          let totalDecompressBytes = 0
-          try {
-            const statResult = await stat(tmpPath)
-            totalDecompressBytes = statResult.size
-          } catch {
-            totalDecompressBytes = 0
-          }
-
-          await new Promise<void>((resolve, reject) => {
-            const decoder = lzma.createDecompressor()
-            const source = createReadStream(tmpPath)
-            const dest = createWriteStream(outPath)
-
-            let decompressedBytes = 0
-
-            source.on('data', (chunk) => {
-              decompressedBytes += chunk.length
-              if (totalDecompressBytes > 0) {
-                decompressFraction = Math.min(1, decompressedBytes / totalDecompressBytes)
-                emitProgress(
-                  'decompress',
-                  downloadFraction,
-                  decompressFraction,
-                  targetFileName,
-                  '补丁解压中'
-                )
-              }
-            })
-
-            source.on('error', (err) => reject(err))
-            dest.on('error', (err) => reject(err))
-            dest.on('finish', () => resolve())
-
-            source.pipe(decoder).pipe(dest)
-          })
-
-          // 解压完成后删除临时压缩包（异步）
-          try {
-            await unlink(tmpPath)
-          } catch (error) {
-            console.warn('[Main] 删除临时补丁文件失败（可忽略）:', tmpPath, error)
-          }
-
-          console.log('[Main] 补丁解压完成:', outPath)
-          decompressFraction = 1
-          emitProgress(
-            'decompress',
-            downloadFraction,
-            decompressFraction,
-            targetFileName,
-            '补丁解压完成'
-          )
-          completedFiles++
-        } catch (error) {
-          const errorMsg = `处理补丁文件失败: ${patch.downloadUrl} - ${error instanceof Error ? error.message : String(error)}`
-          console.error('[Main]', errorMsg)
-          throw new Error(errorMsg)
-        }
-      }
-
-      // 确保所有文件处理完成后，进度为 100%
-      if (completedFiles < totalFiles) {
-        completedFiles = totalFiles
-      }
-      emitProgress('decompress', 1, 1, undefined, '所有补丁文件处理完成')
-
-      return {
-        success: true
-      }
-    } catch (error) {
-      console.error('[Main] download-patch-files 处理失败:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '下载并解压补丁文件时发生未知错误'
       }
     }
   })
