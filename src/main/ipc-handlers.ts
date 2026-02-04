@@ -658,20 +658,34 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
                         }
 
                         try {
-                          // 设置 CPU 亲和性：限制只使用第一个 CPU 核心（位掩码 1 = CPU 0）
-                          const result = await spawnPromise(
-                            'powershell',
-                            [
-                              '-Command',
-                              `$proc = Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if ($proc) { $proc.ProcessorAffinity = 1; Write-Host "Success" } else { Write-Host "Process not found" }`
-                            ],
-                            {
-                              collectStdout: true,
-                              collectStderr: false
+                          // 计算最后一个核心的掩码并设置
+                          // 原理：2的(核心数-1)次方。例如 4核系统，掩码是 2^3 = 8 (二进制 1000)
+                          const psCommand = `
+                            $coreCount = $env:NUMBER_OF_PROCESSORS;
+                            # 计算 2 的 (n-1) 次方，并强制转换为 64 位整数
+                            $maskValue = [int64][Math]::Pow(2, $coreCount - 1);
+                            
+                            $proc = Get-Process -Id ${pid} -ErrorAction SilentlyContinue;
+                            if ($proc) {
+                              try {
+                                # 将 64 位整数转换为系统指针类型执行赋值
+                                $proc.ProcessorAffinity = [System.IntPtr]$maskValue;
+                                Write-Host "SUCCESS_CONFIRM: Mask set to $maskValue";
+                              } catch {
+                                Write-Host "SET_FAILED: $($_.Exception.Message)";
+                              }
+                            } else {
+                              Write-Host "PROCESS_NOT_FOUND";
                             }
-                          )
+                          `
 
-                          if (result.code === 0 && result.stdout.includes('Success')) {
+                          // 设置 CPU 亲和性：限制只使用最后一个 CPU 核心
+                          const result = await spawnPromise('powershell', ['-Command', psCommand], {
+                            collectStdout: true,
+                            collectStderr: false
+                          })
+
+                          if (result.code === 0 && !result.stderr) {
                             console.log(
                               `[Main] 已限制进程只使用一个 CPU 核心: ${name} (pid=${pid})`
                             )
