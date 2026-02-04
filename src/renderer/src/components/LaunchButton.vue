@@ -107,7 +107,7 @@ const checkServerStatus = async () => {
           executeLaunch()
         } else {
           // 未开启自动登录：仅通过系统通知告知用户服务已恢复
-          window.api.showNotification?.('服务器状态已恢复正常', '现在可以尝试重新启动游戏。')
+          window.api.showNotification?.('服务器状态已恢复正常')
         }
       }
     } else {

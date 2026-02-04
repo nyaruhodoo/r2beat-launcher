@@ -317,7 +317,7 @@ export interface ContextBridgeApi {
   windowShow?: () => void
   windowMinimize?: () => void
   windowClose?: () => void
-  showNotification?: (title: string, body: string) => void
+  showNotification?: (title: string, body?: string) => void
   getAnnouncements?: () => Promise<AnnouncementData[]>
   getAnnouncementDetail?: (
     path: string,
@@ -395,7 +395,11 @@ export interface ContextBridgeApi {
   }>
   getPaks?: (gamePath: string) => Promise<GetPaksResult>
   copyPakToGame?: (srcPath: string, gamePath: string) => Promise<CopyPakToGameResult>
-  savePakToGame?: (fileName: string, fileData: Uint8Array, gamePath: string) => Promise<CopyPakToGameResult>
+  savePakToGame?: (
+    fileName: string,
+    fileData: Uint8Array,
+    gamePath: string
+  ) => Promise<CopyPakToGameResult>
   movePakToMods?: (srcPath: string) => Promise<MovePakToModsResult>
   deletePak?: (srcPath: string) => Promise<DeletePakResult>
   checkAppUpdate?: () => Promise<
