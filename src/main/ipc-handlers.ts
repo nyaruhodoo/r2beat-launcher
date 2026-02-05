@@ -14,7 +14,7 @@ import {
   rm
 } from 'fs/promises'
 import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
-import { AnnouncementData, Announcementlist, PatchUpdateInfo, ProcessPriority } from '@types'
+import { AnnouncementData, R2BeatNoticeData, PatchUpdateInfo, ProcessPriority } from '@types'
 import { sendTcpLoginRequest } from './tcp-login'
 import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
 import lzma from 'lzma-native'
@@ -253,14 +253,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     async (
       _event,
       {
-        path,
         idx
       }: {
         path: string
         idx: number
       }
     ) => {
-      const fetchUrl = `https://external-api.xiyouxi.com/api/vfunlounge/posts/r2beat/${path}?lang=cn&page=1&search=`
+      const fetchUrl = `https://external-api.xiyouxi.com/api/vfunlounge/posts/r2beat/all/${idx}`
 
       try {
         const response = await fetch(fetchUrl)
@@ -270,16 +269,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           throw new Error('获取公告详情失败')
         }
 
-        const result = (await response.json()) as Announcementlist
-        const list = result?.data?.data ?? []
+        const data = (await response.json()) as R2BeatNoticeData
 
-        const target = list.find((item) => item.idx === idx)
-        if (!target) {
-          console.warn('[Main] 未找到匹配的公告详情，idx:', idx)
-          throw new Error('未找到公告详情')
+        if (data.result !== 1) {
+          throw new Error('获取公告详情失败')
         }
 
-        return { success: true, data: target }
+        return { success: true, data: data.data }
       } catch (error) {
         console.error('[Main] 获取公告详情异常:', error)
         return {

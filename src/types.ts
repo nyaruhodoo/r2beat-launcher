@@ -412,10 +412,48 @@ export interface ContextBridgeApi {
   >
 }
 
-export interface Announcementlist {
+export interface R2BeatNoticeData {
   result: number
   data: {
-    current_page: number
-    data: { idx: number; section: number; content: string }[]
+    // 公告索引ID
+    idx: number
+    // 服务编码
+    service_code: string
+    // 分区标识
+    section: number
+    // 语言类型（cn 表示中文）
+    language: string
+    // 公告标题
+    title: string
+    // 发布者昵称（空字符串）
+    nickname: string
+    // 公告内容（包含HTML标签）
+    content: string
+    // 图片列表（当前为null）
+    images: null | string[] // 兼容可能的非null场景，定义为null或字符串数组
+    // 公告状态（1 通常表示有效）
+    status: number
+    // 用户ID（当前为null）
+    user_id: null | number | string // 兼容可能的非null场景
+    // 点赞数
+    like_count: number
+    // 评论数（冗余字段，和comments_count一致）
+    comment_count: number
+    // 管理员标识（1 表示管理员发布）
+    admin_flag: number
+    // 创建时间
+    created_at: string
+    // 更新时间
+    updated_at: string
+    // 置顶标识（0 表示未置顶）
+    top_flag: number
+    // 发布者IP地址
+    user_ip: string
+    // 用户点赞状态（0 表示未点赞）
+    user_like_status: number
+    // 评论数
+    comments_count: number
+    // 管理员图标URL
+    admin_icon: string
   }
 }
