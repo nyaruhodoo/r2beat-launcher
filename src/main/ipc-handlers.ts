@@ -20,6 +20,7 @@ import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
 import lzma from 'lzma-native'
 import { Utils } from './utils'
 import { hookDll } from './hookDll'
+import icon from '../../build/game.ico?asset'
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
@@ -85,7 +86,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           const notification = new Notification({
             title,
             body,
-            silent: false
+            silent: false,
+            icon
           })
 
           // 点击通知时唤醒主窗口
