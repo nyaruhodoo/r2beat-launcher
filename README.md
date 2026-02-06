@@ -1,7 +1,5 @@
 # r2beat-launcher
 
-An Electron application with Vue and TypeScript
-
 自用游戏启动器，完善中
 
 - [x] 最低支持1元充值
@@ -9,5 +7,6 @@ An Electron application with Vue and TypeScript
 - [x] 系统公告预览
 - [x] 进程优先级调整
 - [x] 快速启动(有点BUG)
-- [x] 无限保存账号密码
+- [x] 无限保存账号密码(可加备注)
 - [x] MOD 管理工具
+- [x] 游戏相册

@@ -1446,26 +1446,35 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('创建补丁文件目录失败')
       }
 
+      const totalFiles = patches.length
+      // 用于整体进度统计：每个文件的下载/解压进度分别记录
+      const downloadFractions = new Array<number>(totalFiles).fill(0)
+      const decompressFractions = new Array<number>(totalFiles).fill(0)
+
       // 节流控制：默认 2 秒上报一次进度
       let lastProgressTime = 0
-      const totalFiles = patches.length
-      let completedFiles = 0
 
+      /**
+       * 上报函数
+       */
       const emitProgress = (
+        index: number,
         stage: 'download' | 'decompress' | 'skip',
         currentFileDownloadFraction: number,
         currentFileDecompressFraction: number,
         targetFileName?: string,
         message?: string
       ) => {
-        // 计算当前文件的进度（下载占50%，解压占50%）
-        const currentFileProgress =
-          currentFileDownloadFraction * 0.5 + currentFileDecompressFraction * 0.5
+        downloadFractions[index] = currentFileDownloadFraction
+        decompressFractions[index] = currentFileDecompressFraction
 
-        // 计算总体进度：
-        // - 已完成文件占 (completedFiles / totalFiles)
-        // - 当前文件占 (currentFileProgress / totalFiles)
-        const overallProgress = (completedFiles + currentFileProgress) / totalFiles
+        // 计算总体进度：每个文件下载/解压各占 50%
+        let sum = 0
+        for (let i = 0; i < totalFiles; i++) {
+          const fileProgress = downloadFractions[i] * 0.5 + decompressFractions[i] * 0.5
+          sum += fileProgress
+        }
+        const overallProgress = sum / totalFiles
         const percent = Math.min(100, Number((overallProgress * 100).toFixed(2)))
 
         const now = Date.now()
@@ -1483,14 +1492,18 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         })
       }
 
-      emitProgress('download', 0, 0, undefined, '开始更新补丁')
+      emitProgress(0, 'download', 0, 0, undefined, '开始更新补丁')
 
-      for (const patch of patches) {
+      /**
+       * 针对单个补丁的下载+解压
+       */
+      const processSinglePatch = async (patchIndex: number) => {
+        const patch = patches[patchIndex]
         let downloadFraction = 0
         let decompressFraction = 0
         const targetFileName = patch.targetFileName
         if (!targetFileName || !patch.downloadUrl) {
-          continue
+          return
         }
 
         // 处理文件名可能包含路径的情况，如 "PatchInfo\DeleteFileList.dat"
@@ -1524,14 +1537,14 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           downloadFraction = 1
           decompressFraction = 1
           emitProgress(
+            patchIndex,
             'skip',
             downloadFraction,
             decompressFraction,
             targetFileName,
             '目标文件已存在，跳过'
           )
-          completedFiles++
-          continue
+          return
         }
 
         // 临时文件保存在相同的目录结构中
@@ -1542,6 +1555,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           await Utils.downloadFile(patch.downloadUrl, tmpPath, (_downloaded, _total, progress) => {
             downloadFraction = progress
             emitProgress(
+              patchIndex,
               'download',
               downloadFraction,
               decompressFraction,
@@ -1554,6 +1568,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
           downloadFraction = 1
           emitProgress(
+            patchIndex,
             'download',
             downloadFraction,
             decompressFraction,
@@ -1582,6 +1597,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               if (totalDecompressBytes > 0) {
                 decompressFraction = Math.min(1, decompressedBytes / totalDecompressBytes)
                 emitProgress(
+                  patchIndex,
                   'decompress',
                   downloadFraction,
                   decompressFraction,
@@ -1608,13 +1624,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           console.log('[Main] 补丁解压完成:', outPath)
           decompressFraction = 1
           emitProgress(
+            patchIndex,
             'decompress',
             downloadFraction,
             decompressFraction,
             targetFileName,
             '补丁解压完成'
           )
-          completedFiles++
         } catch (error) {
           const errorMsg = `处理补丁文件失败: ${patch.downloadUrl} - ${error instanceof Error ? error.message : String(error)}`
           console.error('[Main]', errorMsg)
@@ -1622,11 +1638,28 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         }
       }
 
-      // 确保所有文件处理完成后，进度为 100%
-      if (completedFiles < totalFiles) {
-        completedFiles = totalFiles
+      // 并发处理，根据测试觉醒最多也就允许3个，超出了会被强行断开链接
+      const maxConcurrency = 3
+      let currentIndex = 0
+
+      const worker = async () => {
+        while (true) {
+          const index = currentIndex++
+          if (index >= totalFiles) break
+          await processSinglePatch(index)
+        }
       }
-      emitProgress('decompress', 1, 1, undefined, '所有补丁文件处理完成')
+
+      const workers: Promise<void>[] = []
+      const workerCount = Math.min(maxConcurrency, totalFiles)
+      for (let i = 0; i < workerCount; i++) {
+        workers.push(worker())
+      }
+
+      await Promise.all(workers)
+
+      // 确保所有文件处理完成后，进度为 100%
+      emitProgress(totalFiles - 1, 'decompress', 1, 1, undefined, '所有补丁文件处理完成')
 
       return {
         success: true

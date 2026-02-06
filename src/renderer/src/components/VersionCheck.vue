@@ -104,11 +104,26 @@ const showProgressBar = computed(() => {
 })
 
 const patchProgressTitle = computed(() => {
+  const percent = patchProgressPercent.value ?? 0
   const stage = patchProgressStage.value
-  if (stage === 'download') return '正在下载'
-  if (stage === 'decompress') return '正在解压'
-  if (stage === 'skip') return '已跳过'
-  return '处理中'
+
+  if (!stage || percent <= 0) {
+    return '准备更新补丁'
+  }
+
+  if (stage === 'download') {
+    return '正在下载'
+  }
+
+  if (stage === 'decompress') {
+    return '正在解压'
+  }
+
+  if (stage === 'skip') {
+    return '文件已存在，跳过处理'
+  }
+
+  return '正在处理'
 })
 
 const totalSizeGbText = computed<string | null>(() => {
@@ -177,6 +192,7 @@ const loadLocalVersion = async () => {
     const result = await window.api.readPatchInfo?.(path)
     if (result?.success && result.data) {
       currentVersion.value = result.data.patch.version.toString().padStart(5, '0')
+      // currentVersion.value = '00001'
     } else {
       throw new Error(result?.error)
     }
