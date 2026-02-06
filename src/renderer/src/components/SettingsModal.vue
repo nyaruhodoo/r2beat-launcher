@@ -51,6 +51,7 @@
 
         <div class="checkbox-group">
           <Checkbox v-model="graphicsQuality">描边</Checkbox>
+          <Checkbox v-model="jitterShake">禁止画面抖动</Checkbox>
         </div>
       </div>
     </div>
@@ -215,6 +216,20 @@ const graphicsQuality = computed({
   }
 })
 
+const jitterShake = computed({
+  get: () => {
+    if (!configIniJson.value?.JITTER) return false
+    return configIniJson.value.JITTER.ONOFF === 1
+  },
+  set: (value: boolean) => {
+    if (!configIniJson.value) return
+    if (!configIniJson.value.JITTER) {
+      configIniJson.value.JITTER = { ONOFF: 0 }
+    }
+    configIniJson.value.JITTER.ONOFF = value ? 1 : 0
+  }
+})
+
 const audioEffects = computed({
   get: () => {
     if (!configIniJson.value?.SOUND) return true
@@ -341,7 +356,6 @@ watch(
     }
   }
 )
-
 </script>
 
 <style scoped>
