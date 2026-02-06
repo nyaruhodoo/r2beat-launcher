@@ -481,6 +481,58 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   })
 
   /**
+   * 重置 GameGuard：删除游戏目录下的 GameGuard 文件夹
+   * - 传入 gamePath
+   * - 若 Game.exe 正在运行则拒绝执行
+   * - 若不存在 GameGuard 则跳过
+   */
+  ipcMain.handle('reset-gg', async (_event, gamePath: string) => {
+    try {
+      if (!gamePath || typeof gamePath !== 'string' || gamePath.trim() === '') {
+        throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
+      }
+
+      // 移除前需要检查 Game.exe 是否在运行中（参考 apply-patch-files）
+      if (process.platform === 'win32') {
+        const processName = 'Game.exe'
+
+        const result = await spawnPromise('tasklist', ['/FI', `IMAGENAME eq ${processName}`], {
+          collectStdout: true,
+          collectStderr: false
+        })
+
+        const output = result.stdout.toLowerCase()
+        if (output.includes(processName.toLowerCase())) {
+          throw new Error(`${processName} 正在运行中，请关闭后重试`)
+        }
+      }
+
+      const ggDir = join(gamePath, 'GameGuard')
+
+      if (!(await exists(ggDir))) {
+        // 不存在直接算成功（跳过也算成功）
+        return { success: true }
+      }
+
+      // 仅当确实是目录才删除
+      const ggStat = await stat(ggDir)
+      if (!ggStat.isDirectory()) {
+        return { success: true }
+      }
+
+      await rm(ggDir, { recursive: true, force: true })
+
+      return { success: true }
+    } catch (error) {
+      console.error('[Main] reset-gg 失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '重置 GameGuard 时发生未知错误'
+      }
+    }
+  })
+
+  /**
    * 启动游戏
    */
   ipcMain.handle(

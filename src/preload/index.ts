@@ -134,6 +134,10 @@ const api = {
   checkAppUpdate: async () => {
     const result = await ipcRenderer.invoke('check-app-update')
     return result
+  },
+  resetGG: async (gamePath: string): Promise<{ success: boolean; error?: string }> => {
+    const result = await ipcRenderer.invoke('reset-gg', gamePath)
+    return result
   }
 }
 

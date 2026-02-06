@@ -136,11 +136,13 @@ import zuanshiImg from '@renderer/assets/imgs/zuanshi.png'
 import shezhiImg from '@renderer/assets/imgs/shezhi.png'
 import aixinImg from '@renderer/assets/imgs/aixin.png'
 import budingImg from '@renderer/assets/imgs/buding.png'
+import shanchuImg from '@renderer/assets/imgs/shanchu.png'
 import WindowResizer from './components/WindowResizer.vue'
 import { useToast } from './composables/useToast'
 import { checkUpdateIntervalTime } from '@config'
+import { confirm } from './composables/useConfirm'
 
-const { info } = useToast()
+const { info, success, error } = useToast()
 
 // ========== 状态管理 ==========
 const showSettings = ref(false)
@@ -176,6 +178,31 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
     icon: budingImg,
     onClick: () => {
       showPakModal.value = true
+    }
+  },
+  {
+    label: '重置GG',
+    icon: shanchuImg,
+    onClick: async () => {
+      await confirm({
+        message:
+          '该功能会移除游戏目录下的 GameGuard ，如果你经常遇到游戏弹出相关警告，或许可以通过该功能修复'
+      })
+
+      const gamePath = gameSettings.value?.gamePath
+      if (!gamePath) {
+        info('请先在设置中配置游戏目录')
+        return
+      }
+
+      const res = await window.api.resetGG?.(gamePath)
+
+      if (!res?.success) {
+        error(res?.error || '重置GG失败')
+        return
+      }
+
+      success('重置GG完成')
     }
   }
 ])

@@ -75,7 +75,7 @@ export function confirm(options: ConfirmOptions): Promise<void> {
           if (!visibleRef) return null
           return h(ConfirmDialog, {
             visible: visibleRef.value,
-            title: options.title ?? '确认',
+            title: options.title ?? '提示',
             message: options.message,
             confirmText: options.confirmText ?? '确认',
             cancelText: options.cancelText ?? '取消',
@@ -90,4 +90,3 @@ export function confirm(options: ConfirmOptions): Promise<void> {
     app.mount(container)
   })
 }
-

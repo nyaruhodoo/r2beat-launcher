@@ -410,6 +410,7 @@ export interface ContextBridgeApi {
       }
     | undefined
   >
+  resetGG?: (gamePath: string) => Promise<{ success: boolean; error?: string }>
 }
 
 export interface R2BeatNoticeData {
