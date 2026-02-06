@@ -533,6 +533,104 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   })
 
   /**
+   * 获取截图目录下的所有图片文件
+   * - 读取 gamePath/SCREENSHOT 目录（不存在则返回空数组）
+   * - 递归读取子目录
+   */
+  ipcMain.handle('get-screenshots', async (_event, gamePath: string) => {
+    try {
+      if (!gamePath || typeof gamePath !== 'string' || gamePath.trim() === '') {
+        throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
+      }
+
+      const screenshotDir = join(gamePath, 'SCREENSHOT')
+      if (!(await exists(screenshotDir))) {
+        return { success: true, files: [] as Array<{ name: string; path: string }> }
+      }
+
+      const imageExts = new Set([
+        '.png',
+        '.jpg',
+        '.jpeg',
+        '.gif',
+        '.webp',
+        '.bmp',
+        '.tif',
+        '.tiff',
+        '.avif'
+      ])
+
+      const files: Array<{ name: string; path: string }> = []
+
+      const walk = async (dir: string) => {
+        const entries = await readdir(dir, { withFileTypes: true })
+        for (const entry of entries) {
+          const fullPath = join(dir, entry.name)
+          if (entry.isDirectory()) {
+            await walk(fullPath)
+            continue
+          }
+          if (!entry.isFile()) continue
+
+          const lowerName = entry.name.toLowerCase()
+          const dot = lowerName.lastIndexOf('.')
+          const ext = dot >= 0 ? lowerName.slice(dot) : ''
+          if (!imageExts.has(ext)) continue
+
+          files.push({ name: entry.name, path: fullPath })
+        }
+      }
+
+      const dirStat = await stat(screenshotDir)
+      if (!dirStat.isDirectory()) {
+        return { success: true, files: [] as Array<{ name: string; path: string }> }
+      }
+
+      await walk(screenshotDir)
+
+      // 简单按文件名倒序（通常截图文件名含时间）
+      files.sort((a, b) => b.name.localeCompare(a.name))
+
+      return { success: true, files }
+    } catch (error) {
+      console.error('[Main] get-screenshots 失败:', error)
+      return {
+        success: false,
+        files: [],
+        error: error instanceof Error ? error.message : '获取截图列表时发生未知错误'
+      }
+    }
+  })
+
+  /**
+   * 使用系统默认图片查看器打开指定图片
+   */
+  ipcMain.handle('open-screenshot', async (_event, filePath: string) => {
+    try {
+      if (!filePath || typeof filePath !== 'string') {
+        throw new Error('文件路径为空')
+      }
+
+      if (!(await exists(filePath))) {
+        throw new Error('文件不存在')
+      }
+
+      const err = await shell.openPath(filePath)
+      if (err) {
+        throw new Error(err)
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('[Main] open-screenshot 失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '打开图片失败'
+      }
+    }
+  })
+
+  /**
    * 启动游戏
    */
   ipcMain.handle(
@@ -1119,6 +1217,37 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         success: false,
         status: 'ERROR',
         error: error instanceof Error ? error.message : 'TCP 登录时发生未知错误'
+      }
+    }
+  })
+
+  /**
+   * 删除指定截图文件
+   */
+  ipcMain.handle('delete-screenshot', async (_event, filePath: string) => {
+    try {
+      if (!filePath) {
+        throw new Error('删除路径为空')
+      }
+
+      if (await exists(filePath)) {
+        const info = await stat(filePath)
+        if (info.isFile()) {
+          await unlink(filePath)
+        } else {
+          throw new Error('目标不是文件')
+        }
+      } else {
+        // 文件不存在也视为成功
+        return { success: true }
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('[Main] delete-screenshot 失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '删除截图时发生未知错误'
       }
     }
   })

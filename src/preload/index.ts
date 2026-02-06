@@ -138,6 +138,20 @@ const api = {
   resetGG: async (gamePath: string): Promise<{ success: boolean; error?: string }> => {
     const result = await ipcRenderer.invoke('reset-gg', gamePath)
     return result
+  },
+  getScreenshots: async (
+    gamePath: string
+  ): Promise<{ success: boolean; files: Array<{ name: string; path: string }>; error?: string }> => {
+    const result = await ipcRenderer.invoke('get-screenshots', gamePath)
+    return result
+  },
+  openScreenshot: async (filePath: string): Promise<{ success: boolean; error?: string }> => {
+    const result = await ipcRenderer.invoke('open-screenshot', filePath)
+    return result
+  },
+  deleteScreenshot: async (filePath: string): Promise<{ success: boolean; error?: string }> => {
+    const result = await ipcRenderer.invoke('delete-screenshot', filePath)
+    return result
   }
 }
 

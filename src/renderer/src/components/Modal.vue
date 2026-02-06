@@ -5,7 +5,10 @@
         <!-- 标题栏 -->
         <div class="modal-header">
           <h2 class="modal-title">
-            <span v-if="titleIcon" class="title-icon">{{ titleIcon }}</span>
+            <span v-if="titleIcon || titleIconImg" class="title-icon">
+              <img v-if="titleIconImg" class="title-icon-img" :src="titleIconImg" alt="" />
+              <span v-else>{{ titleIcon }}</span>
+            </span>
             <slot name="header">
               {{ title }}
             </slot>
@@ -45,11 +48,15 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import useEventListener from 'vue-hooks-plus/lib/useEventListener'
+
+const props = withDefaults(
   defineProps<{
     visible: boolean
     title?: string
     titleIcon?: string
+    /** 可选：使用图片作为标题图标（优先级高于 titleIcon 文本） */
+    titleIconImg?: string
     confirmText?: string
     cancelText?: string
     showCancel?: boolean
@@ -93,6 +100,13 @@ const handleConfirm = () => {
 const handleCancel = () => {
   emit('cancel')
 }
+
+// 统一 ESC 关闭逻辑：所有使用 Modal 的组件自动支持按下 ESC 关闭
+useEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && props.visible) {
+    emit('close')
+  }
+})
 </script>
 
 <style scoped>
@@ -157,6 +171,13 @@ const handleCancel = () => {
 
 .title-icon {
   font-size: 20px;
+}
+
+.title-icon-img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
 }
 
 .close-btn {
@@ -321,21 +342,3 @@ const handleCancel = () => {
   opacity: 0;
 }
 </style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

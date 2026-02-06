@@ -208,12 +208,6 @@ watch(
   }
 )
 
-// ESC 键关闭弹框
-useEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && props.visible) {
-    handleClose()
-  }
-})
 // 点击外部关闭下拉框
 useEventListener('click', (event) => {
   if (accountSelectRef.value && !accountSelectRef.value.contains(event.target as Node)) {

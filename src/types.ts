@@ -313,6 +313,17 @@ export interface GetPaksResult {
   error?: string
 }
 
+export interface ScreenshotFileInfo {
+  name: string
+  path: string
+}
+
+export interface GetScreenshotsResult {
+  success: boolean
+  files: ScreenshotFileInfo[]
+  error?: string
+}
+
 export interface ContextBridgeApi {
   windowShow?: () => void
   windowMinimize?: () => void
@@ -411,6 +422,9 @@ export interface ContextBridgeApi {
     | undefined
   >
   resetGG?: (gamePath: string) => Promise<{ success: boolean; error?: string }>
+  getScreenshots?: (gamePath: string) => Promise<GetScreenshotsResult>
+  openScreenshot?: (filePath: string) => Promise<{ success: boolean; error?: string }>
+  deleteScreenshot?: (filePath: string) => Promise<{ success: boolean; error?: string }>
 }
 
 export interface R2BeatNoticeData {

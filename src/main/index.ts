@@ -1,5 +1,6 @@
-import { app, shell, BrowserWindow, Tray, Menu } from 'electron'
-import { join } from 'path'
+import { app, shell, BrowserWindow, Tray, Menu, protocol } from 'electron'
+import { join, extname } from 'path'
+import { readFile } from 'fs/promises'
 import { electronApp, is } from '@electron-toolkit/utils'
 import icon from '../../build/game.ico?asset'
 import { ipcHandlers } from './ipc-handlers'
@@ -179,6 +180,40 @@ if (!gotTheLock) {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
       if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
+
+    // 注册本地截图文件协议，用于在渲染进程中安全加载本地图片
+    protocol.handle('r2shot', async (request) => {
+      try {
+        const url = new URL(request.url)
+        const filePath = decodeURIComponent(url.searchParams.get('path') ?? '')
+
+        if (!filePath) {
+          return new Response('Bad Request', { status: 400 })
+        }
+
+        const data = await readFile(filePath)
+        const ext = extname(filePath).toLowerCase()
+
+        let contentType = 'application/octet-stream'
+        if (ext === '.png') contentType = 'image/png'
+        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg'
+        else if (ext === '.gif') contentType = 'image/gif'
+        else if (ext === '.webp') contentType = 'image/webp'
+        else if (ext === '.bmp') contentType = 'image/bmp'
+        else if (ext === '.avif') contentType = 'image/avif'
+        else if (ext === '.tif' || ext === '.tiff') contentType = 'image/tiff'
+
+        return new Response(data, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType
+          }
+        })
+      } catch (error) {
+        console.error('[Protocol] r2shot 处理失败:', error)
+        return new Response('Not Found', { status: 404 })
+      }
     })
 
     mainWindow = createWindow()

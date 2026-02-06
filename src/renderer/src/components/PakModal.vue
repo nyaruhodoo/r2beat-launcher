@@ -2,7 +2,7 @@
   <Modal
     :visible="visible"
     title="补丁"
-    title-icon="⚙️"
+    :title-icon-img="budingImg"
     confirm-text="保存"
     cancel-text="关闭"
     @close="handleClose"
@@ -47,10 +47,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import Modal from './Modal.vue'
-import useEventListener from 'vue-hooks-plus/lib/useEventListener'
 import Checkbox from './Checkbox.vue'
 import { confirm } from '@renderer/composables/useConfirm'
 import { useToast } from '@renderer/composables/useToast'
+import budingImg from '@renderer/assets/imgs/buding.png'
 
 interface MergedPakItem {
   name: string
@@ -211,13 +211,6 @@ const handleConfirm = async () => {
   await getPaks()
   emit('close')
 }
-
-// ESC 键关闭弹框
-useEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && props.visible) {
-    handleClose()
-  }
-})
 
 // 拖拽处理
 const handleDragEnter = (event: DragEvent) => {

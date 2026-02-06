@@ -101,6 +101,13 @@
       @close="showPakModal = false"
     />
 
+    <!-- 相册模态框 -->
+    <AlbumModal
+      :visible="showAlbumModal"
+      :game-path="gameSettings?.gamePath"
+      @close="showAlbumModal = false"
+    />
+
     <!-- 登录模态框 -->
     <LoginModal
       :visible="showLoginModal"
@@ -128,6 +135,7 @@ import ThemeToggle from './components/ThemeToggle.vue'
 import UserInfoCom from './components/UserInfo.vue'
 import GamePreview from './components/GamePreview.vue'
 import PakModal from './components/PakModal.vue'
+import AlbumModal from './components/AlbumModal.vue'
 import Dropdown from './components/Dropdown.vue'
 import type { DropdownItem } from './components/Dropdown.vue'
 import { GameSettings, Theme, UserInfo } from '../../types'
@@ -137,6 +145,7 @@ import shezhiImg from '@renderer/assets/imgs/shezhi.png'
 import aixinImg from '@renderer/assets/imgs/aixin.png'
 import budingImg from '@renderer/assets/imgs/buding.png'
 import shanchuImg from '@renderer/assets/imgs/shanchu.png'
+import xiangceImg from '@renderer/assets/imgs/xiangce.png'
 import WindowResizer from './components/WindowResizer.vue'
 import { useToast } from './composables/useToast'
 import { checkUpdateIntervalTime } from '@config'
@@ -149,6 +158,7 @@ const showSettings = ref(false)
 const showLoginModal = ref(false)
 const showLogoutConfirm = ref(false)
 const showPakModal = ref(false)
+const showAlbumModal = ref(false)
 
 // ========== 下拉框菜单项 ==========
 // 抽奖中心和充值中心下拉菜单
@@ -178,6 +188,13 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
     icon: budingImg,
     onClick: () => {
       showPakModal.value = true
+    }
+  },
+  {
+    label: '相册',
+    icon: xiangceImg,
+    onClick: () => {
+      showAlbumModal.value = true
     }
   },
   {

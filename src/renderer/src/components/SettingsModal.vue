@@ -2,7 +2,7 @@
   <Modal
     :visible="visible"
     title="游戏设置"
-    title-icon="⚙️"
+    :title-icon-img="shezhiImg"
     confirm-text="保存设置"
     cancel-text="取消"
     @close="handleClose"
@@ -121,8 +121,8 @@ import CustomSelect from './CustomSelect.vue'
 import Checkbox from './Checkbox.vue'
 import type { AppConfig, GameSettings } from '@types'
 import qrcode from '@renderer/assets/imgs/qrcode.jpg'
+import shezhiImg from '@renderer/assets/imgs/shezhi.png'
 import { useToast } from '@renderer/composables/useToast'
-import useEventListener from 'vue-hooks-plus/lib/useEventListener'
 
 const props = defineProps<{
   visible: boolean
@@ -342,12 +342,6 @@ watch(
   }
 )
 
-// ESC 键关闭弹框
-useEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && props.visible) {
-    handleClose()
-  }
-})
 </script>
 
 <style scoped>
