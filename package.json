@@ -1,7 +1,7 @@
 {
   "name": "r2beat-launcher",
   "version": "1.1.7",
-  "description": "An Electron application with Vue and TypeScript",
+  "description": "音速觉醒启动器",
   "main": "./out/main/index.js",
   "author": "https://github.com/nyaruhodoo",
   "homepage": "https://electron-vite.org",

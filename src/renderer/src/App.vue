@@ -184,7 +184,7 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
     onClick: () => handleNavClick('settings')
   },
   {
-    label: '补丁',
+    label: 'MOD',
     icon: budingImg,
     onClick: () => {
       showPakModal.value = true
