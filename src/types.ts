@@ -324,6 +324,11 @@ export interface GetScreenshotsResult {
   error?: string
 }
 
+export interface ClearScreenshotsResult {
+  success: boolean
+  error?: string
+}
+
 export interface ContextBridgeApi {
   windowShow?: () => void
   windowMinimize?: () => void
@@ -425,6 +430,7 @@ export interface ContextBridgeApi {
   getScreenshots?: (gamePath: string) => Promise<GetScreenshotsResult>
   openScreenshot?: (filePath: string) => Promise<{ success: boolean; error?: string }>
   deleteScreenshot?: (filePath: string) => Promise<{ success: boolean; error?: string }>
+  clearScreenshots?: (gamePath: string) => Promise<ClearScreenshotsResult>
 }
 
 export interface R2BeatNoticeData {

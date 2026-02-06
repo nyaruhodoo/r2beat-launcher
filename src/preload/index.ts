@@ -152,6 +152,10 @@ const api = {
   deleteScreenshot: async (filePath: string): Promise<{ success: boolean; error?: string }> => {
     const result = await ipcRenderer.invoke('delete-screenshot', filePath)
     return result
+  },
+  clearScreenshots: async (gamePath: string): Promise<{ success: boolean; error?: string }> => {
+    const result = await ipcRenderer.invoke('clear-screenshots', gamePath)
+    return result
   }
 }
 

@@ -3,11 +3,11 @@
     :visible="visible"
     title="相册"
     :title-icon-img="xiangceImg"
-    :show-footer="false"
-    cancel-text="关闭"
     :show-confirm="false"
-    @close="handleClose"
-    @cancel="handleClose"
+    :show-footer="files.values.length > 0"
+    cancel-text="清空"
+    @close="emit('close')"
+    @cancel="handleClear"
   >
     <div class="album-body">
       <div v-if="loading" class="album-tip">加载中...</div>
@@ -54,8 +54,24 @@ const loading = ref(false)
 const loadError = ref<string | null>(null)
 const files = ref<ScreenshotFileInfo[]>([])
 
-const handleClose = () => {
-  emit('close')
+const handleClear = async () => {
+  await confirm({
+    message: '确定要清空所有照片吗？此操作会删除 SCREENSHOT 目录下的所有截图文件，且无法恢复。'
+  })
+
+  if (!props.gamePath) {
+    showError('请先在设置中配置游戏目录')
+    return
+  }
+
+  const res = await window.api.clearScreenshots?.(props.gamePath)
+
+  if (!res?.success) {
+    showError(res?.error || '清空相册失败')
+    return
+  }
+
+  files.value = []
 }
 
 const toFileUrl = (p: string) => {
@@ -74,12 +90,9 @@ const load = async () => {
   loading.value = true
   try {
     const res = await window.api.getScreenshots?.(props.gamePath)
-    if (!res) {
-      loadError.value = '相册加载失败：IPC 未就绪'
-      return
-    }
-    if (!res.success) {
-      loadError.value = res.error || '相册加载失败'
+
+    if (!res?.success) {
+      loadError.value = res?.error || '相册加载失败'
       return
     }
     files.value = res.files ?? []
@@ -98,10 +111,7 @@ const handleOpen = async (filePath: string) => {
 const handleDelete = async (file: ScreenshotFileInfo) => {
   try {
     await confirm({
-      title: '删除截图',
-      message: `确定要删除 ${file.name} 吗？`,
-      confirmText: '删除',
-      cancelText: '取消'
+      message: `确定要删除 ${file.name} 吗？`
     })
 
     const res = await window.api.deleteScreenshot?.(file.path)

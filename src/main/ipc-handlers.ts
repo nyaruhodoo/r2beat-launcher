@@ -603,6 +603,58 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   })
 
   /**
+   * 清空 SCREENSHOT 目录下的所有文件（递归删除文件，仅保留目录本身）
+   */
+  ipcMain.handle('clear-screenshots', async (_event, gamePath: string) => {
+    try {
+      if (!gamePath || typeof gamePath !== 'string' || gamePath.trim() === '') {
+        throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
+      }
+
+      const screenshotDir = join(gamePath, 'SCREENSHOT')
+      if (!(await exists(screenshotDir))) {
+        // 目录本身不存在也视为成功
+        return { success: true }
+      }
+
+      const dirStat = await stat(screenshotDir)
+      if (!dirStat.isDirectory()) {
+        throw new Error('SCREENSHOT 不是目录')
+      }
+
+      const entries = await readdir(screenshotDir, { withFileTypes: true })
+
+      // 递归删除目录内容，但不删除 SCREENSHOT 目录本身
+      const deleteEntry = async (dir: string, name: string, isDir: boolean) => {
+        const target = join(dir, name)
+        if (isDir) {
+          // 先删子内容
+          const subEntries = await readdir(target, { withFileTypes: true })
+          for (const sub of subEntries) {
+            await deleteEntry(target, sub.name, sub.isDirectory())
+          }
+          // 再删空目录
+          await rm(target, { recursive: true, force: true })
+        } else {
+          await unlink(target)
+        }
+      }
+
+      for (const entry of entries) {
+        await deleteEntry(screenshotDir, entry.name, entry.isDirectory())
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('[Main] clear-screenshots 失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '清空截图目录时发生未知错误'
+      }
+    }
+  })
+
+  /**
    * 使用系统默认图片查看器打开指定图片
    */
   ipcMain.handle('open-screenshot', async (_event, filePath: string) => {
