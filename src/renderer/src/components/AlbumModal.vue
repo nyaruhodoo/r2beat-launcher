@@ -4,7 +4,7 @@
     title="相册"
     :title-icon-img="xiangceImg"
     :show-confirm="false"
-    :show-footer="files.values.length > 0"
+    :show-footer="files.length > 1"
     cancel-text="清空"
     @close="emit('close')"
     @cancel="handleClear"
