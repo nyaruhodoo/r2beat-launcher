@@ -135,7 +135,9 @@ const fetchAnnouncements = async () => {
 }
 
 const handleAnnouncementClick = (item: AnnouncementData) => {
-  window.api.openAnnouncementDetail?.(item)
+  window.api.openAnnouncementDetail?.({
+    ...item
+  })
 }
 
 fetchAnnouncements()
