@@ -5,7 +5,7 @@
       <span class="announcement-title">系统公告</span>
     </div>
     <div class="announcement-content">
-      <div v-if="loading && announcements.length === 0" class="loading-state">
+      <div v-if="loading && announcementsCache?.data.length === 0" class="loading-state">
         <span class="loading-text">
           <span>正在加载公告</span>
           <span class="loading-dots">
@@ -15,9 +15,11 @@
           </span>
         </span>
       </div>
-      <div v-else-if="!loading && announcements.length === 0" class="empty-state">暂无公告</div>
+      <div v-else-if="!loading && announcementsCache?.data.length === 0" class="empty-state">
+        暂无公告
+      </div>
       <div
-        v-for="(item, index) in announcements"
+        v-for="(item, index) in announcementsCache?.data"
         v-else
         :key="item.idx || index"
         class="announcement-item"
@@ -35,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { checkAnnouncementsCacheTime, checkAnnouncementsTime } from '@config'
+import { checkAnnouncementsTime } from '@config'
 import type { AnnouncementData } from '@types'
 import { ref } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
@@ -52,7 +54,6 @@ const [announcementsCache, setAnnouncementsCache] = useLocalStorageState<Announc
   }
 )
 
-const announcements = ref<AnnouncementData[]>([])
 // 记录上一次公告列表中第一条公告的 idx，用于判断是否有新公告
 const lastFirstAnnouncementIdx = ref<number>()
 const loading = ref(true)
@@ -99,24 +100,10 @@ const filterTitle = (title: string): string => {
 // 获取公告数据
 const fetchAnnouncements = async () => {
   try {
-    loading.value = true
-
-    // 检查缓存是否有效
-    const cache = announcementsCache.value
-    if (cache?.data && Array.isArray(cache.data)) {
-      const now = Date.now()
-      const cacheAge = now - cache.timestamp
-
-      // 如果缓存未过期（5分钟内），直接使用缓存
-      if (cacheAge < checkAnnouncementsCacheTime) {
-        console.log(`[Renderer] 使用缓存数据（缓存时间: ${Math.round(cacheAge / 1000)}秒）`)
-        announcements.value = cache.data
-        loading.value = false
-        return
-      }
+    if (!announcementsCache.value?.data.length) {
+      loading.value = true
     }
 
-    // 缓存过期或不存在，重新获取数据
     const data = await window.api.getAnnouncements?.()
 
     if (Array.isArray(data)) {
@@ -130,42 +117,25 @@ const fetchAnnouncements = async () => {
       }
 
       lastFirstAnnouncementIdx.value = first?.idx
-      announcements.value = data
 
-      // 保存到缓存
       const newCache: AnnouncementsCache = {
         data,
         timestamp: Date.now()
       }
       setAnnouncementsCache(newCache)
       console.log('[Renderer] 公告数据已缓存')
-    } else if (cache && cache.data && Array.isArray(cache.data)) {
-      throw new Error('[Renderer] 获取失败，使用过期缓存数据')
+    } else {
+      throw new Error('获取公告失败')
     }
   } catch (error) {
     console.error('[Renderer] 获取公告失败:', error)
-    // 如果获取失败，尝试使用过期缓存
-    const cache = announcementsCache.value
-    if (cache && cache.data && Array.isArray(cache.data)) {
-      console.log('[Renderer] 使用过期缓存数据作为后备')
-      announcements.value = cache.data
-    }
   } finally {
     loading.value = false
   }
 }
 
 const handleAnnouncementClick = (item: AnnouncementData) => {
-  const plainItem: AnnouncementData = {
-    idx: item.idx,
-    user_id: item.user_id,
-    language: item.language,
-    section: item.section,
-    title: item.title,
-    created_at: item.created_at
-  }
-
-  window.api.openAnnouncementDetail?.(plainItem)
+  window.api.openAnnouncementDetail?.(item)
 }
 
 fetchAnnouncements()

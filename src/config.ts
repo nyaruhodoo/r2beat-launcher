@@ -19,11 +19,6 @@ export const checkRemoteVersionTime = minutesToMilliseconds(10)
 export const checkAnnouncementsTime = minutesToMilliseconds(5)
 
 /**
- * 系统公告缓存时间
- */
-export const checkAnnouncementsCacheTime = minutesToMilliseconds(5)
-
-/**
  * 服务端状态检测间隔时间(正常)
  */
 export const checkServerStatusTime = minutesToMilliseconds(5)
@@ -36,7 +31,7 @@ export const checkUnknownServerStatusTime = minutesToMilliseconds(1)
 /**
  * 登录器版本检查间隔时间
  */
-export const checkUpdateIntervalTime = minutesToMilliseconds(30)
+export const checkUpdateIntervalTime = minutesToMilliseconds(15)
 
 /**
  * 窗口大小
