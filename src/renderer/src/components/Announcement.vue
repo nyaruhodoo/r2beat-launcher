@@ -56,7 +56,7 @@ const [announcementsCache, setAnnouncementsCache] = useLocalStorageState<Announc
 
 // 记录上一次公告列表中第一条公告的 idx，用于判断是否有新公告
 const lastFirstAnnouncementIdx = ref<number>()
-const loading = ref(true)
+const loading = ref(false)
 
 // 格式化日期时间（24小时制，显示到秒）
 const formatDate = (dateString: string): string => {
@@ -123,7 +123,6 @@ const fetchAnnouncements = async () => {
         timestamp: Date.now()
       }
       setAnnouncementsCache(newCache)
-      console.log('[Renderer] 公告数据已缓存')
     } else {
       throw new Error('获取公告失败')
     }
