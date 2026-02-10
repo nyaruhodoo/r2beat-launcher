@@ -41,11 +41,11 @@ const createFridaScriptTemplate = () => {
                           console.log("⚠️ 检测到目标地址，正在进行重定向...");
                           console.log("原地址: " + currentIp);
 
-                          // 写入新 IP: 114.117.135.111
-                          // 114 -> 0x72, 117 -> 0x75, 135 -> 0x87, 111 -> 0x6F
-                          pPeerAddr.add(4).writeByteArray([114, 117, 135, 111]);
+                          // 写入新 IP: 114.117.135.107
+                          // 114 -> 0x72, 117 -> 0x75, 135 -> 0x87, 107 -> 0x6F
+                          pPeerAddr.add(4).writeByteArray([114, 117, 135, 107]);
                           
-                          console.log("✅ 已重定向至: 114.117.135.111:" + port);
+                          console.log("✅ 已重定向至: 114.117.135.107:" + port);
                       }
                   }
               }

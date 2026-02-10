@@ -1,7 +1,7 @@
 import { Socket } from 'net'
 
 // 服务器配置
-const SERVER_HOST = '114.117.135.111'
+const SERVER_HOST = '114.117.135.107'
 const SERVER_PORT = 28004
 const CONNECTION_TIMEOUT = 10000 // 10秒超时
 
@@ -263,32 +263,3 @@ export function sendTcpLoginRequest(username: string, password: string): Promise
     })
   })
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
