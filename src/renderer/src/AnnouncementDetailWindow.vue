@@ -120,6 +120,7 @@ onMounted(() => {
   line-height: 1.2;
 
   &:deep(img) {
+    max-width: 75%;
     border-radius: 16px;
     height: auto !important;
   }
