@@ -25,7 +25,7 @@
       </div>
 
       <template v-else>
-        <div v-if="showProgressBar" class="patch-progress">
+        <div v-if="showProgressBar || isApplyPatch" class="patch-progress">
           <div class="progress-header">
             <div class="progress-title">
               <span class="status-icon">⏳</span>
@@ -99,6 +99,8 @@ const hasUpdateError = ref(false)
 // 底部版本信息区域加载状态（远程版本 + 预下载列表）
 const isVersionSectionLoading = ref(true)
 
+const isApplyPatch = ref(false)
+
 const showProgressBar = computed(() => {
   return patchProgressPercent.value !== null && patchProgressPercent.value < 100
 })
@@ -106,6 +108,10 @@ const showProgressBar = computed(() => {
 const patchProgressTitle = computed(() => {
   const percent = patchProgressPercent.value ?? 0
   const stage = patchProgressStage.value
+
+  if (isApplyPatch.value) {
+    return '正在应用补丁'
+  }
 
   if (!stage || percent <= 0) {
     return '准备更新补丁'
@@ -317,6 +323,8 @@ const handleUpdate = async () => {
       throw new Error('游戏路径或远程版本为空，无法应用补丁')
     }
 
+    isApplyPatch.value = true
+
     const applyRes = await window.api.applyPatchFiles?.(gamePath, latest)
     if (!applyRes?.success) {
       throw new Error(applyRes?.error || '应用补丁失败')
@@ -336,6 +344,7 @@ const handleUpdate = async () => {
     patchProgressPercent.value = null
     patchProgressStage.value = undefined
     patchProgressFileName.value = ''
+    isApplyPatch.value = false
   }
 }
 
