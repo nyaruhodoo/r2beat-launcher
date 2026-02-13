@@ -355,6 +355,14 @@ watch(
   align-items: center;
   gap: 8px;
   justify-content: space-between;
+
+  .checkbox-wrapper {
+    max-width: 70%;
+  }
+
+  button {
+    flex-shrink: 0;
+  }
 }
 
 .pak-delete {

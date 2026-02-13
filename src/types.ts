@@ -435,6 +435,7 @@ export interface ContextBridgeApi {
   openScreenshot?: (filePath: string) => Promise<{ success: boolean; error?: string }>
   deleteScreenshot?: (filePath: string) => Promise<{ success: boolean; error?: string }>
   clearScreenshots?: (gamePath: string) => Promise<ClearScreenshotsResult>
+  openGameRecovery?: (gamePath: string) => Promise<{ success: boolean; error?: string }>
 }
 
 export interface R2BeatNoticeData {

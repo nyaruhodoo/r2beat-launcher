@@ -22,6 +22,7 @@ import { Utils } from './utils'
 import { hookDll } from './hook-dll'
 import icon from '../../build/game.ico?asset'
 import { patchPak } from './patch-pak'
+import { execFile } from 'child_process'
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
@@ -493,20 +494,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
       }
 
-      // 移除前需要检查 Game.exe 是否在运行中（参考 apply-patch-files）
-      if (process.platform === 'win32') {
-        const processName = 'Game.exe'
-
-        const result = await spawnPromise('tasklist', ['/FI', `IMAGENAME eq ${processName}`], {
-          collectStdout: true,
-          collectStderr: false
-        })
-
-        const output = result.stdout.toLowerCase()
-        if (output.includes(processName.toLowerCase())) {
-          throw new Error(`${processName} 正在运行中，请关闭后重试`)
-        }
-      }
+      await Utils.checkGameRunning()
 
       const ggDir = join(gamePath, 'GameGuard')
 
@@ -660,7 +648,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    */
   ipcMain.handle('open-screenshot', async (_event, filePath: string) => {
     try {
-      if (!filePath || typeof filePath !== 'string') {
+      if (!filePath) {
         throw new Error('文件路径为空')
       }
 
@@ -1715,35 +1703,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       // 在应用补丁前，检查 Game.exe 和 VLauncher.exe 是否正在运行中
-      if (process.platform === 'win32') {
-        const processesToCheck = ['Game.exe', 'VLauncher.exe']
-        const runningProcesses: string[] = []
-
-        for (const processName of processesToCheck) {
-          try {
-            const result = await spawnPromise('tasklist', ['/FI', `IMAGENAME eq ${processName}`], {
-              collectStdout: true,
-              collectStderr: false
-            })
-
-            const output = result.stdout.toLowerCase()
-            const processNameLower = processName.toLowerCase()
-            // tasklist 在找到进程时会包含进程名这一行
-            if (output.includes(processNameLower)) {
-              runningProcesses.push(processName)
-            }
-          } catch (error) {
-            // 如果检查进程本身失败，记录警告但继续检查其他进程
-            console.warn(`[Main] 检查 ${processName} 进程状态失败（忽略）:`, error)
-          }
-        }
-
-        // 如果有进程正在运行，抛出错误
-        if (runningProcesses.length > 0) {
-          const processList = runningProcesses.join(' 和 ')
-          throw new Error(`${processList} 正在运行中，请关闭后重试`)
-        }
-      }
+      await Utils.checkGameRunning()
 
       const appRoot = Utils.getTargetDir()
       const patchRoot = join(appRoot, 'patch')
@@ -2096,6 +2056,42 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     } catch (error) {
       console.error('[Main] 检查更新时发生异常:', error)
       return undefined
+    }
+  })
+
+  /**
+   * 运行游戏内置的修复工具
+   */
+  ipcMain.handle('open-game-recovery', async (_, gamePath: string) => {
+    try {
+      if (!gamePath || gamePath.trim() === '') {
+        throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
+      }
+
+      const gameRecoveryPath = join(gamePath, 'GameRecovery.exe')
+      if (!(await exists(gameRecoveryPath))) {
+        throw new Error(`找不到修复文件: ${gameRecoveryPath} 请检查游戏安装目录是否正确`)
+      }
+
+      await Utils.checkGameRunning()
+
+      const { promise, resolve } = Promise.withResolvers()
+
+      execFile(gameRecoveryPath, (error) => {
+        if (error) throw error
+        resolve({
+          success: true
+        })
+      })
+
+      return promise
+    } catch (error) {
+      console.error('[Main] 运行修复工具失败:', error)
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '运行修复工具失败'
+      }
     }
   })
 }

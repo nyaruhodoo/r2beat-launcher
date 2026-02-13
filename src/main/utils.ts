@@ -5,6 +5,7 @@ import { createWriteStream } from 'fs'
 import { get as httpGet } from 'http'
 import { get as httpsGet } from 'https'
 import { URL } from 'url'
+import { spawnPromise } from './spawn'
 
 export class Utils {
   static getTargetDir() {
@@ -189,4 +190,35 @@ export class Utils {
     return 0
   }
 
+  static async checkGameRunning() {
+    if (process.platform === 'win32') {
+      const processesToCheck = ['Game.exe', 'VLauncher.exe']
+      const runningProcesses: string[] = []
+
+      for (const processName of processesToCheck) {
+        try {
+          const result = await spawnPromise('tasklist', ['/FI', `IMAGENAME eq ${processName}`], {
+            collectStdout: true,
+            collectStderr: false
+          })
+
+          const output = result.stdout.toLowerCase()
+          const processNameLower = processName.toLowerCase()
+          // tasklist 在找到进程时会包含进程名这一行
+          if (output.includes(processNameLower)) {
+            runningProcesses.push(processName)
+          }
+        } catch (error) {
+          // 如果检查进程本身失败，记录警告但继续检查其他进程
+          console.warn(`[Main] 检查 ${processName} 进程状态失败（忽略）:`, error)
+        }
+      }
+
+      // 如果有进程正在运行，抛出错误
+      if (runningProcesses.length > 0) {
+        const processList = runningProcesses.join(' 和 ')
+        throw new Error(`${processList} 正在运行中，请关闭后重试`)
+      }
+    }
+  }
 }

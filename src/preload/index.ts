@@ -141,7 +141,11 @@ const api = {
   },
   getScreenshots: async (
     gamePath: string
-  ): Promise<{ success: boolean; files: Array<{ name: string; path: string }>; error?: string }> => {
+  ): Promise<{
+    success: boolean
+    files: Array<{ name: string; path: string }>
+    error?: string
+  }> => {
     const result = await ipcRenderer.invoke('get-screenshots', gamePath)
     return result
   },
@@ -155,6 +159,10 @@ const api = {
   },
   clearScreenshots: async (gamePath: string): Promise<{ success: boolean; error?: string }> => {
     const result = await ipcRenderer.invoke('clear-screenshots', gamePath)
+    return result
+  },
+  openGameRecovery: async (gamePath: string): Promise<{ success: boolean; error?: string }> => {
+    const result = await ipcRenderer.invoke('open-game-recovery', gamePath)
     return result
   }
 }

@@ -146,6 +146,7 @@ import aixinImg from '@renderer/assets/imgs/aixin.png'
 import budingImg from '@renderer/assets/imgs/buding.png'
 import shanchuImg from '@renderer/assets/imgs/shanchu.png'
 import xiangceImg from '@renderer/assets/imgs/xiangce.png'
+import xiufuImg from '@renderer/assets/imgs/xiufu.png'
 import WindowResizer from './components/WindowResizer.vue'
 import { useToast } from './composables/useToast'
 import { checkUpdateIntervalTime } from '@config'
@@ -195,6 +196,23 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
     icon: xiangceImg,
     onClick: () => {
       showAlbumModal.value = true
+    }
+  },
+  {
+    label: '修复',
+    icon: xiufuImg,
+    onClick: async () => {
+      const gamePath = gameSettings.value?.gamePath
+      if (!gamePath) {
+        info('请先在设置中配置游戏目录')
+        return
+      }
+
+      const res = await window.api.openGameRecovery?.(gamePath)
+
+      if (!res?.success) {
+        error(res?.error ?? '无法运行 GameRecovery')
+      }
     }
   },
   {
