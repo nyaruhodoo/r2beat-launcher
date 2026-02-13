@@ -763,7 +763,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
          * 等待优先级相关操作结果
          */
         try {
-          await new Promise((res) => {
+          new Promise((res) => {
             if (process.platform !== 'win32') {
               return res(undefined)
             }
