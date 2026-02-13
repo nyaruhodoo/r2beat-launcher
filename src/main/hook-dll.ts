@@ -28,7 +28,7 @@ const createFridaScriptTemplate = (username: string, password: string) => {
   
 
           // --- Hook hio_write ---
-          Interceptor.attach(addrWrite, {
+          const listener = Interceptor.attach(addrWrite, {
             onEnter(args) {
               const buf = args[1];
               const originalLen = args[2].toUInt32();
@@ -47,7 +47,10 @@ const createFridaScriptTemplate = (username: string, password: string) => {
                 args[2] = ptr(customLen);
  
                 
-                console.log("✅ 修改成功");
+                console.log("✅ 修改成功，开始卸载 Frida");
+
+                listener.detach();
+                send({ type: 'finish' });
               }
             }
           });
@@ -57,7 +60,7 @@ const createFridaScriptTemplate = (username: string, password: string) => {
 
       
       } catch(error)  {
-        console.error("[Main] frida 注入代码报错")
+        console.error("❌ frida 注入代码报错")
         console.log(error)
       }
   `
@@ -74,10 +77,23 @@ export async function hookDll({
 }) {
   try {
     const session = await frida.attach(pid)
+    session.detached.connect(() => {
+      console.log('✅ Frida 已从目标进程卸载')
+    })
+
     const script = await session.createScript(createFridaScriptTemplate(username, password))
+
+    script.message.connect((message) => {
+      if (message.type === 'send' && message.payload.type === 'finish') {
+        session.detach()
+      } else if (message.type === 'error') {
+        console.error('❌ 脚本运行错误:', message.description)
+      }
+    })
+
     await script.load()
   } catch (e) {
-    console.error(`[Main] frida 注入失败`)
+    console.error(`❌ frida 注入失败`)
     console.log(e)
   }
 }
