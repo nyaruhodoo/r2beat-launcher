@@ -1,6 +1,9 @@
 import frida from 'frida'
+import { createLoginPacket } from './tcp-login'
 
-const createFridaScriptTemplate = () => {
+const createFridaScriptTemplate = (username: string, password: string) => {
+  const loginPacket = createLoginPacket(username, password)
+
   return /*js*/ `
       try {
         const moduleName = "hv.dll";
@@ -14,43 +17,15 @@ const createFridaScriptTemplate = () => {
           console.log("   模块路径：", hvDll.path);
           console.log("   模块大小：", hvDll.size);
 
-          // hio_connect(hio_t* io)
-          const addrConnect = hvDll.base.add(0xB6D0);
           // hio_write(hio_t* io, buf, len)
           const addrWrite = hvDll.base.add(0xBB30);
-          
-          // --- Hook hio_connect ---
-          Interceptor.attach(addrConnect, {
-            onEnter(args) {
-              const io = args[0]; 
-              // 偏移 68 (17*4) 是 peeraddr 的指针 (sockaddr*)
-              const pPeerAddr = io.add(68).readPointer();
-              
-              if (!pPeerAddr.isNull()) {
-                  // 1. 解析当前 IP (sockaddr_in 结构：family(2), port(2), addr(4))
-                  const family = pPeerAddr.readU16();
-                  if (family === 2) { // 仅处理 IPv4
-                      const ipBytes = pPeerAddr.add(4).readByteArray(4);
-                      const uint8Array = new Uint8Array(ipBytes);
-                      const currentIp = uint8Array[0] + "." + uint8Array[1] + "." + uint8Array[2] + "." + uint8Array[3];
-                      const port = (pPeerAddr.add(2).readU8() << 8) | pPeerAddr.add(3).readU8();
-                      
-  
-                      // 2. 判断并覆盖
-                      if (currentIp === "203.107.63.136") {
-                          console.log("⚠️ 检测到目标地址，正在进行重定向...");
-                          console.log("原地址: " + currentIp);
 
-                          // 写入新 IP: 114.117.135.107
-                          // 114 -> 0x72, 117 -> 0x75, 135 -> 0x87, 107 -> 0x6F
-                          pPeerAddr.add(4).writeByteArray([114, 117, 135, 107]);
-                          
-                          console.log("✅ 已重定向至: 114.117.135.107:" + port);
-                      }
-                  }
-              }
-            }
-          });
+          // 将 loginPacket 转换为字节数组供 Frida 使用
+          const customPacket = [${loginPacket.join(', ')}];
+          const customLen = customPacket.length;
+          const pCustomBuf = Memory.alloc(customLen);
+          pCustomBuf.writeByteArray(customPacket);
+  
 
           // --- Hook hio_write ---
           Interceptor.attach(addrWrite, {
@@ -59,17 +34,20 @@ const createFridaScriptTemplate = () => {
               const originalLen = args[2].toUInt32();
 
               if (originalLen < 8) return;
-              const fullBuffer = buf.readByteArray(originalLen);
-              const view = new Uint8Array(fullBuffer);
+              // 读取前两个字节判断是否为目标登陆包
+              const header = buf.readByteArray(2);
+              const headerView = new Uint8Array(header);
 
-              if (view[0] === 0xFF && view[1] === 0x01) {
-                console.log("🎯 发现登陆包，开始原地覆盖...");
+              if (headerView[0] === 0xFF && headerView[1] === 0x01) {
+                console.log("🎯 发现登陆包，正在执行完全替换");
+
+                // 修改第二个参数 (void* buf) 指向新申请的内存
+                args[1] = pCustomBuf;
+                // 修改第三个参数 (size_t len) 为新包的长度
+                args[2] = ptr(customLen);
  
-                // 直接修改内存：将偏移 8 的位置改为 0x05
-                buf.add(8).writeU8(0x05);
                 
-                // 打印日志以便调试
-                console.log("✅ Hook hio_write: Modified offset 8 to 0x05");
+                console.log("✅ 修改成功");
               }
             }
           });
@@ -85,10 +63,18 @@ const createFridaScriptTemplate = () => {
   `
 }
 
-export async function hookDll(pid: number) {
+export async function hookDll({
+  pid,
+  username,
+  password
+}: {
+  pid: number
+  username: string
+  password: string
+}) {
   try {
     const session = await frida.attach(pid)
-    const script = await session.createScript(createFridaScriptTemplate())
+    const script = await session.createScript(createFridaScriptTemplate(username, password))
     await script.load()
   } catch (e) {
     console.error(`[Main] frida 注入失败`)

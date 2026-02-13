@@ -705,8 +705,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         minimizeToTrayOnLaunch?: boolean
         processPriority?: ProcessPriority
         lowerNPPriority?: boolean
-        username?: string
-        password?: string
+        username: string
+        password: string
         isShieldWordDisabled?: boolean
       }
     ) => {
@@ -729,21 +729,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           })
         }
 
-        // 打印密码到控制台
-        if (password) {
-          // console.log(`[Main] 接收到的密码参数: ${password}`)
-        }
-
         // 使用传入的 username 参数写入 xyxID.txt
-        if (username && username.trim()) {
-          const xyxIdFilePath = join(gamePath, 'xyxID.txt')
-          try {
-            await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
-            console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
-          } catch (error) {
-            console.error('[Main] 写入 xyxID.txt 失败:', error)
-            // 不抛出错误，继续启动游戏
-          }
+        const xyxIdFilePath = join(gamePath, 'xyxID.txt')
+        try {
+          await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
+          console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
+        } catch (error) {
+          console.error('[Main] 写入 xyxID.txt 失败:', error)
         }
 
         // 解析命令行参数（将字符串按空格分割）
@@ -771,8 +763,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
 
-        if (launchArgs !== 'xyxOpen') {
-          hookDll(gameProcess.pid)
+        if (launchArgs === 'xyxOpen') {
+          hookDll({
+            pid: gameProcess.pid,
+            username,
+            password
+          })
         }
 
         /**

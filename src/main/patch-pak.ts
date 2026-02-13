@@ -26,7 +26,6 @@ export const patchPak = async ({
 
     if (index === -1) {
       console.log(`❌ 未能在后 50% 区域找到 "${isShieldWordDisabled ? SEARCH_STR : REPLACE_STR}"。`)
-      console.log(`-----------------------------------------------`)
       return
     }
 
