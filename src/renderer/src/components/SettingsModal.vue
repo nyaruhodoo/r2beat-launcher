@@ -77,6 +77,7 @@
         <Checkbox v-model="settings.autoUpdate">自动更新游戏</Checkbox>
         <Checkbox v-model="settings.minimizeToTrayOnLaunch">启动游戏后最小化到托盘</Checkbox>
         <Checkbox v-model="settings.avoidSecondLogin">避免二次登录(测试版)</Checkbox>
+        <Checkbox v-model="settings.isShieldWordDisabled">关闭屏蔽字</Checkbox>
       </div>
     </div>
 
@@ -144,7 +145,8 @@ const settings = ref<GameSettings>({
   minimizeToTrayOnLaunch: true,
   processPriority: 'normal',
   lowerNPPriority: false,
-  avoidSecondLogin: true
+  avoidSecondLogin: true,
+  isShieldWordDisabled: false
 })
 
 // 保存 config.ini 转换后的 JSON 数据

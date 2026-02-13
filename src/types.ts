@@ -26,9 +26,12 @@ export interface GameSettings {
   /** 启动游戏后最小化到系统托盘 */
   minimizeToTrayOnLaunch: boolean
   processPriority: ProcessPriority
-  lowerNPPriority: boolean // 降低NP优先级（GameMon检测）
+  // 降低NP优先级（GameMon检测）
+  lowerNPPriority: boolean
   /** 避免二次登录 */
   avoidSecondLogin: boolean
+  // 屏蔽字
+  isShieldWordDisabled: boolean
 }
 
 /**
@@ -344,15 +347,16 @@ export interface ContextBridgeApi {
     error?: string
   }>
   selectFolder?: (currentPath?: string) => Promise<string | null>
-  launchGame?: (
-    gamePath: string,
-    launchArgs?: string,
-    minimizeToTrayOnLaunch?: boolean,
-    processPriority?: ProcessPriority,
-    lowerNPPriority?: boolean,
-    username?: string,
+  launchGame?: (params: {
+    gamePath: string
+    launchArgs?: string
+    minimizeToTrayOnLaunch?: boolean
+    processPriority?: ProcessPriority
+    lowerNPPriority?: boolean
+    username?: string
     password?: string
-  ) => Promise<{ success: boolean; error?: string }>
+    isShieldWordDisabled?: boolean
+  }) => Promise<{ success: boolean; error?: string }>
   readPatchInfo?: (
     gamePath: string
   ) => Promise<{ success: boolean; data?: PatchInfo; error?: string }>

@@ -184,11 +184,8 @@ const executeLaunch = async () => {
     return
   }
 
-  // 使用传入的 gameSettings
-  const latestSettings = props.gameSettings
-
   // 检查游戏路径是否设置
-  if (!latestSettings?.gamePath || latestSettings.gamePath.trim() === '') {
+  if (!props.gameSettings?.gamePath || props.gameSettings.gamePath.trim() === '') {
     showError('请先在设置中配置游戏安装目录')
     return
   }
@@ -197,20 +194,18 @@ const executeLaunch = async () => {
   isDisabled.value = true
 
   try {
-    // 根据避免二次登录设置决定启动参数
-    const launchArgs = latestSettings?.avoidSecondLogin
-      ? `xyxOpen|${props.userInfo.username}|0|1|${props.userInfo.password}|3|4`
-      : 'xyxOpen'
+    const launchArgs = 'xyxOpen'
 
-    const result = await window.api.launchGame?.(
-      latestSettings.gamePath,
+    const result = await window.api.launchGame?.({
+      gamePath: props.gameSettings.gamePath,
       launchArgs,
-      latestSettings.minimizeToTrayOnLaunch || false,
-      latestSettings.processPriority || 'normal',
-      latestSettings.lowerNPPriority || false,
-      props.userInfo.username,
-      props.userInfo.password
-    )
+      minimizeToTrayOnLaunch: props.gameSettings.minimizeToTrayOnLaunch,
+      processPriority: props.gameSettings.processPriority,
+      lowerNPPriority: props.gameSettings.lowerNPPriority,
+      username: props.userInfo.username,
+      password: props.userInfo.password,
+      isShieldWordDisabled: props.gameSettings.isShieldWordDisabled
+    })
 
     if (result?.success) {
       !props.gameSettings?.minimizeToTrayOnLaunch && showSuccess('游戏启动成功！')

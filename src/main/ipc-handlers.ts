@@ -19,8 +19,9 @@ import { sendTcpLoginRequest } from './tcp-login'
 import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
 import lzma from 'lzma-native'
 import { Utils } from './utils'
-import { hookDll } from './hookDll'
+import { hookDll } from './hook-dll'
 import icon from '../../build/game.ico?asset'
+import { patchPak } from './patch-pak'
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
@@ -689,13 +690,25 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     'launch-game',
     async (
       _,
-      gamePath: string,
-      launchArgs?: string,
-      minimizeToTrayOnLaunch?: boolean,
-      processPriority?: ProcessPriority,
-      lowerNPPriority?: boolean,
-      username?: string,
-      password?: string
+      {
+        gamePath,
+        launchArgs,
+        minimizeToTrayOnLaunch,
+        processPriority,
+        lowerNPPriority,
+        username,
+        password,
+        isShieldWordDisabled
+      }: {
+        gamePath: string
+        launchArgs?: string
+        minimizeToTrayOnLaunch?: boolean
+        processPriority?: ProcessPriority
+        lowerNPPriority?: boolean
+        username?: string
+        password?: string
+        isShieldWordDisabled?: boolean
+      }
     ) => {
       try {
         if (!gamePath || gamePath.trim() === '') {
@@ -704,7 +717,16 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         const gameExePath = join(gamePath, 'Game.exe')
         if (!(await exists(gameExePath))) {
-          throw new Error(`找不到游戏文件: ${gameExePath}\n请检查游戏安装目录是否正确`)
+          throw new Error(`找不到游戏文件: ${gameExePath} 请检查游戏安装目录是否正确`)
+        }
+
+        // 修补敏感字pak
+        const pakPath = join(gamePath, 'rnr_script.pak')
+        if (await exists(pakPath)) {
+          await patchPak({
+            pakPath,
+            isShieldWordDisabled
+          })
         }
 
         // 打印密码到控制台

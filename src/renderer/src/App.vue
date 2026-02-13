@@ -234,7 +234,8 @@ const [gameSettings, setGameSettings] = useLocalStorageState<GameSettings>('r2be
     minimizeToTrayOnLaunch: true,
     processPriority: 'normal',
     lowerNPPriority: false,
-    avoidSecondLogin: true
+    avoidSecondLogin: true,
+    isShieldWordDisabled: false
   }
 })
 
