@@ -14,18 +14,17 @@ export const patchPak = async ({
     // 1. 读取文件
     const buffer = await fs.readFile(pakPath)
     const fileSize = buffer.length
-    const halfPoint = Math.floor(fileSize / 2)
+    const halfPoint = Math.floor(fileSize / 1.3)
 
     console.log(`-----------------------------------------------`)
     console.log(`文件名称: ${pakPath}`)
     console.log(`文件大小: ${(fileSize / 1024 / 1024).toFixed(2)} MB`)
-    console.log(`搜索范围: 后 50% (从 0x${halfPoint.toString(16).toUpperCase()} 开始)`)
+    console.log(`搜索范围: 从 0x${halfPoint.toString(16).toUpperCase()} 开始`)
 
-    // 2. 从后 50% 处开始搜索
     const index = buffer.indexOf(isShieldWordDisabled ? SEARCH_STR : REPLACE_STR, halfPoint)
 
     if (index === -1) {
-      console.log(`❌ 未能在后 50% 区域找到 "${isShieldWordDisabled ? SEARCH_STR : REPLACE_STR}"。`)
+      console.log(`❌ 未能搜索到 "${isShieldWordDisabled ? SEARCH_STR : REPLACE_STR}"。`)
       return
     }
 
