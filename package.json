@@ -24,7 +24,8 @@
     "appId": "com.r2beat-launcher",
     "win": {
       "target": "nsis",
-      "icon": "build/game.ico"
+      "icon": "build/game.ico",
+      "requestedExecutionLevel": "requireAdministrator"
     },
     "productName": "R2Beat-Launcher",
     "nsis": {
