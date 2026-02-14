@@ -5,6 +5,11 @@ import { electronApp, is } from '@electron-toolkit/utils'
 import icon from '../../build/game.ico?asset'
 import { ipcHandlers } from './ipc-handlers'
 
+// 必须在 app ready 之前调用
+if (process.platform === 'win32') {
+  app.commandLine.appendSwitch('disable-gpu-sandbox')
+}
+
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let isQuitting = false
