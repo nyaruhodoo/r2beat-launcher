@@ -81,14 +81,10 @@ const getStatusText = (status: ServerStatus): string => {
 
 // 检测服务端状态
 const checkServerStatus = async () => {
+  if (!props.userInfo?.username || !props.userInfo?.password) return
+
   try {
-    const encodedUsername = 'dnZ4NjQyODg2Mw=='
-    const encodedPassword = 'NjQyODg2MTc0'
-
-    const username = props.userInfo?.username || atob(encodedUsername)
-    const password = props.userInfo?.password || atob(encodedPassword)
-
-    const result = await window.api.tcpLogin?.(username, password)
+    const result = await window.api.tcpLogin?.(props.userInfo?.username, props.userInfo?.password)
 
     const previousStatus = serverStatus.value
 
@@ -133,7 +129,7 @@ onMounted(() => {
   const now = Date.now()
   const lastCheck = lastCheckTimestamp.value
 
-  // 如果距离上次检测超过一分钟，则重新检测
+  // 如果距离上次检测超过一分钟，则重新检测(仅启动时)
   if (!lastCheck || now - lastCheck >= checkUnknownServerStatusTime) {
     checkServerStatus()
   } else {
