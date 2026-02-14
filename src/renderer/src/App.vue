@@ -147,6 +147,7 @@ import budingImg from '@renderer/assets/imgs/buding.png'
 import shanchuImg from '@renderer/assets/imgs/shanchu.png'
 import xiangceImg from '@renderer/assets/imgs/xiangce.png'
 import xiufuImg from '@renderer/assets/imgs/xiufu.png'
+import wangzhanImg from '@renderer/assets/imgs/wangzhan.png'
 import WindowResizer from './components/WindowResizer.vue'
 import { useToast } from './composables/useToast'
 import { checkUpdateIntervalTime } from '@config'
@@ -173,7 +174,15 @@ const giftRechargeItems = computed<DropdownItem[]>(() => [
   {
     label: '充值中心',
     icon: zuanshiImg,
-    onClick: () => handleNavClick('recharge')
+    onClick: () => {
+      window.api.openRechargeCenter?.(userInfo.value?.username)
+    }
+  },
+  {
+    label: '游戏官网',
+    icon: wangzhanImg,
+    href: 'https://r2beat.xiyouxi.com/',
+    target: '_blank'
   }
 ])
 
@@ -182,21 +191,17 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
   {
     label: '设置',
     icon: shezhiImg,
-    onClick: () => handleNavClick('settings')
+    onClick: () => (showSettings.value = true)
   },
   {
     label: 'MOD',
     icon: budingImg,
-    onClick: () => {
-      showPakModal.value = true
-    }
+    onClick: () => (showPakModal.value = true)
   },
   {
     label: '相册',
     icon: xiangceImg,
-    onClick: () => {
-      showAlbumModal.value = true
-    }
+    onClick: () => (showAlbumModal.value = true)
   },
   {
     label: '修复',
@@ -341,14 +346,6 @@ const handleLoginSuccess = async (userInfo: UserInfo) => {
   }
 
   showLoginModal.value = false
-}
-
-const handleNavClick = (type: 'website' | 'recharge' | 'settings') => {
-  if (type === 'settings') {
-    showSettings.value = true
-  } else if (type === 'recharge') {
-    window.api.openRechargeCenter?.(userInfo.value?.username)
-  }
 }
 
 const searchGamePath = async () => {

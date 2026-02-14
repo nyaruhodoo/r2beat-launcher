@@ -436,6 +436,14 @@ export interface ContextBridgeApi {
   deleteScreenshot?: (filePath: string) => Promise<{ success: boolean; error?: string }>
   clearScreenshots?: (gamePath: string) => Promise<ClearScreenshotsResult>
   openGameRecovery?: (gamePath: string) => Promise<{ success: boolean; error?: string }>
+  getQQ?: () => Promise<{
+    success: boolean
+    error?: string
+    data?: {
+      imgSrc?: string
+      qqNumber?: string
+    }
+  }>
 }
 
 export interface R2BeatNoticeData {

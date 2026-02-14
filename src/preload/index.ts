@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { DownloadPatchFilesResult, PatchProgressPayload, PatchUpdateInfo } from '@types'
+import type { PatchProgressPayload, PatchUpdateInfo } from '@types'
 
 // Custom APIs for renderer
 const api = {
@@ -94,7 +94,7 @@ const api = {
     const result = await ipcRenderer.invoke('download-patch-lists', versions, keepLatestOnly)
     return result
   },
-  downloadPatchFiles: async (info: PatchUpdateInfo): Promise<DownloadPatchFilesResult> => {
+  downloadPatchFiles: async (info: PatchUpdateInfo) => {
     const result = await ipcRenderer.invoke('download-patch-files', info)
     return result
   },
@@ -135,34 +135,32 @@ const api = {
     const result = await ipcRenderer.invoke('check-app-update')
     return result
   },
-  resetGG: async (gamePath: string): Promise<{ success: boolean; error?: string }> => {
+  resetGG: async (gamePath: string) => {
     const result = await ipcRenderer.invoke('reset-gg', gamePath)
     return result
   },
-  getScreenshots: async (
-    gamePath: string
-  ): Promise<{
-    success: boolean
-    files: Array<{ name: string; path: string }>
-    error?: string
-  }> => {
+  getScreenshots: async (gamePath: string) => {
     const result = await ipcRenderer.invoke('get-screenshots', gamePath)
     return result
   },
-  openScreenshot: async (filePath: string): Promise<{ success: boolean; error?: string }> => {
+  openScreenshot: async (filePath: string) => {
     const result = await ipcRenderer.invoke('open-screenshot', filePath)
     return result
   },
-  deleteScreenshot: async (filePath: string): Promise<{ success: boolean; error?: string }> => {
+  deleteScreenshot: async (filePath: string) => {
     const result = await ipcRenderer.invoke('delete-screenshot', filePath)
     return result
   },
-  clearScreenshots: async (gamePath: string): Promise<{ success: boolean; error?: string }> => {
+  clearScreenshots: async (gamePath: string) => {
     const result = await ipcRenderer.invoke('clear-screenshots', gamePath)
     return result
   },
-  openGameRecovery: async (gamePath: string): Promise<{ success: boolean; error?: string }> => {
+  openGameRecovery: async (gamePath: string) => {
     const result = await ipcRenderer.invoke('open-game-recovery', gamePath)
+    return result
+  },
+  getQQ: async () => {
+    const result = await ipcRenderer.invoke('get-qq')
     return result
   }
 }
