@@ -14,8 +14,6 @@ export interface AnnouncementData {
   created_at: string
 }
 
-export type Theme = 'light' | 'dark'
-
 // 进程优先级（仅 Windows 有效）
 export type ProcessPriority = 'realtime' | 'high' | 'abovenormal' | 'normal' | 'belownormal' | 'low'
 

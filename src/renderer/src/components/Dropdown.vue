@@ -21,24 +21,29 @@
           :class="{ disabled: item.disabled }"
           @click.stop="handleItemClick(item)"
         >
-          <span v-if="item.icon" class="menu-icon">
-            <img
-              v-if="
-                typeof item.icon === 'string' &&
-                (item.icon.endsWith('.png') ||
-                  item.icon.endsWith('.jpg') ||
-                  item.icon.endsWith('.jpeg') ||
-                  item.icon.endsWith('.svg') ||
-                  item.icon.endsWith('.gif') ||
-                  item.icon.endsWith('.webp') ||
-                  item.icon.startsWith('data:') ||
-                  item.icon.startsWith('http'))
-              "
-              :src="item.icon"
-              alt=""
-            />
-            <component :is="item.icon" v-else-if="typeof item.icon === 'object'" />
-            <span v-else>{{ item.icon }}</span>
+          <span v-if="item.color || item.icon" class="menu-icon">
+            <!-- 优先显示颜色块 -->
+            <div v-if="item.color" class="color-indicator" :style="{ backgroundColor: item.color }"></div>
+            <!-- 如果没有颜色，则显示图标 -->
+            <template v-else>
+              <img
+                v-if="
+                  typeof item.icon === 'string' &&
+                  (item.icon.endsWith('.png') ||
+                    item.icon.endsWith('.jpg') ||
+                    item.icon.endsWith('.jpeg') ||
+                    item.icon.endsWith('.svg') ||
+                    item.icon.endsWith('.gif') ||
+                    item.icon.endsWith('.webp') ||
+                    item.icon.startsWith('data:') ||
+                    item.icon.startsWith('http'))
+                "
+                :src="item.icon"
+                alt=""
+              />
+              <component :is="item.icon" v-else-if="typeof item.icon === 'object'" />
+              <span v-else>{{ item.icon }}</span>
+            </template>
           </span>
           <span class="menu-text">{{ item.label }}</span>
         </div>
@@ -54,6 +59,7 @@ import type { CSSProperties } from 'vue'
 export interface DropdownItem {
   label: string
   icon?: string | object
+  color?: string // 主题色，用于显示颜色块
   disabled?: boolean
   onClick?: () => void
   href?: string
@@ -279,6 +285,14 @@ watch(showMenu, (newVal) => {
       width: 100%;
       height: 100%;
       object-fit: contain;
+    }
+
+    .color-indicator {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
   }
 }

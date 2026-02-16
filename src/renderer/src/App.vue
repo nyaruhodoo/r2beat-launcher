@@ -60,7 +60,8 @@
             </button>
           </template>
         </Dropdown>
-        <ThemeToggle :theme="theme" :toggle-theme="toggleTheme" />
+
+        <ThemeToggle :theme="theme" :toggle-theme="setTheme" />
       </template>
     </CustomTitleBar>
 
@@ -138,7 +139,7 @@ import PakModal from './components/PakModal.vue'
 import AlbumModal from './components/AlbumModal.vue'
 import Dropdown from './components/Dropdown.vue'
 import type { DropdownItem } from './components/Dropdown.vue'
-import { GameSettings, Theme, UserInfo } from '../../types'
+import { GameSettings, UserInfo } from '../../types'
 import mangheImg from '@renderer/assets/imgs/manghe.png'
 import zuanshiImg from '@renderer/assets/imgs/zuanshi.png'
 import shezhiImg from '@renderer/assets/imgs/shezhi.png'
@@ -287,19 +288,19 @@ const deleteAccount = (userName: string): void => {
   setSavedAccounts(newAccounts)
 }
 
-const applyTheme = (newTheme: Theme) => {
-  const root = document.documentElement
-  root.setAttribute('data-theme', newTheme)
-  root.classList.remove('light-theme', 'dark-theme')
-  root.classList.add(`${newTheme}-theme`)
-}
-
-const [theme, setTheme] = useLocalStorageState<Theme>('r2beat-launcher-theme', {
+const [theme, setTheme] = useLocalStorageState<string>('r2beat-launcher-theme', {
   defaultValue: (() => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     return prefersDark ? 'dark' : 'light'
   })()
 })
+const applyTheme = (newTheme?: string) => {
+  if (!newTheme) return
+  const root = document.documentElement
+  root.setAttribute('data-theme', newTheme)
+  root.className = ''
+  root.classList.add(`${newTheme.trim()}-theme`)
+}
 
 // 上次检查更新的时间（用于缓存，30分钟内不重复检查）
 const [lastUpdateCheckTime, setLastUpdateCheckTime] = useLocalStorageState<number>(
@@ -313,24 +314,10 @@ const [lastUpdateCheckTime, setLastUpdateCheckTime] = useLocalStorageState<numbe
 watch(
   theme,
   (newTheme) => {
-    if (newTheme) {
-      applyTheme(newTheme)
-    }
+    applyTheme(newTheme)
   },
   { immediate: true }
 )
-
-// 监听系统主题变化(不写入缓存)
-const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-mediaQuery.addEventListener('change', (e) => {
-  applyTheme(e.matches ? 'dark' : 'light')
-})
-
-// 主题切换方法
-const toggleTheme = () => {
-  const newTheme = theme.value === 'dark' ? 'light' : 'dark'
-  setTheme(newTheme)
-}
 
 /**
  * 登录成功，只存储到本地即可

@@ -297,7 +297,6 @@ useInterval(() => {
 
   &:hover:not(.disabled):not(.launching) {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 12px 40px rgba(255, 107, 157, 0.6);
   }
 
   &:active:not(.disabled):not(.launching) {

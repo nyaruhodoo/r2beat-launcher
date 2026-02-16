@@ -1,13 +1,9 @@
 @import './base.css';
 
+/*
+  全局通用的主题色
+*/
 :root {
-  /* 二次元粉色系主题色 */
-  --color-primary: #ffb6c1;
-  --color-primary-dark: #ff6b9d;
-  --color-primary-light: #ffe4e1;
-  --color-secondary: #dda0dd;
-  --color-accent: #ff69b4;
-
   /* 错误/警告颜色 */
   --color-error: #ff6b6b;
   --color-error-bg: rgba(255, 107, 107, 0.1);
@@ -25,27 +21,6 @@
   --color-overlay: rgba(0, 0, 0, 0.6);
   --color-overlay-light: rgba(0, 0, 0, 0.4);
 
-  /* 渐变背景 */
-  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  --gradient-primary-dark: linear-gradient(
-    135deg,
-    var(--color-primary-dark) 0%,
-    #c44569 50%,
-    var(--color-primary) 100%
-  );
-  --gradient-card: linear-gradient(
-    135deg,
-    rgba(255, 182, 193, 0.1) 0%,
-    rgba(221, 160, 221, 0.1) 100%
-  );
-  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  --gradient-shine-light: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-
   /* 文字阴影 */
   --text-shadow-primary: 0 0 10px rgba(255, 182, 193, 0.5);
 
@@ -58,8 +33,39 @@
   --border-radius-app: 8px;
 }
 
+/* 这里加 root 是为了让系统公告强行用 dark 覆盖 */
 :root,
 :root.dark-theme {
+  --color-primary: #ffb6c1;
+  --color-primary-dark: #ff6b9d;
+  --color-primary-light: #ffe4e1;
+  --color-secondary: #dda0dd;
+  --color-accent: #ff69b4;
+
+  /* 渐变背景 */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --gradient-primary-dark: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    #c44569 50%,
+    var(--color-primary) 100%
+  );
+  /* modal 颜色 */
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(255, 182, 193, 0.1) 0%,
+    rgba(221, 160, 221, 0.1) 100%
+  );
+
+  /* 登录按钮相关 */
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+
   /* 背景色 */
   --color-bg-primary: #1a1a2e;
   --color-bg-secondary: #16213e;
@@ -104,6 +110,36 @@
 }
 
 :root.light-theme {
+  --color-primary: #ffb6c1;
+  --color-primary-dark: #ff6b9d;
+  --color-primary-light: #ffe4e1;
+  --color-secondary: #dda0dd;
+  --color-accent: #ff69b4;
+
+  /* 渐变背景 */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --gradient-primary-dark: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    #c44569 50%,
+    var(--color-primary) 100%
+  );
+  /* modal 颜色 */
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(255, 182, 193, 0.1) 0%,
+    rgba(221, 160, 221, 0.1) 100%
+  );
+
+  /* 登录按钮相关 */
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+
   /* 背景色 */
   --color-bg-primary: #f5f5f8;
   --color-bg-secondary: #ffffff;
@@ -145,6 +181,529 @@
   --shadow-button-active: 0 2px 8px rgba(255, 182, 193, 0.2);
   --shadow-input-focus: 0 0 0 3px rgba(255, 182, 193, 0.1);
   --shadow-input-focus-light: 0 0 0 3px rgba(255, 107, 157, 0.15);
+}
+
+/* 小辞喜欢的天蓝? */
+:root.xiaocilan-theme {
+  /* 核心蓝调：高饱和度但明亮，像动漫里的盛夏晴空 */
+  --color-primary: #7ed6ff; /* 主色：清透的天空蓝 */
+  --color-primary-dark: #45aaf2; /* 深色：蔚蓝色，用于增加层次感 */
+  --color-primary-light: #e3f7ff; /* 浅色：极淡的水蓝色 */
+  --color-secondary: #a29bfe; /* 辅助色：带点紫调的浅靛蓝，增加梦幻感 */
+  --color-accent: #f9ca24; /* 强调色：明亮的柠檬黄，如同夏日的阳光 */
+
+  /* 渐变背景：天蓝到浅青的过渡，呈现出如同通透玻璃的效果 */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, #a2e9ff 100%);
+  --gradient-primary-dark: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    #2d98da 50%,
+    var(--color-primary) 100%
+  );
+
+  /* Modal 颜色：像是一层薄薄的蓝色冰块或水汽 */
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(126, 214, 255, 0.1) 0%,
+    rgba(162, 155, 254, 0.1) 100%
+  );
+
+  /* 登录按钮相关 */
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+
+  /* 背景色：带有微弱蓝调的极白，保持空气感 */
+  --color-bg-primary: #f5fafd;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #eaf4f9;
+  --color-bg-card: rgba(69, 170, 242, 0.08);
+  --color-bg-card-hover: rgba(69, 170, 242, 0.12);
+
+  --app-bg: #f5fafd;
+
+  /* 模态框 */
+  --modal-bg: #ffffff;
+  --modal-bg-overlay: rgba(20, 35, 50, 0.3); /* 带有深蓝倾向的遮罩 */
+
+  /* Toast 错误提示框：使用明亮的西瓜红/橘红，避免破坏蓝色系的轻盈感 */
+  --toast-error-bg: rgba(255, 255, 255, 0.95);
+  --toast-error-border: rgba(255, 121, 121, 0.3);
+  --toast-error-text: #ff7979;
+  --toast-error-shadow: 0 4px 20px rgba(255, 121, 121, 0.15);
+
+  /* 文字颜色：使用深海蓝灰色，比纯黑更现代且与主色调呼应 */
+  --color-text-primary: rgba(30, 45, 60, 0.95);
+  --color-text-secondary: rgba(30, 45, 60, 0.8);
+  --color-text-tertiary: rgba(30, 45, 60, 0.6);
+  --color-text-muted: rgba(30, 45, 60, 0.4);
+
+  /* 边框颜色 */
+  --color-border: rgba(126, 214, 255, 0.25);
+  --color-border-hover: rgba(126, 214, 255, 0.45);
+
+  /* 阴影：淡蓝色的光晕，让元素看起来像悬浮在水面 */
+  --shadow-sm: 0 2px 10px rgba(126, 214, 255, 0.1);
+  --shadow-md: 0 4px 20px rgba(126, 214, 255, 0.15);
+  --shadow-lg: 0 8px 30px rgba(126, 214, 255, 0.2);
+  --shadow-glow: 0 0 20px rgba(126, 214, 255, 0.5);
+  --shadow-card-hover: 0 2px 8px rgba(126, 214, 255, 0.2);
+  --shadow-card-active: 0 4px 12px rgba(126, 214, 255, 0.3);
+  --shadow-button-hover: 0 4px 15px rgba(69, 170, 242, 0.35);
+  --shadow-button-active: 0 2px 8px rgba(69, 170, 242, 0.25);
+  --shadow-input-focus: 0 0 0 3px rgba(126, 214, 255, 0.15);
+  --shadow-input-focus-light: 0 0 0 3px rgba(69, 170, 242, 0.2);
+}
+
+/* 草绿 */
+:root.caolv-theme {
+  /* 核心绿调：选用带有活力的嫩草绿和青柠绿 */
+  --color-primary: #8ee4af; /* 主色：清新的嫩草绿 */
+  --color-primary-dark: #52b788; /* 深色：薄荷森林绿，更有稳重感 */
+  --color-primary-light: #e8f5e9; /* 浅色：极浅的呼吸绿 */
+  --color-secondary: #b9f2ff; /* 辅助色：二次元常用的淡天蓝色，增加通透感 */
+  --color-accent: #ffd54f; /* 强调色：明亮的萤火虫黄，用于点睛 */
+
+  /* 渐变背景：绿到蓝的微小过渡，更有透明感 */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, #b2e2f2 100%);
+  --gradient-primary-dark: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    #40916c 50%,
+    var(--color-primary) 100%
+  );
+
+  /* Modal 颜色：像半透明的树叶阴影 */
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(142, 228, 175, 0.1) 0%,
+    rgba(185, 242, 255, 0.1) 100%
+  );
+
+  /* 登录按钮相关 */
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+
+  /* 背景色：稍微偏向冷灰，让绿色更跳跃 */
+  --color-bg-primary: #f7faf9;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #edf2f0;
+  --color-bg-card: rgba(82, 183, 136, 0.08);
+  --color-bg-card-hover: rgba(82, 183, 136, 0.12);
+
+  --app-bg: #f7faf9;
+
+  /* 模态框 */
+  --modal-bg: #ffffff;
+  --modal-bg-overlay: rgba(20, 40, 30, 0.3); /* 稍微带点深绿的遮罩 */
+
+  /* Toast 错误提示框：使用更醒目的珊瑚橙而非死板的红 */
+  --toast-error-bg: rgba(255, 255, 255, 0.95);
+  --toast-error-border: rgba(255, 126, 103, 0.3);
+  --toast-error-text: #ff7e67;
+  --toast-error-shadow: 0 4px 20px rgba(255, 126, 103, 0.15);
+
+  /* 文字颜色：使用深青黑色，比纯黑更现代 */
+  --color-text-primary: rgba(35, 50, 45, 0.95);
+  --color-text-secondary: rgba(35, 50, 45, 0.8);
+  --color-text-tertiary: rgba(35, 50, 45, 0.6);
+  --color-text-muted: rgba(35, 50, 45, 0.4);
+
+  /* 边框颜色 */
+  --color-border: rgba(82, 183, 136, 0.2);
+  --color-border-hover: rgba(82, 183, 136, 0.4);
+
+  /* 阴影：将原先的粉色投影改为淡淡的草绿色投影，更有氛围感 */
+  --shadow-sm: 0 2px 10px rgba(82, 183, 136, 0.08);
+  --shadow-md: 0 4px 20px rgba(82, 183, 136, 0.12);
+  --shadow-lg: 0 8px 30px rgba(82, 183, 136, 0.15);
+  --shadow-glow: 0 0 20px rgba(142, 228, 175, 0.5);
+  --shadow-card-hover: 0 2px 8px rgba(142, 228, 175, 0.2);
+  --shadow-card-active: 0 4px 12px rgba(142, 228, 175, 0.3);
+  --shadow-button-hover: 0 4px 15px rgba(82, 183, 136, 0.3);
+  --shadow-button-active: 0 2px 8px rgba(82, 183, 136, 0.2);
+  --shadow-input-focus: 0 0 0 3px rgba(142, 228, 175, 0.2);
+  --shadow-input-focus-light: 0 0 0 3px rgba(82, 183, 136, 0.2);
+}
+
+/* 茜茜喜欢的紫色 */
+:root.xixizi-theme {
+  /* 核心紫调：选用明度高、纯度适中的薰衣草色 */
+  --color-primary: #b294ff; /* 主色：明亮薰衣草紫（带一点点蓝调，更清透） */
+  --color-primary-dark: #8a70d6; /* 深色：紫罗兰色，用于文字或深色按钮 */
+  --color-primary-light: #f3efff; /* 浅色：极浅的淡紫色，像梦境一样的底色 */
+  --color-secondary: #ffc2eb; /* 辅助色：甜美的糖果粉，增加二次元少女感 */
+  --color-accent: #74ebd5; /* 强调色：薄荷青（紫色的对比色），让视觉瞬间变清新 */
+
+  /* 渐变背景：薰衣草紫到夕阳粉的过渡，非常有层次感 */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, #d8b4fe 100%);
+  --gradient-primary-dark: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    #6c5ce7 50%,
+    var(--color-primary) 100%
+  );
+
+  /* Modal 颜色：带有一点紫色的透明水汽感 */
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(178, 148, 255, 0.1) 0%,
+    rgba(255, 194, 235, 0.1) 100%
+  );
+
+  /* 登录按钮相关 */
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+
+  /* 背景色：透着一点点紫的白，比死白更有质感 */
+  --color-bg-primary: #f9f8ff;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f0edff;
+  --color-bg-card: rgba(138, 112, 214, 0.08);
+  --color-bg-card-hover: rgba(138, 112, 214, 0.12);
+
+  --app-bg: #f9f8ff;
+
+  /* 模态框 */
+  --modal-bg: #ffffff;
+  --modal-bg-overlay: rgba(45, 30, 60, 0.35); /* 带一点深紫褐色的遮罩，更有沉浸感 */
+
+  /* Toast 错误提示框：紫色系配亮粉橙，非常醒目 */
+  --toast-error-bg: rgba(255, 255, 255, 0.95);
+  --toast-error-border: rgba(255, 126, 180, 0.3);
+  --toast-error-text: #ff6b9d;
+  --toast-error-shadow: 0 4px 20px rgba(255, 107, 157, 0.15);
+
+  /* 文字颜色：使用带有暖紫调的深灰色，避免冷硬 */
+  --color-text-primary: rgba(45, 40, 60, 0.95);
+  --color-text-secondary: rgba(45, 40, 60, 0.8);
+  --color-text-tertiary: rgba(45, 40, 60, 0.6);
+  --color-text-muted: rgba(45, 40, 60, 0.4);
+
+  /* 边框颜色 */
+  --color-border: rgba(178, 148, 255, 0.25);
+  --color-border-hover: rgba(178, 148, 255, 0.45);
+
+  /* 阴影：淡紫色的呼吸光晕 */
+  --shadow-sm: 0 2px 10px rgba(178, 148, 255, 0.1);
+  --shadow-md: 0 4px 20px rgba(178, 148, 255, 0.15);
+  --shadow-lg: 0 8px 30px rgba(178, 148, 255, 0.2);
+  --shadow-glow: 0 0 20px rgba(178, 148, 255, 0.5);
+  --shadow-card-hover: 0 2px 8px rgba(178, 148, 255, 0.2);
+  --shadow-card-active: 0 4px 12px rgba(178, 148, 255, 0.3);
+  --shadow-button-hover: 0 4px 15px rgba(138, 112, 214, 0.35);
+  --shadow-button-active: 0 2px 8px rgba(138, 112, 214, 0.25);
+  --shadow-input-focus: 0 0 0 3px rgba(178, 148, 255, 0.15);
+  --shadow-input-focus-light: 0 0 0 3px rgba(138, 112, 214, 0.2);
+}
+
+/* 奶黄，有点亮 */
+:root.naihuang-theme {
+  /* 核心黄调：选用高明度、低饱和度的暖黄色，像流心蛋黄一样温柔 */
+  --color-primary: #ffeaa7; /* 主色：奶黄色（芝士色） */
+  --color-primary-dark: #fdcb6e; /* 深色：琥珀黄，用于文字或按钮边界 */
+  --color-primary-light: #fff9e6; /* 浅色：奶油白，极其轻盈 */
+  --color-secondary: #fab1a0; /* 辅助色：柔和的珊瑚粉，增加少女气色 */
+  --color-accent: #81ecec; /* 强调色：清爽的天蓝色，让整体不至于过甜，增加透明感 */
+
+  /* 渐变背景：奶黄到浅粉的过渡，像夕阳下的云朵 */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, #ffdf91 100%);
+  --gradient-primary-dark: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    #e1a32a 50%,
+    var(--color-primary) 100%
+  );
+
+  /* Modal 颜色：像半透明的蜜糖纸 */
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(255, 234, 167, 0.15) 0%,
+    rgba(250, 177, 160, 0.1) 100%
+  );
+
+  /* 登录按钮相关 */
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.7),
+    transparent
+  );
+
+  /* 背景色：像香草冰淇淋一样的暖白色 */
+  --color-bg-primary: #fffdf5;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f9f5e7;
+  --color-bg-card: rgba(253, 203, 110, 0.08);
+  --color-bg-card-hover: rgba(253, 203, 110, 0.12);
+
+  --app-bg: #fffdf5;
+
+  /* 模态框 */
+  --modal-bg: #ffffff;
+  --modal-bg-overlay: rgba(60, 50, 30, 0.3); /* 带有暖棕色倾向的遮罩 */
+
+  /* Toast 错误提示框：使用柔和的草莓红 */
+  --toast-error-bg: rgba(255, 255, 255, 0.95);
+  --toast-error-border: rgba(255, 118, 117, 0.3);
+  --toast-error-text: #ff7675;
+  --toast-error-shadow: 0 4px 20px rgba(255, 118, 117, 0.15);
+
+  /* 文字颜色：使用温暖的焦糖咖色，比纯黑更契合黄色调 */
+  --color-text-primary: rgba(75, 60, 45, 0.95);
+  --color-text-secondary: rgba(75, 60, 45, 0.8);
+  --color-text-tertiary: rgba(75, 60, 45, 0.6);
+  --color-text-muted: rgba(75, 60, 45, 0.4);
+
+  /* 边框颜色 */
+  --color-border: rgba(253, 203, 110, 0.3);
+  --color-border-hover: rgba(253, 203, 110, 0.5);
+
+  /* 阴影：带有蜂蜜感的暖光投影 */
+  --shadow-sm: 0 2px 10px rgba(253, 203, 110, 0.1);
+  --shadow-md: 0 4px 20px rgba(253, 203, 110, 0.15);
+  --shadow-lg: 0 8px 30px rgba(253, 203, 110, 0.2);
+  --shadow-glow: 0 0 20px rgba(255, 234, 167, 0.6);
+  --shadow-card-hover: 0 2px 8px rgba(255, 234, 167, 0.3);
+  --shadow-card-active: 0 4px 12px rgba(255, 234, 167, 0.4);
+  --shadow-button-hover: 0 4px 15px rgba(253, 203, 110, 0.4);
+  --shadow-button-active: 0 2px 8px rgba(253, 203, 110, 0.3);
+  --shadow-input-focus: 0 0 0 3px rgba(255, 234, 167, 0.3);
+  --shadow-input-focus-light: 0 0 0 3px rgba(253, 203, 110, 0.2);
+}
+
+/* 浅灰色 */
+:root.qianhui-theme {
+  /* 核心灰调：带有冷色调的灰色，清冷且高级 */
+  --color-primary: #b2bec3; /* 主色：浅烟灰色（带有微弱的蓝紫倾向） */
+  --color-primary-dark: #636e72; /* 深色：深岩灰，用于强调结构 */
+  --color-primary-light: #f1f2f6; /* 浅色：云雾白，极佳的背景过渡色 */
+  --color-secondary: #dfe6e9; /* 辅助色：冰晶灰 */
+  --color-accent: #00d2ff; /* 强调色：电光蓝，二次元机能风的点睛之笔 */
+
+  /* 渐变背景：从烟灰到冷蓝的微弱过渡，呈现出磨砂金属或薄雾的效果 */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, #d1d8e0 100%);
+  --gradient-primary-dark: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    #2f3542 50%,
+    var(--color-primary) 100%
+  );
+
+  /* Modal 颜色：像是一层半透明的磨砂玻璃 */
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(178, 190, 195, 0.1) 0%,
+    rgba(116, 125, 140, 0.05) 100%
+  );
+
+  /* 登录按钮相关：光效在灰色背景上会呈现出一种液态金属感 */
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+
+  /* 背景色：极其纯净的冷灰白 */
+  --color-bg-primary: #f5f6fa;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #eceef2;
+  --color-bg-card: rgba(99, 110, 114, 0.06);
+  --color-bg-card-hover: rgba(99, 110, 114, 0.1);
+
+  --app-bg: #f5f6fa;
+
+  /* 模态框 */
+  --modal-bg: #ffffff;
+  --modal-bg-overlay: rgba(47, 53, 66, 0.3); /* 深沉的钢灰色遮罩 */
+
+  /* Toast 错误提示框：在冷色调中，深红色会显得非常醒目 */
+  --toast-error-bg: rgba(255, 255, 255, 0.95);
+  --toast-error-border: rgba(235, 77, 75, 0.3);
+  --toast-error-text: #eb4d4b;
+  --toast-error-shadow: 0 4px 20px rgba(235, 77, 75, 0.1);
+
+  /* 文字颜色：使用深蓝灰色，增加一种“电子档案”的高级感 */
+  --color-text-primary: rgba(47, 53, 66, 0.95);
+  --color-text-secondary: rgba(47, 53, 66, 0.8);
+  --color-text-tertiary: rgba(47, 53, 66, 0.6);
+  --color-text-muted: rgba(47, 53, 66, 0.4);
+
+  /* 边框颜色 */
+  --color-border: rgba(178, 190, 195, 0.3);
+  --color-border-hover: rgba(178, 190, 195, 0.5);
+
+  /* 阴影：不再是散漫的投影，而是更凝聚、更具科技感的淡灰色光晕 */
+  --shadow-sm: 0 2px 10px rgba(178, 190, 195, 0.1);
+  --shadow-md: 0 4px 20px rgba(178, 190, 195, 0.15);
+  --shadow-lg: 0 8px 30px rgba(178, 190, 195, 0.2);
+  --shadow-glow: 0 0 20px rgba(0, 210, 255, 0.4); /* 发光使用电光蓝，非常有神采 */
+  --shadow-card-hover: 0 2px 8px rgba(178, 190, 195, 0.2);
+  --shadow-card-active: 0 4px 12px rgba(178, 190, 195, 0.3);
+  --shadow-button-hover: 0 4px 15px rgba(99, 110, 114, 0.25);
+  --shadow-button-active: 0 2px 8px rgba(99, 110, 114, 0.2);
+  --shadow-input-focus: 0 0 0 3px rgba(0, 210, 255, 0.1);
+  --shadow-input-focus-light: 0 0 0 3px rgba(178, 190, 195, 0.2);
+}
+
+/* 新年红 */
+:root.xinchunhong-theme {
+  /* 核心红调：选用带有朝气的朱红，而非暗淡的深红 */
+  --color-primary: #ff4d4d; /* 主色：元气朱红（像锦鲤和御守的颜色） */
+  --color-primary-dark: #d63031; /* 深色：枫叶红，用于更有分量的文字或边框 */
+  --color-primary-light: #fff2f2; /* 浅色：极浅的淡粉白，像冬日红梅映雪 */
+  --color-secondary: #ffaf40; /* 辅助色：暖金色（夕阳橘），增加节庆的辉煌感 */
+  --color-accent: #ffd700; /* 强调色：明亮的黄金色，用于模拟新年高光点缀 */
+
+  /* 渐变背景：红到金橙色的过渡，像锦鲤在水中游动，极具灵动感 */
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, #ff7675 100%);
+  --gradient-primary-dark: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    #b33939 50%,
+    var(--color-primary) 100%
+  );
+
+  /* Modal 颜色：像是一层淡淡的粉红气泡，梦幻且喜庆 */
+  --gradient-card: linear-gradient(135deg, rgba(255, 77, 77, 0.1) 0%, rgba(255, 175, 64, 0.1) 100%);
+
+  /* 登录按钮相关：光效在红色背景上会产生一种“流光溢彩”的效果 */
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+
+  /* 背景色：透着淡淡红晕的暖白，像和纸的质感 */
+  --color-bg-primary: #fffafb;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #fdf1f2;
+  --color-bg-card: rgba(255, 77, 77, 0.08);
+  --color-bg-card-hover: rgba(255, 77, 77, 0.12);
+
+  --app-bg: #fffafb;
+
+  /* 模态框 */
+  --modal-bg: #ffffff;
+  --modal-bg-overlay: rgba(60, 20, 20, 0.35); /* 带一点深红褐色的遮罩 */
+
+  /* Toast 错误提示框：使用更深的酒红色，确保在红色调中仍有对比度 */
+  --toast-error-bg: rgba(255, 255, 255, 0.95);
+  --toast-error-border: rgba(214, 48, 49, 0.3);
+  --toast-error-text: #d63031;
+  --toast-error-shadow: 0 4px 20px rgba(214, 48, 49, 0.15);
+
+  /* 文字颜色：带有暖红倾向的深咖啡色，避免黑色过于死板 */
+  --color-text-primary: rgba(60, 30, 30, 0.95);
+  --color-text-secondary: rgba(60, 30, 30, 0.8);
+  --color-text-tertiary: rgba(60, 30, 30, 0.6);
+  --color-text-muted: rgba(60, 30, 30, 0.4);
+
+  /* 边框颜色 */
+  --color-border: rgba(255, 77, 77, 0.25);
+  --color-border-hover: rgba(255, 77, 77, 0.45);
+
+  /* 阴影：红色的光晕，像是在发光的灯笼 */
+  --shadow-sm: 0 2px 10px rgba(255, 77, 77, 0.1);
+  --shadow-md: 0 4px 20px rgba(255, 77, 77, 0.15);
+  --shadow-lg: 0 8px 30px rgba(255, 77, 77, 0.2);
+  --shadow-glow: 0 0 20px rgba(255, 77, 77, 0.5);
+  --shadow-card-hover: 0 2px 8px rgba(255, 77, 77, 0.2);
+  --shadow-card-active: 0 4px 12px rgba(255, 77, 77, 0.3);
+  --shadow-button-hover: 0 4px 15px rgba(214, 48, 49, 0.35);
+  --shadow-button-active: 0 2px 8px rgba(214, 48, 49, 0.25);
+  --shadow-input-focus: 0 0 0 3px rgba(255, 77, 77, 0.15);
+  --shadow-input-focus-light: 0 0 0 3px rgba(255, 175, 64, 0.2);
+}
+
+/* 纯黑配色 */
+:root.chunhei-theme {
+  /* 核心色调：在纯黑背景下，主色需要极高的亮度和纯度 */
+  --color-primary: #00ffcc; /* 主色：荧光青（类似赛博朋克的初音绿） */
+  --color-primary-dark: #00ccaa; /* 深色：暗青，用于按下状态 */
+  --color-primary-light: rgba(0, 255, 204, 0.15); /* 浅色：青色光晕感 */
+  --color-secondary: #7d5fff; /* 辅助色：电光紫，与青色形成经典的二次元撞色 */
+  --color-accent: #fff200; /* 强调色：警示黄，用于极高亮度的提醒 */
+
+  /* 渐变背景：在黑色背景上，渐变需要从深色往主色跳跃 */
+  --gradient-primary: linear-gradient(135deg, #00ffcc 0%, #7d5fff 100%);
+  --gradient-primary-dark: linear-gradient(135deg, #00ccaa 0%, #574b90 50%, #00ffcc 100%);
+
+  /* Modal 颜色：半透明的深灰，产生“毛玻璃”浮在黑洞上的感觉 */
+  --gradient-card: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+
+  /* 登录按钮相关：光效要像霓虹灯管一样耀眼 */
+  --gradient-shine: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  --gradient-shine-light: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+
+  /* 背景色：严格执行 #000 纯黑 */
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #0a0a0a; /* 极深灰，用于区分层级 */
+  --color-bg-tertiary: #141414;
+  --color-bg-card: rgba(255, 255, 255, 0.03); /* 靠透明度在黑底上拉开层次 */
+  --color-bg-card-hover: rgba(255, 255, 255, 0.07);
+
+  --app-bg: #000000;
+
+  /* 模态框 */
+  --modal-bg: #0a0a0a;
+  --modal-bg-overlay: rgba(0, 0, 0, 0.85); /* 几乎全黑的遮罩 */
+
+  /* Toast 错误提示框：在黑底上使用高亮度的亮粉色 */
+  --toast-error-bg: #1a1a1a;
+  --toast-error-border: rgba(255, 77, 77, 0.5);
+  --toast-error-text: #ff4d4d;
+  --toast-error-shadow: 0 0 20px rgba(255, 77, 77, 0.2);
+
+  /* 文字颜色：纯黑背景下，文字必须足够白才能不累眼睛 */
+  --color-text-primary: rgba(255, 255, 255, 0.95);
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-text-tertiary: rgba(255, 255, 255, 0.5);
+  --color-text-muted: rgba(255, 255, 255, 0.3);
+
+  /* 边框颜色：使用带透明度的白或主色，做出“呼吸感” */
+  --color-border: rgba(0, 255, 204, 0.2);
+  --color-border-hover: rgba(0, 255, 204, 0.5);
+
+  /* 阴影：纯黑背景下传统阴影不可见，必须使用 Glow（外发光） */
+  --shadow-sm: 0 0 10px rgba(0, 0, 0, 1); /* 纯黑影其实看不见 */
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 1);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 1);
+  --shadow-glow: 0 0 15px rgba(0, 255, 204, 0.6); /* 核心发光特效 */
+  --shadow-card-hover: 0 0 12px rgba(0, 255, 204, 0.2);
+  --shadow-card-active: 0 0 20px rgba(0, 255, 204, 0.3);
+  --shadow-button-hover: 0 0 15px rgba(0, 255, 204, 0.5);
+  --shadow-button-active: 0 0 8px rgba(0, 255, 204, 0.3);
+  --shadow-input-focus: 0 0 0 3px rgba(0, 255, 204, 0.2);
+  --shadow-input-focus-light: 0 0 0 3px rgba(125, 95, 255, 0.3);
 }
 
 #app {
