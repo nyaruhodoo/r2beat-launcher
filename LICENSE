@@ -1,0 +1,89 @@
+GNU AGPL v3 License
+
+                      GNU AFFERO GENERAL PUBLIC LICENSE
+                           Version 3, 19 November 2007
+
+   Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
+   Everyone is permitted to copy and distribute verbatim copies
+   of this license document, but changing it is not allowed.
+
+                             Preamble
+
+   The GNU Affero General Public License is a free software license
+   that guarantees end users the freedom to run, study, share and
+   modify the software. In addition, it ensures that the source code
+   is available to everyone, and it protects your rights as an end
+   user, including the right to run the software and share it with
+   others.
+
+   The AGPL was designed primarily for software that is used over a
+   network, ensuring that any user who interacts with the software
+   has access to the source code.  This is especially important for
+   software that is deployed on web servers, where users may not have
+   direct access to the software that powers the service they are
+   using. This license also mandates that modified versions must
+   provide the same freedoms to all users.
+
+   This is a summary of the terms of the AGPL v3 license:
+
+   0. Definitions
+
+   "This License" refers to version 3 of the GNU Affero General Public License.
+
+   "The Program" refers to any copyrightable work licensed under this License.
+
+   "The work" refers to the work of authorship where copyright is being
+   claimed.
+
+   "You" and "Your" refer to the licensee's rights and obligations.
+
+   1. Source Code
+
+   "Source code" for a work means the preferred form of the work for making
+   modifications to it.  It includes all modules it contains, plus any
+   associated interface definition files, scripts used to control compilation
+   and installation of an executable, or source code for a program that is
+   designed to be run on a computer operating system.
+
+   2. Basic Permissions
+
+   You may run the program, use it for any purpose, and distribute copies
+   of it.  You may also modify the program and distribute your modifications.
+
+   3. Copyleft
+
+   The modified version must be distributed under the same license terms.
+
+   4. Conveying Modified Source Versions
+
+   You must also pass on the same freedoms to everyone else.
+
+   5. No Additional Restrictions
+
+   You may not impose any further restrictions on others' exercise of the
+   rights granted herein.
+
+   6. Termination
+
+   If you violate this License, your rights under it terminate automatically.
+
+   7. Acceptance
+
+   You accept this License if you copy, modify or distribute the Program.
+
+   8. Limited Warranty
+
+   There is no warranty for the Program, and the author is not liable for
+   any damages.
+
+   9. Limitation of Liability
+
+   To the extent permitted by law, the author is not liable for any damages
+   that result from your use of the program.
+
+                             END
+
+   To get a copy of the complete GNU AGPL v3 License, please visit
+   https://www.gnu.org/licenses/agpl-3.0.txt 
+
+End of License.
