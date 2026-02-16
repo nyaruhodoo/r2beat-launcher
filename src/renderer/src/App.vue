@@ -40,6 +40,8 @@
           </template>
         </Dropdown>
 
+        <ThemeToggle :theme="theme" :toggle-theme="setTheme" />
+
         <!-- 补丁和设置下拉框 -->
         <Dropdown :items="patchSettingsItems">
           <template #trigger="{ isOpen }">
@@ -60,8 +62,6 @@
             </button>
           </template>
         </Dropdown>
-
-        <ThemeToggle :theme="theme" :toggle-theme="setTheme" />
       </template>
     </CustomTitleBar>
 
