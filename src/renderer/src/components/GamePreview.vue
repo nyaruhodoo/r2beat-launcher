@@ -21,15 +21,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-// 获取 imgs/mujica 文件夹下所有的图片
+import { ref, onMounted, watch } from 'vue'
+import type { GameSettings } from '@types'
+
+const props = defineProps<{
+  gameSettings?: GameSettings
+}>()
+
+// 获取本地图片（作为后备）
 const images = import.meta.glob('../assets/imgs/mujica/*.avif', {
   eager: true,
   import: 'default'
 })
 
 // 将图片对象转换为路径数组
-const imagePaths = Object.values(images) as string[]
+const localImagePaths = Object.values(images) as string[]
+
+// 本地图库图片路径列表
+const libraryImagePaths = ref<string[]>([])
 
 const text = Math.random() < 0.5 ? '恋爱' : '出轨'
 
@@ -40,8 +49,46 @@ const coverImageRef = ref<HTMLImageElement | null>(null)
 // 动画进行中标志
 const isAnimating = ref<boolean>(false)
 
+// 加载本地图库图片
+const loadLibraryImages = async () => {
+  const libraryPath = props.gameSettings?.localImageLibrary
+  if (!libraryPath || libraryPath.trim() === '') {
+    libraryImagePaths.value = []
+    return
+  }
+
+  try {
+    const result = await window.api.getLocalImageLibrary?.(libraryPath)
+    if (result?.success && result.files && result.files.length > 0) {
+      // 使用 r2shot:// 协议加载本地图片
+      libraryImagePaths.value = result.files.map((file) => {
+        const encodedPath = encodeURIComponent(file.path)
+        return `r2shot://?path=${encodedPath}`
+      })
+      console.log('本地图库加载成功，共', libraryImagePaths.value.length, '张图片')
+    } else {
+      libraryImagePaths.value = []
+    }
+  } catch (error) {
+    console.error('加载本地图库失败:', error)
+    libraryImagePaths.value = []
+  }
+}
+
+// 获取所有可用的图片路径（优先使用本地图库）
+const getAllImagePaths = (): string[] => {
+  // 如果本地图库有图片，优先使用
+  if (libraryImagePaths.value.length > 0) {
+    return libraryImagePaths.value
+  }
+  // 否则使用本地图片
+  return localImagePaths
+}
+
 // 加载随机游戏封面图片
 const loadRandomGameImage = () => {
+  const imagePaths = getAllImagePaths()
+
   if (imagePaths.length === 0) {
     console.error('没有可用的游戏封面图片')
     gameImagePath.value = ''
@@ -82,7 +129,6 @@ const handleImageClick = async () => {
 
     // 立即清除所有transform相关的样式，确保从干净的状态开始
     el.style.transform = ''
-    el.style.webkitTransform = ''
 
     // 等待浏览器处理样式清除
     await new Promise((resolve) => requestAnimationFrame(resolve))
@@ -117,16 +163,29 @@ const handleImageClick = async () => {
     // 动画结束后，取消动画并清除所有transform样式
     secondAnimation.cancel()
     el.style.transform = ''
-    el.style.webkitTransform = ''
   } finally {
     // 动画结束，重置标志
     isAnimating.value = false
   }
 }
 
+// 监听本地图库路径变化
+watch(
+  () => props.gameSettings?.localImageLibrary,
+  () => {
+    loadLibraryImages().then(() => {
+      // 图库加载完成后，重新加载随机图片
+      loadRandomGameImage()
+    })
+  },
+  { immediate: true }
+)
+
 // 组件挂载时加载随机图片
 onMounted(() => {
-  loadRandomGameImage()
+  loadLibraryImages().then(() => {
+    loadRandomGameImage()
+  })
 })
 </script>
 
@@ -152,6 +211,7 @@ onMounted(() => {
 
     .game-cover-float {
       width: 70%;
+      aspect-ratio: 1 / 1;
       max-width: 40vh;
       animation: float-cover 4s ease-in-out infinite;
       display: inline-block;
@@ -212,38 +272,6 @@ onMounted(() => {
       color: var(--color-text-secondary);
       margin: 0;
     }
-  }
-}
-
-.cover-placeholder {
-  width: 200px;
-  height: 280px;
-  margin: 0 auto;
-  background: var(--color-bg-card-hover);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 80px;
-  border: 2px solid var(--color-border);
-  box-shadow: var(--shadow-md);
-  transition:
-    background var(--transition-normal),
-    border-color var(--transition-normal),
-    box-shadow var(--transition-normal),
-    transform var(--transition-normal);
-  cursor: pointer;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--color-primary);
-  }
-
-  @media (max-width: 768px) {
-    width: 150px;
-    height: 210px;
-    font-size: 60px;
   }
 }
 

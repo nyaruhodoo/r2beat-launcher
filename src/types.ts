@@ -20,6 +20,8 @@ export type ProcessPriority = 'realtime' | 'high' | 'abovenormal' | 'normal' | '
 // 游戏设置
 export interface GameSettings {
   gamePath: string
+  /** 本地图库路径，用于 GamePreview 组件显示图片 */
+  localImageLibrary?: string
   autoUpdate: boolean
   /** 启动游戏后最小化到系统托盘 */
   minimizeToTrayOnLaunch: boolean
@@ -442,6 +444,7 @@ export interface ContextBridgeApi {
       qqNumber?: string
     }
   }>
+  getLocalImageLibrary?: (libraryPath: string) => Promise<GetScreenshotsResult>
 }
 
 export interface R2BeatNoticeData {

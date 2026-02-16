@@ -69,7 +69,7 @@
       <div class="content-wrapper">
         <!-- 左侧区域 -->
         <div class="left-section">
-          <GamePreview />
+          <GamePreview :game-settings="gameSettings" />
 
           <VersionCheck :game-settings="gameSettings" />
         </div>
@@ -254,6 +254,7 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
 const [gameSettings, setGameSettings] = useLocalStorageState<GameSettings>('r2beat_game_settings', {
   defaultValue: {
     gamePath: '',
+    localImageLibrary: '',
     autoUpdate: false,
     minimizeToTrayOnLaunch: true,
     processPriority: 'normal',

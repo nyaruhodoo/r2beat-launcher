@@ -10,9 +10,24 @@
     @cancel="handleClose"
   >
     <div class="settings-section">
+      <h3 class="section-title">本地图库</h3>
+      <div class="setting-item">
+        <div class="path-input-group">
+          <input
+            v-model="settings.localImageLibrary"
+            type="text"
+            class="path-input"
+            placeholder="请选择本地图库目录（可选）"
+          />
+          <button class="browse-btn" @click="handleBrowseLibrary">浏览</button>
+        </div>
+        <p class="setting-hint">设置后，将优先使用本地图库中的图片进行随机展示</p>
+      </div>
+    </div>
+
+    <div class="settings-section">
       <h3 class="section-title">游戏路径</h3>
       <div class="setting-item">
-        <label class="setting-label">游戏安装目录</label>
         <div class="path-input-group">
           <input
             v-model="settings.gamePath"
@@ -141,6 +156,7 @@ const { error: showError } = useToast()
 // 创建一个本地的响应式对象用于 v-model 绑定
 const settings = ref<GameSettings>({
   gamePath: '',
+  localImageLibrary: '',
   autoUpdate: true,
   minimizeToTrayOnLaunch: true,
   processPriority: 'normal',
@@ -309,6 +325,18 @@ const handleBrowse = async () => {
     }
   } catch (error) {
     console.error('选择文件夹失败:', error)
+  }
+}
+
+const handleBrowseLibrary = async () => {
+  try {
+    // 传递当前已保存的路径，让对话框从该位置打开
+    const selectedPath = await window.api.selectFolder?.(settings.value.localImageLibrary)
+    if (selectedPath) {
+      settings.value.localImageLibrary = selectedPath
+    }
+  } catch (error) {
+    console.error('选择图库文件夹失败:', error)
   }
 }
 

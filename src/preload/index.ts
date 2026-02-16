@@ -162,6 +162,10 @@ const api = {
   getQQ: async () => {
     const result = await ipcRenderer.invoke('get-qq')
     return result
+  },
+  getLocalImageLibrary: async (libraryPath: string) => {
+    const result = await ipcRenderer.invoke('get-local-image-library', libraryPath)
+    return result
   }
 }
 

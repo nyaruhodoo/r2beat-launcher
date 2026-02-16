@@ -593,6 +593,75 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   })
 
   /**
+   * 获取本地图库目录下的所有图片文件
+   * - 读取指定目录（不存在则返回空数组）
+   * - 递归读取子目录
+   */
+  ipcMain.handle('get-local-image-library', async (_event, libraryPath: string) => {
+    try {
+      if (!libraryPath || typeof libraryPath !== 'string' || libraryPath.trim() === '') {
+        return { success: true, files: [] as Array<{ name: string; path: string }> }
+      }
+
+      if (!(await exists(libraryPath))) {
+        return { success: true, files: [] as Array<{ name: string; path: string }> }
+      }
+
+      const imageExts = new Set([
+        '.png',
+        '.jpg',
+        '.jpeg',
+        '.gif',
+        '.webp',
+        '.bmp',
+        '.tif',
+        '.tiff',
+        '.avif'
+      ])
+
+      const files: Array<{ name: string; path: string }> = []
+
+      const walk = async (dir: string) => {
+        const entries = await readdir(dir, { withFileTypes: true })
+        for (const entry of entries) {
+          const fullPath = join(dir, entry.name)
+          if (entry.isDirectory()) {
+            await walk(fullPath)
+            continue
+          }
+          if (!entry.isFile()) continue
+
+          const lowerName = entry.name.toLowerCase()
+          const dot = lowerName.lastIndexOf('.')
+          const ext = dot >= 0 ? lowerName.slice(dot) : ''
+          if (!imageExts.has(ext)) continue
+
+          files.push({ name: entry.name, path: fullPath })
+        }
+      }
+
+      const dirStat = await stat(libraryPath)
+      if (!dirStat.isDirectory()) {
+        return { success: true, files: [] as Array<{ name: string; path: string }> }
+      }
+
+      await walk(libraryPath)
+
+      // 按文件名排序
+      files.sort((a, b) => a.name.localeCompare(b.name))
+
+      return { success: true, files }
+    } catch (error) {
+      console.error('[Main] get-local-image-library 失败:', error)
+      return {
+        success: false,
+        files: [],
+        error: error instanceof Error ? error.message : '获取本地图库列表时发生未知错误'
+      }
+    }
+  })
+
+  /**
    * 清空 SCREENSHOT 目录下的所有文件（递归删除文件，仅保留目录本身）
    */
   ipcMain.handle('clear-screenshots', async (_event, gamePath: string) => {
