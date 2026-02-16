@@ -34,15 +34,15 @@ const props = defineProps<Props>()
 
 // 主题列表配置（包含主题色）
 const themes = [
-  { value: 'dark', label: '暗紫色', color: '#ffb6c1' },
-  { value: 'light', label: '粉白色', color: '#ffb6c1' },
+  { value: 'caolv', label: '青春绿', color: '#8ee4af' },
+  { value: 'light', label: '少女粉', color: '#ffb6c1' },
+  { value: 'naihuang', label: '奶酪黄', color: '#ffeaa7' },
   { value: 'xiaocilan', label: '小辞蓝', color: '#7ed6ff' },
-  { value: 'caolv', label: '草绿色', color: '#8ee4af' },
   { value: 'xixizi', label: '茜茜紫', color: '#b294ff' },
-  { value: 'naihuang', label: '奶黄色', color: '#ffeaa7' },
-  { value: 'qianhui', label: '浅灰色', color: '#b2bec3' },
+  { value: 'qianhui', label: '高雅灰', color: '#b2bec3' },
   { value: 'xinchunhong', label: '新年红', color: '#ff4d4d' },
-  { value: 'chunhei', label: '纯黑色', color: '#000' }
+  { value: 'dark', label: '暗夜紫', color: '#4B247A' },
+  { value: 'chunhei', label: '暗夜黑', color: '#000' }
 ]
 
 // 生成下拉菜单项
