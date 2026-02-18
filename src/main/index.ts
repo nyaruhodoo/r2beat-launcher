@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, Tray, Menu, protocol } from 'electron'
 import { join, extname } from 'path'
 import { readFile } from 'fs/promises'
-import { electronApp, is } from '@electron-toolkit/utils'
+import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 import icon from '../../build/game.ico?asset'
 import { ipcHandlers } from './ipc-handlers'
 
@@ -170,20 +170,7 @@ if (!gotTheLock) {
     electronApp.setAppUserModelId('R2Beat-Launcher')
 
     app.on('browser-window-created', (_, window) => {
-      // 仍然保留 electron-toolkit 提供的快捷键（如 Ctrl+Shift+I 等）
-      // optimizer.watchWindowShortcuts(window)
-
-      // 额外强制支持 F12 打开/关闭开发者工具（无论开发/生产环境）
-      window.webContents.on('before-input-event', (event, input) => {
-        if (input.type === 'keyDown' && input.key === 'F12') {
-          if (window.webContents.isDevToolsOpened()) {
-            window.webContents.closeDevTools()
-          } else {
-            window.webContents.openDevTools({ mode: 'detach' })
-          }
-          event.preventDefault()
-        }
-      })
+      optimizer.watchWindowShortcuts(window)
     })
 
     app.on('activate', function () {
