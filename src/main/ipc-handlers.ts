@@ -661,214 +661,228 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 启动游戏
    */
-  ipc.handle('launch-game', async (_, args) => {
-    const {
-      gamePath,
-      launchArgs,
-      minimizeToTrayOnLaunch,
-      processPriority,
-      lowerNPPriority,
-      username,
-      password,
-      isShieldWordDisabled
-    } = args
-    try {
-      if (!gamePath || gamePath.trim() === '') {
-        throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
+  ipc.handle(
+    'launch-game',
+    async (
+      _,
+      {
+        gamePath,
+        launchArgs,
+        minimizeToTrayOnLaunch,
+        processPriority,
+        lowerNPPriority,
+        username,
+        password,
+        isShieldWordDisabled
       }
-      if (!username || !password) {
-        throw new Error('用户名或密码为空')
-      }
-
-      const gameExePath = join(gamePath, 'Game.exe')
-      if (!(await Utils.exists(gameExePath))) {
-        throw new Error(`找不到游戏文件: ${gameExePath} 请检查游戏安装目录是否正确`)
-      }
-
-      // 修补敏感字pak
-      const pakPath = join(gamePath, 'rnr_script.pak')
-      if (await Utils.exists(pakPath)) {
-        await patchPak({
-          pakPath,
-          isShieldWordDisabled
-        })
-      }
-
-      // 使用传入的 username 参数写入 xyxID.txt
-      const xyxIdFilePath = join(gamePath, 'xyxID.txt')
-      await Utils.safeExecute(async () => {
-        await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
-        console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
-      }, '[Main] 写入 xyxID.txt 失败')
-
-      // 解析命令行参数（将字符串按空格分割）
-      const args: string[] = []
-      if (launchArgs && launchArgs.trim() !== '') {
-        // 简单的参数解析：按空格分割，但保留引号内的内容
-        const argParts = launchArgs.trim().match(/(?:[^\s"]+|"[^"]*")+/g) || []
-        args.push(...argParts.map((arg: string) => arg.replace(/^"|"$/g, '')))
-      }
-
-      console.log(`[Main] 启动游戏: ${gameExePath}`)
-      console.log(`[Main] 命令行参数:`, args)
-
-      const gameProcess = await spawnGameProcess(
-        gameExePath,
-        args,
-        {
-          cwd: gamePath // 设置工作目录为游戏目录
-        },
-        (code, signal) => {
-          // 监听进程退出（仅用于日志记录）
-          console.log(`[Main] 游戏进程退出: code=${code}, signal=${signal}`)
+    ) => {
+      try {
+        if (!gamePath || gamePath.trim() === '') {
+          throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
         }
-      )
-
-      if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
-
-      if (launchArgs === 'xyxOpen') {
-        hookDll({
-          pid: gameProcess.pid,
-          username,
-          password
-        })
-      }
-
-      if (minimizeToTrayOnLaunch) {
-        console.log('[Main] 启动游戏后最小化到托盘（根据用户设置）')
-        // 与主进程 hideToTray 保持一致：只做「最小化 + 隐藏任务栏图标」，避免调用 hide() 导致窗口状态异常
-        if (mainWindow) {
-          mainWindow.setSkipTaskbar(true)
-          if (!mainWindow.isMinimized()) {
-            mainWindow.minimize()
-          }
+        if (!username || !password) {
+          throw new Error('用户名或密码为空')
         }
-      } else {
-        console.log('[Main] 启动游戏后保持启动器窗口可见（根据用户设置）')
-      }
 
-      /**
-       * 进程优先级相关操作结果
-       */
-      Utils.safeExecute(() => {
-        return new Promise((res) => {
-          if (process.platform !== 'win32') {
-            return res(undefined)
-          }
+        const gameExePath = join(gamePath, 'Game.exe')
+        if (!(await Utils.exists(gameExePath))) {
+          throw new Error(`找不到游戏文件: ${gameExePath} 请检查游戏安装目录是否正确`)
+        }
 
-          // 在 Windows 上，根据用户设置调整游戏进程优先级
-          const priorityKey: ProcessPriority = processPriority || 'normal'
-          // 对应 Windows PriorityClass 数值
-          const priorityMap: Record<ProcessPriority, number> = {
-            realtime: 256, // REALTIME_PRIORITY_CLASS
-            high: 128, // HIGH_PRIORITY_CLASS
-            abovenormal: 32768, // ABOVE_NORMAL_PRIORITY_CLASS
-            normal: 32, // NORMAL_PRIORITY_CLASS
-            belownormal: 16384, // BELOW_NORMAL_PRIORITY_CLASS
-            low: 64 // IDLE_PRIORITY_CLASS，近似“低”
-          }
+        // 修补敏感字 pak 与写入 xyxID.txt：两者互相独立，对失败不敏感，可并发执行
+        const pakPath = join(gamePath, 'rnr_script.pak')
+        const xyxIdFilePath = join(gamePath, 'xyxID.txt')
 
-          const priorityValue = priorityMap[priorityKey] ?? priorityMap.normal
+        const tasks: Promise<unknown>[] = []
 
-          console.log(
-            `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`
+        if (await Utils.exists(pakPath)) {
+          tasks.push(
+            patchPak({
+              pakPath,
+              isShieldWordDisabled
+            })
           )
+        }
 
-          spawnDetached('wmic', [
-            'process',
-            'where',
-            `processid=${gameProcess.pid}`,
-            'CALL',
-            'setpriority',
-            String(priorityValue)
-          ])
+        tasks.push(
+          Utils.safeExecute(async () => {
+            await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
+            console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
+          }, '[Main] 写入 xyxID.txt 失败')
+        )
 
-          // 如果启用了降低NP优先级功能，则检测并降低GameMon进程优先级
-          if (lowerNPPriority) {
-            // 启动后按 1 秒间隔检查系统进程，直到发现包含关键字 "GameMon" 的进程或超时
-            let checkCount = 0
-            const maxChecks = 15
+        // 等待所有非关键任务完成（即便失败也不会中断整体流程）
+        await Promise.allSettled(tasks)
 
-            const intervalId = setInterval(() => {
-              checkCount++
-              if (checkCount > maxChecks) {
-                clearInterval(intervalId)
-                console.warn('[Main] 未发现 GameMon 相关进程（已超时）')
-                res(undefined)
-                return
-              }
+        // 解析命令行参数（将字符串按空格分割）
+        const args: string[] = []
+        if (launchArgs && launchArgs.trim() !== '') {
+          // 简单的参数解析：按空格分割，但保留引号内的内容
+          const argParts = launchArgs.trim().match(/(?:[^\s"]+|"[^"]*")+/g) || []
+          args.push(...argParts.map((arg: string) => arg.replace(/^"|"$/g, '')))
+        }
 
-              // 使用 Utils.safeExecute + spawnPromise 获取并处理进程列表
-              Utils.safeExecute(async () => {
-                const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
-                  collectStdout: true,
-                  collectStderr: false
-                })
+        console.log(`[Main] 启动游戏: ${gameExePath}`)
+        console.log(`[Main] 命令行参数:`, args)
 
-                // 解析输出，查找包含 GameMon 的进程及其 PID
-                const lines = result.stdout
-                  .split(/\r?\n/)
-                  .map((line) => line.trim())
-                  .filter(Boolean)
+        const gameProcess = await spawnGameProcess(
+          gameExePath,
+          args,
+          {
+            cwd: gamePath // 设置工作目录为游戏目录
+          },
+          (code, signal) => {
+            // 监听进程退出（仅用于日志记录）
+            console.log(`[Main] 游戏进程退出: code=${code}, signal=${signal}`)
+          }
+        )
 
-                const matches: Array<{ name: string; pid: number }> = []
-                for (const line of lines) {
-                  // wmic 输出格式：Name  ProcessId
-                  const match = line.match(/^(.*\S)\s+(\d+)$/)
-                  if (match) {
-                    const name = match[1].trim()
-                    const pid = Number(match[2])
-                    if (name.includes('GameMon')) {
-                      matches.push({ name, pid })
-                    }
-                  }
+        if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
+
+        if (launchArgs === 'xyxOpen') {
+          hookDll({
+            pid: gameProcess.pid,
+            username,
+            password
+          })
+        }
+
+        if (minimizeToTrayOnLaunch) {
+          console.log('[Main] 启动游戏后最小化到托盘（根据用户设置）')
+          // 与主进程 hideToTray 保持一致：只做「最小化 + 隐藏任务栏图标」，避免调用 hide() 导致窗口状态异常
+          if (mainWindow) {
+            mainWindow.setSkipTaskbar(true)
+            if (!mainWindow.isMinimized()) {
+              mainWindow.minimize()
+            }
+          }
+        } else {
+          console.log('[Main] 启动游戏后保持启动器窗口可见（根据用户设置）')
+        }
+
+        /**
+         * 进程优先级相关操作结果
+         */
+        Utils.safeExecute(() => {
+          return new Promise((res) => {
+            if (process.platform !== 'win32') {
+              return res(undefined)
+            }
+
+            // 在 Windows 上，根据用户设置调整游戏进程优先级
+            const priorityKey: ProcessPriority = processPriority || 'normal'
+            // 对应 Windows PriorityClass 数值
+            const priorityMap: Record<ProcessPriority, number> = {
+              realtime: 256, // REALTIME_PRIORITY_CLASS
+              high: 128, // HIGH_PRIORITY_CLASS
+              abovenormal: 32768, // ABOVE_NORMAL_PRIORITY_CLASS
+              normal: 32, // NORMAL_PRIORITY_CLASS
+              belownormal: 16384, // BELOW_NORMAL_PRIORITY_CLASS
+              low: 64 // IDLE_PRIORITY_CLASS，近似“低”
+            }
+
+            const priorityValue = priorityMap[priorityKey] ?? priorityMap.normal
+
+            console.log(
+              `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`
+            )
+
+            spawnDetached('wmic', [
+              'process',
+              'where',
+              `processid=${gameProcess.pid}`,
+              'CALL',
+              'setpriority',
+              String(priorityValue)
+            ])
+
+            // 如果启用了降低NP优先级功能，则检测并降低GameMon进程优先级
+            if (lowerNPPriority) {
+              // 启动后按 1 秒间隔检查系统进程，直到发现包含关键字 "GameMon" 的进程或超时
+              let checkCount = 0
+              const maxChecks = 15
+
+              const intervalId = setInterval(() => {
+                checkCount++
+                if (checkCount > maxChecks) {
+                  clearInterval(intervalId)
+                  console.warn('[Main] 未发现 GameMon 相关进程（已超时）')
+                  res(undefined)
+                  return
                 }
 
-                if (matches.length > 0) {
-                  console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：', matches)
-                  clearInterval(intervalId)
-
-                  // 将所有匹配的 GameMon 相关进程优先级调为最低（IDLE_PRIORITY_CLASS = 64）
-                  const targetPriorityValue = 64
-                  const processPromises = matches.map(async ({ name, pid }) => {
-                    await Utils.safeExecute(async () => {
-                      // 设置进程优先级
-                      console.log(
-                        `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`
-                      )
-                      await spawnDetached('wmic', [
-                        'process',
-                        'where',
-                        `processid=${pid}`,
-                        'CALL',
-                        'setpriority',
-                        String(targetPriorityValue)
-                      ])
-                    }, `[Main] 设置进程优先级失败: ${name} (pid=${pid})`)
+                // 使用 Utils.safeExecute + spawnPromise 获取并处理进程列表
+                Utils.safeExecute(async () => {
+                  const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
+                    collectStdout: true,
+                    collectStderr: false
                   })
 
-                  // 等待所有进程的优先级设置完成
-                  await Promise.all(processPromises)
-                  res(undefined)
-                }
-              }, '设置 GameMon 进程优先级失败')
-            }, 1000)
-          } else {
-            // 如果未启用降低NP优先级功能，直接resolve
-            res(undefined)
-          }
-        })
-      }, '调整进程优先级时发生错误')
+                  // 解析输出，查找包含 GameMon 的进程及其 PID
+                  const lines = result.stdout
+                    .split(/\r?\n/)
+                    .map((line) => line.trim())
+                    .filter(Boolean)
 
-      return { success: true }
-    } catch (error) {
-      console.error('[Main] 启动游戏时发生错误:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '启动游戏时发生未知错误'
+                  const matches: Array<{ name: string; pid: number }> = []
+                  for (const line of lines) {
+                    // wmic 输出格式：Name  ProcessId
+                    const match = line.match(/^(.*\S)\s+(\d+)$/)
+                    if (match) {
+                      const name = match[1].trim()
+                      const pid = Number(match[2])
+                      if (name.includes('GameMon')) {
+                        matches.push({ name, pid })
+                      }
+                    }
+                  }
+
+                  if (matches.length > 0) {
+                    console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：', matches)
+                    clearInterval(intervalId)
+
+                    // 将所有匹配的 GameMon 相关进程优先级调为最低（IDLE_PRIORITY_CLASS = 64）
+                    const targetPriorityValue = 64
+                    const processPromises = matches.map(async ({ name, pid }) => {
+                      await Utils.safeExecute(async () => {
+                        // 设置进程优先级
+                        console.log(
+                          `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`
+                        )
+                        await spawnDetached('wmic', [
+                          'process',
+                          'where',
+                          `processid=${pid}`,
+                          'CALL',
+                          'setpriority',
+                          String(targetPriorityValue)
+                        ])
+                      }, `[Main] 设置进程优先级失败: ${name} (pid=${pid})`)
+                    })
+
+                    // 等待所有进程的优先级设置完成
+                    await Promise.all(processPromises)
+                    res(undefined)
+                  }
+                }, '设置 GameMon 进程优先级失败')
+              }, 1000)
+            } else {
+              // 如果未启用降低NP优先级功能，直接resolve
+              res(undefined)
+            }
+          })
+        }, '调整进程优先级时发生错误')
+
+        return { success: true }
+      } catch (error) {
+        console.error('[Main] 启动游戏时发生错误:', error)
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : '启动游戏时发生未知错误'
+        }
       }
     }
-  })
+  )
 
   /**
    * 读取并转换游戏目录下的 config.ini 文件为 JSON
