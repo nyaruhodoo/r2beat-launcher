@@ -56,7 +56,7 @@ const [announcementsCache, setAnnouncementsCache] = useLocalStorageState<Announc
 
 // 记录上一次公告列表中第一条公告的 idx，用于判断是否有新公告
 const lastFirstAnnouncementIdx = ref<number>()
-const loading = ref(false)
+const loading = ref(true)
 
 // 格式化日期时间（24小时制，显示到秒）
 const formatDate = (dateString: string): string => {
@@ -100,9 +100,7 @@ const filterTitle = (title: string): string => {
 // 获取公告数据
 const fetchAnnouncements = async () => {
   try {
-    if (!announcementsCache.value?.data.length) {
-      loading.value = true
-    }
+    loading.value = true
 
     const data = await window.api.getAnnouncements?.()
 
