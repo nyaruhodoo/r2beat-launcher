@@ -70,8 +70,9 @@
 import { useToast } from '@renderer/composables/useToast'
 import { checkRemoteVersionTime } from '@config'
 import type { GameSettings, PatchProgressPayload, PatchUpdateInfo } from '@types'
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import useInterval from 'vue-hooks-plus/lib/useInterval'
+import { ipcEmitter, ipcListener } from '@renderer/ipc'
 
 interface Props {
   gameSettings?: GameSettings
@@ -195,7 +196,7 @@ const loadLocalVersion = async () => {
 
   isLoading.value = true
   try {
-    const result = await window.api.readPatchInfo?.(path)
+    const result = await ipcEmitter.invoke('read-patch-info', path)
     if (result?.success && result.data) {
       currentVersion.value = result.data.patch.version.toString().padStart(5, '0')
       // currentVersion.value = '00001'
@@ -219,7 +220,7 @@ const loadRemoteVersion = async (isLoading?: boolean) => {
   }
 
   try {
-    const result = await window.api.getRemoteVersion?.()
+    const result = await ipcEmitter.invoke('get-remote-version')
     if (result?.success && result.version) {
       const newRemote = result.version
       const oldRemote = lastNotifiedRemoteVersion.value
@@ -228,10 +229,10 @@ const loadRemoteVersion = async (isLoading?: boolean) => {
 
       // 首次加载不提示；仅在后续轮询中检测到远程版本变化时提醒
       if (oldRemote && newRemote !== oldRemote) {
-        window.api.showNotification?.(
-          '发现新的游戏版本',
-          `远程版本已更新至 ${newRemote}，建议尽快更新游戏客户端。`
-        )
+        ipcEmitter.send('show-notification', {
+          title: '发现新的游戏版本',
+          body: `远程版本已更新至 ${newRemote}，建议尽快更新游戏客户端。`
+        })
       }
 
       lastNotifiedRemoteVersion.value = newRemote
@@ -260,7 +261,7 @@ const getPreDownloadList = async () => {
     return
   }
   try {
-    const res = await window.api.downloadPatchLists?.(updateList)
+    const res = await ipcEmitter.invoke('download-patch-lists', updateList)
 
     if (!res?.success) {
       throw new Error(res?.error)
@@ -309,7 +310,8 @@ const handleUpdate = async () => {
   patchProgressFileName.value = ''
 
   try {
-    const res = await window.api.downloadPatchFiles?.(
+    const res = await ipcEmitter.invoke(
+      'download-patch-files',
       JSON.parse(JSON.stringify(preDownloadList.value))
     )
 
@@ -325,7 +327,7 @@ const handleUpdate = async () => {
 
     isApplyPatch.value = true
 
-    const applyRes = await window.api.applyPatchFiles?.(gamePath, latest)
+    const applyRes = await ipcEmitter.invoke('apply-patch-files', gamePath, latest)
     if (!applyRes?.success) {
       throw new Error(applyRes?.error || '应用补丁失败')
     }
@@ -350,8 +352,7 @@ const handleUpdate = async () => {
 
 // 组件挂载时加载版本
 onMounted(() => {
-  // 订阅主进程推送的补丁进度
-  window.api.onPatchProgress?.((payload: PatchProgressPayload) => {
+  const off = ipcListener.on('patch-progress', (_event, payload: PatchProgressPayload) => {
     patchProgressPercent.value = payload.percent
     patchProgressStage.value = payload.stage
     patchProgressFileName.value = payload.targetFileName ?? ''
@@ -362,6 +363,8 @@ onMounted(() => {
       }`
     )
   })
+
+  onUnmounted(() => off?.())
 
   loadLocalVersion()
   loadRemoteVersion(true)

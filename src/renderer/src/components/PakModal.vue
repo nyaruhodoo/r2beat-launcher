@@ -51,6 +51,7 @@ import Checkbox from './Checkbox.vue'
 import { confirm } from '@renderer/composables/useConfirm'
 import { useToast } from '@renderer/composables/useToast'
 import budingImg from '@renderer/assets/imgs/buding.png'
+import { ipcEmitter } from '@renderer/ipc'
 
 interface MergedPakItem {
   name: string
@@ -90,7 +91,7 @@ const dragCounter = ref(0)
 const getPaks = async () => {
   if (!props.gamePath) return
 
-  const res = await window.api.getPaks?.(props.gamePath)
+  const res = await ipcEmitter.invoke('get-paks', props.gamePath)
   console.log(res)
   if (res?.success) {
     const map: Record<string, MergedPakItem> = {}
@@ -143,7 +144,7 @@ const handleDeleteClick = async (name: string) => {
 
     // 删除本地 mods 目录中的补丁
     if (item.modsPath) {
-      const res = await window.api.deletePak?.(item.modsPath)
+      const res = await ipcEmitter.invoke('delete-pak', item.modsPath)
       if (!res?.success) {
         console.error('[PakModal] 删除本地补丁失败:', res?.error)
       }
@@ -151,7 +152,7 @@ const handleDeleteClick = async (name: string) => {
 
     // 删除游戏目录中的补丁
     if (item.gamePath) {
-      const res = await window.api.deletePak?.(item.gamePath)
+      const res = await ipcEmitter.invoke('delete-pak', item.gamePath)
       if (!res?.success) {
         console.error('[PakModal] 删除游戏目录补丁失败:', res?.error)
       }
@@ -188,7 +189,7 @@ const handleConfirm = async () => {
         console.error('[PakModal] 无法启用补丁（缺少本地 mods 路径）:', name)
         continue
       }
-      const res = await window.api.copyPakToGame?.(item.modsPath, props.gamePath)
+      const res = await ipcEmitter.invoke('copy-pak-to-game', item.modsPath, props.gamePath)
       if (!res?.success) {
         console.error('[PakModal] 复制补丁到游戏目录失败:', res?.error)
       }
@@ -200,7 +201,7 @@ const handleConfirm = async () => {
         console.error('[PakModal] 无法移除补丁（缺少游戏目录路径）:', name)
         continue
       }
-      const res = await window.api.movePakToMods?.(item.gamePath)
+      const res = await ipcEmitter.invoke('move-pak-to-mods', item.gamePath)
       if (!res?.success) {
         console.error('[PakModal] 移动补丁到 mods 目录失败:', res?.error)
       }
@@ -276,7 +277,7 @@ const handleDrop = async (event: DragEvent) => {
       const uint8Array = new Uint8Array(arrayBuffer)
 
       // 通过 IPC 传递文件数据到主进程保存
-      const res = await window.api.savePakToGame?.(file.name, uint8Array, props.gamePath)
+      const res = await ipcEmitter.invoke('save-pak-to-game', file.name, uint8Array, props.gamePath)
       if (res?.success) {
         successCount++
       } else {

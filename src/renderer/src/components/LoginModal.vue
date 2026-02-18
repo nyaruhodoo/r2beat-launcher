@@ -150,6 +150,7 @@ import { useToast } from '@renderer/composables/useToast'
 import { confirm } from '@renderer/composables/useConfirm'
 import type { UserInfo } from '@types'
 import useEventListener from 'vue-hooks-plus/lib/useEventListener'
+import { ipcEmitter } from '@renderer/ipc'
 
 const props = defineProps<{
   visible: boolean
@@ -314,7 +315,8 @@ const handleLogin = async () => {
 
   try {
     // 发送 TCP 登录请求
-    const result = await window.api.tcpLogin?.(
+    const result = await ipcEmitter.invoke(
+      'tcp-login',
       formData.value.username.trim(),
       formData.value.password.trim()
     )

@@ -153,6 +153,7 @@ import WindowResizer from './components/WindowResizer.vue'
 import { useToast } from './composables/useToast'
 import { checkUpdateIntervalTime } from '@config'
 import { confirm } from './composables/useConfirm'
+import { ipcEmitter } from '@renderer/ipc'
 
 const { info, success, error } = useToast()
 
@@ -176,7 +177,7 @@ const giftRechargeItems = computed<DropdownItem[]>(() => [
     label: '充值中心',
     icon: zuanshiImg,
     onClick: () => {
-      window.api.openRechargeCenter?.(userInfo.value?.username)
+      ipcEmitter.send('open-recharge-center', userInfo.value?.username)
     }
   },
   {
@@ -214,7 +215,7 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
         return
       }
 
-      const res = await window.api.openGameRecovery?.(gamePath)
+      const res = await ipcEmitter.invoke('open-game-recovery', gamePath)
 
       if (!res?.success) {
         error(res?.error ?? '无法运行 GameRecovery')
@@ -236,7 +237,7 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
         return
       }
 
-      const res = await window.api.resetGG?.(gamePath)
+      const res = await ipcEmitter.invoke('reset-gg', gamePath)
 
       if (!res?.success) {
         error(res?.error || '重置GG失败')
@@ -337,7 +338,7 @@ const handleLoginSuccess = async (userInfo: UserInfo) => {
 }
 
 const searchGamePath = async () => {
-  const res = await window.api.getR2beatPath?.()
+  const res = await ipcEmitter.invoke('get-r2beat-path')
   if (res?.path && res.success && !gameSettings.value?.gamePath) {
     setGameSettings({
       ...gameSettings.value!,
@@ -356,7 +357,7 @@ const checkAppUpdate = async () => {
   if (timeSinceLastCheck >= checkUpdateIntervalTime) {
     // 距离上次检查已超过30分钟，执行检查
     try {
-      const result = await window.api.checkAppUpdate?.()
+      const result = await ipcEmitter.invoke('check-app-update')
       // 更新最后检查时间
       setLastUpdateCheckTime(now)
 
@@ -382,7 +383,7 @@ onMounted(() => {
   // 延迟创建窗口，否则会闪一下很烦
   nextTick(() => {
     setTimeout(() => {
-      window.api.windowShow?.()
+      ipcEmitter.send('window-show')
     }, 200)
   })
 

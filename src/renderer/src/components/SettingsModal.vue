@@ -140,6 +140,7 @@ import type { AppConfig, GameSettings } from '@types'
 import qrcode from '@renderer/assets/imgs/qrcode.jpg'
 import shezhiImg from '@renderer/assets/imgs/shezhi.png'
 import { useToast } from '@renderer/composables/useToast'
+import { ipcEmitter } from '@renderer/ipc'
 
 const props = defineProps<{
   visible: boolean
@@ -302,7 +303,7 @@ const handleSave = async () => {
     try {
       // 使用 JSON 序列化/反序列化来确保对象可以被 IPC 传递
       const serializedConfig = JSON.parse(JSON.stringify(configIniJson.value))
-      const result = await window.api.writeConfigIni?.(settings.value.gamePath, serializedConfig)
+      const result = await ipcEmitter.invoke('write-config-ini', settings.value.gamePath, serializedConfig)
       if (result?.success) {
         console.log('config.ini 保存成功')
       } else {
@@ -319,7 +320,7 @@ const handleSave = async () => {
 const handleBrowse = async () => {
   try {
     // 传递当前已保存的路径，让对话框从该位置打开
-    const selectedPath = await window.api.selectFolder?.(settings.value.gamePath)
+    const selectedPath = await ipcEmitter.invoke('select-folder', settings.value.gamePath)
     if (selectedPath) {
       settings.value.gamePath = selectedPath
     }
@@ -331,7 +332,7 @@ const handleBrowse = async () => {
 const handleBrowseLibrary = async () => {
   try {
     // 传递当前已保存的路径，让对话框从该位置打开
-    const selectedPath = await window.api.selectFolder?.(settings.value.localImageLibrary)
+    const selectedPath = await ipcEmitter.invoke('select-folder', settings.value.localImageLibrary)
     if (selectedPath) {
       settings.value.localImageLibrary = selectedPath
     }
@@ -349,7 +350,7 @@ const loadConfigIni = async () => {
   }
 
   try {
-    const result = await window.api.readConfigIni?.(gamePath)
+    const result = await ipcEmitter.invoke('read-config-ini', gamePath)
 
     if (result?.success && result.exists && result.data) {
       configIniJson.value = result.data

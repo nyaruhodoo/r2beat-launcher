@@ -16,9 +16,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import CustomTitleBar from './components/CustomTitleBar.vue'
 import type { AnnouncementData } from '@types'
+import { ipcEmitter, ipcListener } from '@renderer/ipc'
 
 const detail = ref<AnnouncementData | null>(null)
 const contentHtml = ref('')
@@ -43,7 +44,7 @@ const fetchDetail = async (payload: AnnouncementData) => {
   errorText.value = ''
 
   try {
-    const res = await window.api.getAnnouncementDetail?.(path, payload.idx ?? 0)
+    const res = await ipcEmitter.invoke('get-announcement-detail', { path, idx: payload.idx ?? 0 })
     if (!res?.success) {
       errorText.value = res?.error || '获取公告详情失败'
       return
@@ -83,10 +84,12 @@ const formatRichTextImage = (html: string) => {
 
 onMounted(() => {
   // 主进程在窗口加载完成后会通过 IPC 发送 announcement-detail-data
-  window.api.onAnnouncementDetail?.((payload: AnnouncementData) => {
+  const off = ipcListener.on('announcement-detail-data', (_event, payload: AnnouncementData) => {
     detail.value = payload
     fetchDetail(payload)
   })
+
+  onUnmounted(() => off?.())
 })
 </script>
 

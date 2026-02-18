@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import type { GameSettings } from '@types'
+import { ipcEmitter } from '@renderer/ipc'
 
 const props = defineProps<{
   gameSettings?: GameSettings
@@ -58,7 +59,7 @@ const loadLibraryImages = async () => {
   }
 
   try {
-    const result = await window.api.getLocalImageLibrary?.(libraryPath)
+    const result = await ipcEmitter.invoke('get-local-image-library', libraryPath)
     if (result?.success && result.files && result.files.length > 0) {
       // 使用 r2shot:// 协议加载本地图片
       libraryImagePaths.value = result.files.map((file) => {

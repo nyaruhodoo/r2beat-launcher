@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/typed-ipc": "^1.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "frida": "^17.6.0",
     "jsdom": "^28.0.0",

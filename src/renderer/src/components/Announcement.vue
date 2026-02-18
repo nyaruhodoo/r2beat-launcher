@@ -41,6 +41,7 @@ import { checkAnnouncementsTime } from '@config'
 import type { AnnouncementData } from '@types'
 import { ref } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
+import { ipcArg, ipcEmitter } from '@renderer/ipc'
 
 interface AnnouncementsCache {
   data: AnnouncementData[]
@@ -102,7 +103,7 @@ const fetchAnnouncements = async () => {
   try {
     loading.value = true
 
-    const data = await window.api.getAnnouncements?.()
+    const data = await ipcEmitter.invoke('get-announcements')
 
     if (Array.isArray(data)) {
       // 只根据“第一条公告是否变化”来判断是否有新公告
@@ -110,7 +111,7 @@ const fetchAnnouncements = async () => {
 
       if (first && lastFirstAnnouncementIdx.value) {
         if (first.idx !== lastFirstAnnouncementIdx.value) {
-          window.api.showNotification?.('有新的系统公告', first.title)
+          ipcEmitter.send('show-notification', { title: '有新的系统公告', body: first.title })
         }
       }
 
@@ -132,9 +133,8 @@ const fetchAnnouncements = async () => {
 }
 
 const handleAnnouncementClick = (item: AnnouncementData) => {
-  window.api.openAnnouncementDetail?.({
-    ...item
-  })
+  // item 来自 Vue 响应式数组（Proxy），需要转成可 structured-clone 的 plain object
+  ipcEmitter.send('open-announcement-detail', ipcArg(item))
 }
 
 fetchAnnouncements()

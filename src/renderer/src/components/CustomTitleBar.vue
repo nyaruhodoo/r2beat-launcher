@@ -40,20 +40,21 @@ const props = defineProps<{
 }>()
 
 import icon from '@renderer/assets/imgs/game.ico'
+import { ipcEmitter } from '@renderer/ipc'
 
 const handleMinimize = () => {
   if (props.type === 'detail') {
-    window.api.windowMinimizeCurrent?.()
+    ipcEmitter.send('window-minimize-current')
   } else {
-    window.api.windowMinimize?.()
+    ipcEmitter.send('window-minimize')
   }
 }
 
 const handleClose = () => {
   if (props.type === 'detail') {
-    window.api.windowCloseCurrent?.()
+    ipcEmitter.send('window-close-current')
   } else {
-    window.api.windowClose?.()
+    ipcEmitter.send('window-close')
   }
 }
 </script>

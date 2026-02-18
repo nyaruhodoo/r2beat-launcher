@@ -39,6 +39,7 @@ import { useToast } from '../composables/useToast'
 import Checkbox from './Checkbox.vue'
 import ServerStatusDialog from './ServerStatusDialog.vue'
 import { checkServerStatusTime, checkUnknownServerStatusTime } from '@config'
+import { ipcEmitter } from '@renderer/ipc'
 
 interface Props {
   userInfo?: UserInfo
@@ -84,7 +85,11 @@ const checkServerStatus = async () => {
   if (!props.userInfo?.username || !props.userInfo?.password) return
 
   try {
-    const result = await window.api.tcpLogin?.(props.userInfo?.username, props.userInfo?.password)
+    const result = await ipcEmitter.invoke(
+      'tcp-login',
+      props.userInfo?.username,
+      props.userInfo?.password
+    )
 
     const previousStatus = serverStatus.value
 
@@ -103,13 +108,13 @@ const checkServerStatus = async () => {
           executeLaunch()
         } else {
           // 未开启自动登录：仅通过系统通知告知用户服务已恢复
-          window.api.showNotification?.('服务器状态已恢复正常')
+          ipcEmitter.send('show-notification', { title: '服务器状态已恢复正常' })
         }
       }
     } else {
       // 如果上次是正常状态，则提醒用户一次
       if (previousStatus === 'normal') {
-        window.api.showNotification?.('服务器状态异常')
+        ipcEmitter.send('show-notification', { title: '服务器状态异常' })
       }
 
       throw new Error(result?.message)
@@ -192,7 +197,7 @@ const executeLaunch = async () => {
   try {
     const launchArgs = 'xyxOpen'
 
-    const result = await window.api.launchGame?.({
+    const result = await ipcEmitter.invoke('launch-game', {
       gamePath: props.gameSettings.gamePath,
       launchArgs,
       minimizeToTrayOnLaunch: props.gameSettings.minimizeToTrayOnLaunch,

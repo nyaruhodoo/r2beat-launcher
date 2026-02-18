@@ -1,10 +1,10 @@
-import { app, BrowserWindow, ipcMain, dialog, Notification, shell } from 'electron'
+import { app, BrowserWindow, dialog, Notification, shell } from 'electron'
 import { join, relative, dirname, basename } from 'path'
 import { homedir } from 'os'
 import { createReadStream, createWriteStream } from 'fs'
 import { readFile, writeFile, readdir, mkdir, unlink, stat, copyFile, rm } from 'fs/promises'
 import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
-import { AnnouncementData, R2BeatNoticeData, PatchUpdateInfo, ProcessPriority } from '@types'
+import { AnnouncementData, R2BeatNoticeData, ProcessPriority, AppConfig, PatchInfo } from '@types'
 import { sendTcpLoginRequest } from './tcp-login'
 import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
 import lzma from 'lzma-native'
@@ -14,29 +14,34 @@ import icon from '../../build/game.ico?asset'
 import { patchPak } from './patch-pak'
 import { execFile } from 'child_process'
 import { JSDOM } from 'jsdom'
+import { IpcListener, IpcEmitter } from '@electron-toolkit/typed-ipc/main'
+import type { IpcMainEvents, IpcRendererEvents } from '../ipc/contracts'
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
-  ipcMain.on('window-show', () => {
+  const ipc = new IpcListener<IpcMainEvents>()
+  const emitter = new IpcEmitter<IpcRendererEvents>()
+
+  ipc.on('window-show', () => {
     mainWindow?.show()
   })
 
-  ipcMain.on('window-minimize', () => {
+  ipc.on('window-minimize', () => {
     mainWindow?.minimize()
   })
 
-  ipcMain.on('window-close', async () => {
+  ipc.on('window-close', async () => {
     // 主窗口关闭按钮：走与 Alt+F4 一致的逻辑，由主进程的 window.on('close') 统一处理
     mainWindow?.close()
   })
 
   // 仅作用于发送方所在的窗口，用于子窗口独立控制
-  ipcMain.on('window-minimize-current', (event) => {
+  ipc.on('window-minimize-current', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     win?.minimize()
   })
 
-  ipcMain.on('window-close-current', (event) => {
+  ipc.on('window-close-current', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     win?.close()
   })
@@ -45,58 +50,55 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 展示系统通知（Windows 原生通知）
    * 只有在窗口在托盘（不可见或最小化）时才显示通知
    */
-  ipcMain.on(
-    'show-notification',
-    (_event, payload: { title?: string; body?: string } | undefined | null) => {
-      try {
-        // 检查窗口状态：如果窗口可见且未最小化，则不显示通知
-        if (mainWindow) {
-          const isVisible = mainWindow.isVisible()
-          const isMinimized = mainWindow.isMinimized()
+  ipc.on('show-notification', (_event, payload) => {
+    try {
+      // 检查窗口状态：如果窗口可见且未最小化，则不显示通知
+      if (mainWindow) {
+        const isVisible = mainWindow.isVisible()
+        const isMinimized = mainWindow.isMinimized()
 
-          // 窗口可见且未最小化，说明不在托盘，不显示通知
-          if (isVisible && !isMinimized) {
-            console.log('[Main] 窗口可见，跳过系统通知')
-            return
-          }
+        // 窗口可见且未最小化，说明不在托盘，不显示通知
+        if (isVisible && !isMinimized) {
+          console.log('[Main] 窗口可见，跳过系统通知')
+          return
         }
-
-        const title = payload?.title || '提示'
-        const body = payload?.body || ''
-
-        // 在部分平台上 Notification 可能不可用，做一次能力判断
-        if (Notification.isSupported()) {
-          const notification = new Notification({
-            title,
-            body,
-            silent: false,
-            icon
-          })
-
-          // 点击通知时唤醒主窗口
-          notification.on('click', () => {
-            if (mainWindow) {
-              // 让窗口重新出现在任务栏并聚焦
-              mainWindow.setSkipTaskbar(false)
-              if (!mainWindow.isVisible()) {
-                mainWindow.show()
-              }
-              if (mainWindow.isMinimized()) {
-                mainWindow.restore()
-              }
-              mainWindow.focus()
-            }
-          })
-
-          notification.show()
-        } else {
-          console.log('[Main] 当前平台不支持系统通知:', { title, body })
-        }
-      } catch (error) {
-        console.error('[Main] 展示系统通知失败:', error)
       }
+
+      const title = payload?.title || '提示'
+      const body = payload?.body || ''
+
+      // 在部分平台上 Notification 可能不可用，做一次能力判断
+      if (Notification.isSupported()) {
+        const notification = new Notification({
+          title,
+          body,
+          silent: false,
+          icon
+        })
+
+        // 点击通知时唤醒主窗口
+        notification.on('click', () => {
+          if (mainWindow) {
+            // 让窗口重新出现在任务栏并聚焦
+            mainWindow.setSkipTaskbar(false)
+            if (!mainWindow.isVisible()) {
+              mainWindow.show()
+            }
+            if (mainWindow.isMinimized()) {
+              mainWindow.restore()
+            }
+            mainWindow.focus()
+          }
+        })
+
+        notification.show()
+      } else {
+        console.log('[Main] 当前平台不支持系统通知:', { title, body })
+      }
+    } catch (error) {
+      console.error('[Main] 展示系统通知失败:', error)
     }
-  )
+  })
 
   /**
    * 打开充值中心窗口
@@ -104,7 +106,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * @param _event IPC 事件对象
    * @param username 可选，当前登录的用户名
    */
-  ipcMain.on('open-recharge-center', (_event, username?: string) => {
+  ipc.on('open-recharge-center', (_event, username) => {
     const rechargeWindow = new BrowserWindow({
       width: 900,
       height: 590,
@@ -191,7 +193,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 打开系统公告详情窗口
    */
-  ipcMain.on('open-announcement-detail', (_event, detail: AnnouncementData) => {
+  ipc.on('open-announcement-detail', (_event, detail) => {
     const mainBounds = mainWindow?.getBounds()
     const baseHeight = mainBounds?.height ?? 720
 
@@ -225,7 +227,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     })
 
     detailWindow.webContents.once('did-finish-load', () => {
-      detailWindow.webContents.send('announcement-detail-data', detail)
+      emitter.send(detailWindow.webContents, 'announcement-detail-data', detail)
       detailWindow.show()
     })
   })
@@ -233,48 +235,38 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 获取系统公告详情
    */
-  ipcMain.handle(
-    'get-announcement-detail',
-    async (
-      _event,
-      {
-        idx
-      }: {
-        path: string
-        idx: number
+  ipc.handle('get-announcement-detail', async (_event, args) => {
+    const { idx } = args
+    const fetchUrl = `https://external-api.xiyouxi.com/api/vfunlounge/posts/r2beat/all/${idx}`
+
+    try {
+      const response = await fetch(fetchUrl)
+
+      if (!response.ok) {
+        console.error('[Main] 获取公告详情失败:', response.status, response.statusText)
+        throw new Error('获取公告详情失败')
       }
-    ) => {
-      const fetchUrl = `https://external-api.xiyouxi.com/api/vfunlounge/posts/r2beat/all/${idx}`
 
-      try {
-        const response = await fetch(fetchUrl)
+      const data = (await response.json()) as R2BeatNoticeData
 
-        if (!response.ok) {
-          console.error('[Main] 获取公告详情失败:', response.status, response.statusText)
-          throw new Error('获取公告详情失败')
-        }
+      if (data.result !== 1) {
+        throw new Error('获取公告详情失败')
+      }
 
-        const data = (await response.json()) as R2BeatNoticeData
-
-        if (data.result !== 1) {
-          throw new Error('获取公告详情失败')
-        }
-
-        return { success: true, data: data.data }
-      } catch (error) {
-        console.error('[Main] 获取公告详情异常:', error)
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : '获取公告详情时发生异常'
-        }
+      return { success: true, data: data.data }
+    } catch (error) {
+      console.error('[Main] 获取公告详情异常:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '获取公告详情时发生异常'
       }
     }
-  )
+  })
 
   /**
    * 获取系统公告
    */
-  ipcMain.handle('get-announcements', async () => {
+  ipc.handle('get-announcements', async () => {
     try {
       const urls = ['https://external-api.xiyouxi.com/api/lounge/posts/r2beat/all/latest/7']
 
@@ -329,7 +321,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 数据来源: https://r2beat-cdn.xiyouxi.com/live/vpatch/patchVersionInfo.txt
    * 只取 [useropen] 段落中的最后一个非空行
    */
-  ipcMain.handle('get-remote-version', async () => {
+  ipc.handle('get-remote-version', async () => {
     const url = 'https://r2beat-cdn.xiyouxi.com/live/vpatch/patchVersionInfo.txt'
     try {
       const response = await fetch(url)
@@ -380,7 +372,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * @param shortcutPath 快捷方式文件路径（可选，默认使用系统默认路径）
    * @returns 返回目标目录路径或错误信息
    */
-  ipcMain.handle('get-r2beat-path', async (_, shortcutPath?: string) => {
+  ipc.handle('get-r2beat-path', async (_, shortcutPath) => {
     try {
       // 如果没有提供快捷方式路径，使用默认路径
       let finalShortcutPath = shortcutPath
@@ -431,7 +423,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 打开文件夹选择对话框
    * @param currentPath 当前已保存的路径（可选）
    */
-  ipcMain.handle('select-folder', async (_, currentPath?: string) => {
+  ipc.handle('select-folder', async (_, currentPath) => {
     try {
       // 确定默认路径：优先使用当前路径，否则使用用户主目录
       let defaultPath = currentPath
@@ -439,7 +431,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         defaultPath = homedir()
       }
 
-      if (!mainWindow) return
+      if (!mainWindow) return null
 
       const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openDirectory'],
@@ -469,7 +461,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * - 若 Game.exe 正在运行则拒绝执行
    * - 若不存在 GameGuard 则跳过
    */
-  ipcMain.handle('reset-gg', async (_event, gamePath: string) => {
+  ipc.handle('reset-gg', async (_event, gamePath) => {
     try {
       if (!gamePath || typeof gamePath !== 'string' || gamePath.trim() === '') {
         throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
@@ -507,7 +499,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * - 读取 gamePath/SCREENSHOT 目录（不存在则返回空数组）
    * - 递归读取子目录
    */
-  ipcMain.handle('get-screenshots', async (_event, gamePath: string) => {
+  ipc.handle('get-screenshots', async (_event, gamePath) => {
     try {
       if (!gamePath || typeof gamePath !== 'string' || gamePath.trim() === '') {
         throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
@@ -559,7 +551,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * - 读取指定目录（不存在则返回空数组）
    * - 递归读取子目录
    */
-  ipcMain.handle('get-local-image-library', async (_event, libraryPath: string) => {
+  ipc.handle('get-local-image-library', async (_event, libraryPath) => {
     try {
       if (!libraryPath || typeof libraryPath !== 'string' || libraryPath.trim() === '') {
         return { success: true, files: [] as Array<{ name: string; path: string }> }
@@ -608,7 +600,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 清空 SCREENSHOT 目录下的所有文件（递归删除文件，仅保留目录本身）
    */
-  ipcMain.handle('clear-screenshots', async (_event, gamePath: string) => {
+  ipc.handle('clear-screenshots', async (_event, gamePath) => {
     try {
       if (!gamePath || typeof gamePath !== 'string' || gamePath.trim() === '') {
         throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
@@ -641,7 +633,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 使用系统默认图片查看器打开指定图片
    */
-  ipcMain.handle('open-screenshot', async (_event, filePath: string) => {
+  ipc.handle('open-screenshot', async (_event, filePath) => {
     try {
       if (!filePath) {
         throw new Error('文件路径为空')
@@ -669,231 +661,220 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 启动游戏
    */
-  ipcMain.handle(
-    'launch-game',
-    async (
-      _,
-      {
-        gamePath,
-        launchArgs,
-        minimizeToTrayOnLaunch,
-        processPriority,
-        lowerNPPriority,
-        username,
-        password,
-        isShieldWordDisabled
-      }: {
-        gamePath: string
-        launchArgs?: string
-        minimizeToTrayOnLaunch?: boolean
-        processPriority?: ProcessPriority
-        lowerNPPriority?: boolean
-        username: string
-        password: string
-        isShieldWordDisabled?: boolean
+  ipc.handle('launch-game', async (_, args) => {
+    const {
+      gamePath,
+      launchArgs,
+      minimizeToTrayOnLaunch,
+      processPriority,
+      lowerNPPriority,
+      username,
+      password,
+      isShieldWordDisabled
+    } = args
+    try {
+      if (!gamePath || gamePath.trim() === '') {
+        throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
       }
-    ) => {
-      try {
-        if (!gamePath || gamePath.trim() === '') {
-          throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
+      if (!username || !password) {
+        throw new Error('用户名或密码为空')
+      }
+
+      const gameExePath = join(gamePath, 'Game.exe')
+      if (!(await Utils.exists(gameExePath))) {
+        throw new Error(`找不到游戏文件: ${gameExePath} 请检查游戏安装目录是否正确`)
+      }
+
+      // 修补敏感字pak
+      const pakPath = join(gamePath, 'rnr_script.pak')
+      if (await Utils.exists(pakPath)) {
+        await patchPak({
+          pakPath,
+          isShieldWordDisabled
+        })
+      }
+
+      // 使用传入的 username 参数写入 xyxID.txt
+      const xyxIdFilePath = join(gamePath, 'xyxID.txt')
+      await Utils.safeExecute(async () => {
+        await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
+        console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
+      }, '[Main] 写入 xyxID.txt 失败')
+
+      // 解析命令行参数（将字符串按空格分割）
+      const args: string[] = []
+      if (launchArgs && launchArgs.trim() !== '') {
+        // 简单的参数解析：按空格分割，但保留引号内的内容
+        const argParts = launchArgs.trim().match(/(?:[^\s"]+|"[^"]*")+/g) || []
+        args.push(...argParts.map((arg: string) => arg.replace(/^"|"$/g, '')))
+      }
+
+      console.log(`[Main] 启动游戏: ${gameExePath}`)
+      console.log(`[Main] 命令行参数:`, args)
+
+      const gameProcess = await spawnGameProcess(
+        gameExePath,
+        args,
+        {
+          cwd: gamePath // 设置工作目录为游戏目录
+        },
+        (code, signal) => {
+          // 监听进程退出（仅用于日志记录）
+          console.log(`[Main] 游戏进程退出: code=${code}, signal=${signal}`)
         }
+      )
 
-        const gameExePath = join(gamePath, 'Game.exe')
-        if (!(await Utils.exists(gameExePath))) {
-          throw new Error(`找不到游戏文件: ${gameExePath} 请检查游戏安装目录是否正确`)
-        }
+      if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
 
-        // 修补敏感字pak
-        const pakPath = join(gamePath, 'rnr_script.pak')
-        if (await Utils.exists(pakPath)) {
-          await patchPak({
-            pakPath,
-            isShieldWordDisabled
-          })
-        }
+      if (launchArgs === 'xyxOpen') {
+        hookDll({
+          pid: gameProcess.pid,
+          username,
+          password
+        })
+      }
 
-        // 使用传入的 username 参数写入 xyxID.txt
-        const xyxIdFilePath = join(gamePath, 'xyxID.txt')
-        await Utils.safeExecute(async () => {
-          await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
-          console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
-        }, '[Main] 写入 xyxID.txt 失败')
-
-        // 解析命令行参数（将字符串按空格分割）
-        const args: string[] = []
-        if (launchArgs && launchArgs.trim() !== '') {
-          // 简单的参数解析：按空格分割，但保留引号内的内容
-          const argParts = launchArgs.trim().match(/(?:[^\s"]+|"[^"]*")+/g) || []
-          args.push(...argParts.map((arg: string) => arg.replace(/^"|"$/g, '')))
-        }
-
-        console.log(`[Main] 启动游戏: ${gameExePath}`)
-        console.log(`[Main] 命令行参数:`, args)
-
-        const gameProcess = await spawnGameProcess(
-          gameExePath,
-          args,
-          {
-            cwd: gamePath // 设置工作目录为游戏目录
-          },
-          (code, signal) => {
-            // 监听进程退出（仅用于日志记录）
-            console.log(`[Main] 游戏进程退出: code=${code}, signal=${signal}`)
+      if (minimizeToTrayOnLaunch) {
+        console.log('[Main] 启动游戏后最小化到托盘（根据用户设置）')
+        // 与主进程 hideToTray 保持一致：只做「最小化 + 隐藏任务栏图标」，避免调用 hide() 导致窗口状态异常
+        if (mainWindow) {
+          mainWindow.setSkipTaskbar(true)
+          if (!mainWindow.isMinimized()) {
+            mainWindow.minimize()
           }
-        )
-
-        if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
-
-        if (launchArgs === 'xyxOpen') {
-          hookDll({
-            pid: gameProcess.pid,
-            username,
-            password
-          })
         }
+      } else {
+        console.log('[Main] 启动游戏后保持启动器窗口可见（根据用户设置）')
+      }
 
-        if (minimizeToTrayOnLaunch) {
-          console.log('[Main] 启动游戏后最小化到托盘（根据用户设置）')
-          // 与主进程 hideToTray 保持一致：只做「最小化 + 隐藏任务栏图标」，避免调用 hide() 导致窗口状态异常
-          if (mainWindow) {
-            mainWindow.setSkipTaskbar(true)
-            if (!mainWindow.isMinimized()) {
-              mainWindow.minimize()
-            }
+      /**
+       * 进程优先级相关操作结果
+       */
+      Utils.safeExecute(() => {
+        return new Promise((res) => {
+          if (process.platform !== 'win32') {
+            return res(undefined)
           }
-        } else {
-          console.log('[Main] 启动游戏后保持启动器窗口可见（根据用户设置）')
-        }
 
-        /**
-         * 进程优先级相关操作结果
-         */
-        Utils.safeExecute(() => {
-          return new Promise((res) => {
-            if (process.platform !== 'win32') {
-              return res(undefined)
-            }
+          // 在 Windows 上，根据用户设置调整游戏进程优先级
+          const priorityKey: ProcessPriority = processPriority || 'normal'
+          // 对应 Windows PriorityClass 数值
+          const priorityMap: Record<ProcessPriority, number> = {
+            realtime: 256, // REALTIME_PRIORITY_CLASS
+            high: 128, // HIGH_PRIORITY_CLASS
+            abovenormal: 32768, // ABOVE_NORMAL_PRIORITY_CLASS
+            normal: 32, // NORMAL_PRIORITY_CLASS
+            belownormal: 16384, // BELOW_NORMAL_PRIORITY_CLASS
+            low: 64 // IDLE_PRIORITY_CLASS，近似“低”
+          }
 
-            // 在 Windows 上，根据用户设置调整游戏进程优先级
-            const priorityKey: ProcessPriority = processPriority || 'normal'
-            // 对应 Windows PriorityClass 数值
-            const priorityMap: Record<ProcessPriority, number> = {
-              realtime: 256, // REALTIME_PRIORITY_CLASS
-              high: 128, // HIGH_PRIORITY_CLASS
-              abovenormal: 32768, // ABOVE_NORMAL_PRIORITY_CLASS
-              normal: 32, // NORMAL_PRIORITY_CLASS
-              belownormal: 16384, // BELOW_NORMAL_PRIORITY_CLASS
-              low: 64 // IDLE_PRIORITY_CLASS，近似“低”
-            }
+          const priorityValue = priorityMap[priorityKey] ?? priorityMap.normal
 
-            const priorityValue = priorityMap[priorityKey] ?? priorityMap.normal
+          console.log(
+            `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`
+          )
 
-            console.log(
-              `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`
-            )
+          spawnDetached('wmic', [
+            'process',
+            'where',
+            `processid=${gameProcess.pid}`,
+            'CALL',
+            'setpriority',
+            String(priorityValue)
+          ])
 
-            spawnDetached('wmic', [
-              'process',
-              'where',
-              `processid=${gameProcess.pid}`,
-              'CALL',
-              'setpriority',
-              String(priorityValue)
-            ])
+          // 如果启用了降低NP优先级功能，则检测并降低GameMon进程优先级
+          if (lowerNPPriority) {
+            // 启动后按 1 秒间隔检查系统进程，直到发现包含关键字 "GameMon" 的进程或超时
+            let checkCount = 0
+            const maxChecks = 15
 
-            // 如果启用了降低NP优先级功能，则检测并降低GameMon进程优先级
-            if (lowerNPPriority) {
-              // 启动后按 1 秒间隔检查系统进程，直到发现包含关键字 "GameMon" 的进程或超时
-              let checkCount = 0
-              const maxChecks = 15
+            const intervalId = setInterval(() => {
+              checkCount++
+              if (checkCount > maxChecks) {
+                clearInterval(intervalId)
+                console.warn('[Main] 未发现 GameMon 相关进程（已超时）')
+                res(undefined)
+                return
+              }
 
-              const intervalId = setInterval(() => {
-                checkCount++
-                if (checkCount > maxChecks) {
-                  clearInterval(intervalId)
-                  console.warn('[Main] 未发现 GameMon 相关进程（已超时）')
-                  res(undefined)
-                  return
-                }
+              // 使用 Utils.safeExecute + spawnPromise 获取并处理进程列表
+              Utils.safeExecute(async () => {
+                const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
+                  collectStdout: true,
+                  collectStderr: false
+                })
 
-                // 使用 Utils.safeExecute + spawnPromise 获取并处理进程列表
-                Utils.safeExecute(async () => {
-                  const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
-                    collectStdout: true,
-                    collectStderr: false
-                  })
+                // 解析输出，查找包含 GameMon 的进程及其 PID
+                const lines = result.stdout
+                  .split(/\r?\n/)
+                  .map((line) => line.trim())
+                  .filter(Boolean)
 
-                  // 解析输出，查找包含 GameMon 的进程及其 PID
-                  const lines = result.stdout
-                    .split(/\r?\n/)
-                    .map((line) => line.trim())
-                    .filter(Boolean)
-
-                  const matches: Array<{ name: string; pid: number }> = []
-                  for (const line of lines) {
-                    // wmic 输出格式：Name  ProcessId
-                    const match = line.match(/^(.*\S)\s+(\d+)$/)
-                    if (match) {
-                      const name = match[1].trim()
-                      const pid = Number(match[2])
-                      if (name.includes('GameMon')) {
-                        matches.push({ name, pid })
-                      }
+                const matches: Array<{ name: string; pid: number }> = []
+                for (const line of lines) {
+                  // wmic 输出格式：Name  ProcessId
+                  const match = line.match(/^(.*\S)\s+(\d+)$/)
+                  if (match) {
+                    const name = match[1].trim()
+                    const pid = Number(match[2])
+                    if (name.includes('GameMon')) {
+                      matches.push({ name, pid })
                     }
                   }
+                }
 
-                  if (matches.length > 0) {
-                    console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：', matches)
-                    clearInterval(intervalId)
+                if (matches.length > 0) {
+                  console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：', matches)
+                  clearInterval(intervalId)
 
-                    // 将所有匹配的 GameMon 相关进程优先级调为最低（IDLE_PRIORITY_CLASS = 64）
-                    const targetPriorityValue = 64
-                    const processPromises = matches.map(async ({ name, pid }) => {
-                      await Utils.safeExecute(async () => {
-                        // 设置进程优先级
-                        console.log(
-                          `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`
-                        )
-                        await spawnDetached('wmic', [
-                          'process',
-                          'where',
-                          `processid=${pid}`,
-                          'CALL',
-                          'setpriority',
-                          String(targetPriorityValue)
-                        ])
-                      }, `[Main] 设置进程优先级失败: ${name} (pid=${pid})`)
-                    })
+                  // 将所有匹配的 GameMon 相关进程优先级调为最低（IDLE_PRIORITY_CLASS = 64）
+                  const targetPriorityValue = 64
+                  const processPromises = matches.map(async ({ name, pid }) => {
+                    await Utils.safeExecute(async () => {
+                      // 设置进程优先级
+                      console.log(
+                        `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`
+                      )
+                      await spawnDetached('wmic', [
+                        'process',
+                        'where',
+                        `processid=${pid}`,
+                        'CALL',
+                        'setpriority',
+                        String(targetPriorityValue)
+                      ])
+                    }, `[Main] 设置进程优先级失败: ${name} (pid=${pid})`)
+                  })
 
-                    // 等待所有进程的优先级设置完成
-                    await Promise.all(processPromises)
-                    res(undefined)
-                  }
-                }, '设置 GameMon 进程优先级失败')
-              }, 1000)
-            } else {
-              // 如果未启用降低NP优先级功能，直接resolve
-              res(undefined)
-            }
-          })
-        }, '调整进程优先级时发生错误')
+                  // 等待所有进程的优先级设置完成
+                  await Promise.all(processPromises)
+                  res(undefined)
+                }
+              }, '设置 GameMon 进程优先级失败')
+            }, 1000)
+          } else {
+            // 如果未启用降低NP优先级功能，直接resolve
+            res(undefined)
+          }
+        })
+      }, '调整进程优先级时发生错误')
 
-        return { success: true }
-      } catch (error) {
-        console.error('[Main] 启动游戏时发生错误:', error)
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : '启动游戏时发生未知错误'
-        }
+      return { success: true }
+    } catch (error) {
+      console.error('[Main] 启动游戏时发生错误:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '启动游戏时发生未知错误'
       }
     }
-  )
+  })
 
   /**
    * 读取并转换游戏目录下的 config.ini 文件为 JSON
    * @param gamePath 游戏安装目录
    */
-  ipcMain.handle('read-config-ini', async (_, gamePath: string) => {
+  ipc.handle('read-config-ini', async (_, gamePath) => {
     try {
       if (!gamePath || gamePath.trim() === '') {
         return { success: false, exists: false, error: '游戏路径未设置' }
@@ -912,7 +893,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       // 使用 ini-json-converter 转换为 JSON
       const jsonData = parseIniToJson(fileContent)
 
-      return { success: true, exists: true, data: jsonData }
+      // parseIniToJson 返回的是宽泛对象，这里按契约约束为 AppConfig（由渲染层按字段读取）
+      return { success: true, exists: true, data: jsonData as AppConfig }
     } catch (error) {
       console.error('[Main] 读取 config.ini 失败:', error)
       return {
@@ -928,43 +910,40 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * @param gamePath 游戏安装目录
    * @param configJson JSON 配置对象
    */
-  ipcMain.handle(
-    'write-config-ini',
-    async (_, gamePath: string, configJson: Record<string, Record<string, unknown>>) => {
-      try {
-        if (!gamePath || gamePath.trim() === '') {
-          throw new Error('游戏路径未设置')
-        }
+  ipc.handle('write-config-ini', async (_, gamePath, configJson) => {
+    try {
+      if (!gamePath || gamePath.trim() === '') {
+        throw new Error('游戏路径未设置')
+      }
 
-        if (!configJson) {
-          throw new Error('配置数据为空')
-        }
+      if (!configJson) {
+        throw new Error('配置数据为空')
+      }
 
-        const configIniPath = join(gamePath, 'config.ini')
+      const configIniPath = join(gamePath, 'config.ini')
 
-        // 使用 ini-json-converter 转换为 INI 字符串
-        const iniContent = stringifyJsonToIni(configJson)
+      // 使用 ini-json-converter 转换为 INI 字符串
+      const iniContent = stringifyJsonToIni(configJson)
 
-        // 写入文件（异步）
-        await writeFile(configIniPath, iniContent, 'utf-8')
+      // 写入文件（异步）
+      await writeFile(configIniPath, iniContent, 'utf-8')
 
-        console.log('[Main] config.ini 保存成功:', configIniPath)
-        return { success: true }
-      } catch (error) {
-        console.error('[Main] 保存 config.ini 失败:', error)
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : '保存 config.ini 文件时发生未知错误'
-        }
+      console.log('[Main] config.ini 保存成功:', configIniPath)
+      return { success: true }
+    } catch (error) {
+      console.error('[Main] 保存 config.ini 失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '保存 config.ini 文件时发生未知错误'
       }
     }
-  )
+  })
 
   /**
    * 读取游戏 Patch.ini 文件
    * @param gamePath 游戏安装目录
    */
-  ipcMain.handle('read-patch-info', async (_, gamePath: string) => {
+  ipc.handle('read-patch-info', async (_, gamePath) => {
     try {
       if (!gamePath || gamePath.trim() === '') {
         throw new Error('游戏路径未设置')
@@ -980,7 +959,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const fileContent = await readFile(patchIniPath, 'utf-8')
       const patchInfo = parseIniToJson(fileContent)
 
-      return { success: true, data: patchInfo }
+      return { success: true, data: patchInfo as PatchInfo }
     } catch (error) {
       console.error('[Main] 读取 Patch.ini 失败:', error)
       return {
@@ -996,7 +975,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * - modsPaks: 启动器根目录下 mods 目录中的 .pak（若目录不存在返回空数组）
    * @param gamePath 游戏安装目录
    */
-  ipcMain.handle('get-paks', async (_, gamePath: string) => {
+  ipc.handle('get-paks', async (_, gamePath) => {
     try {
       if (!gamePath || gamePath.trim() === '') {
         throw new Error('目录路径未设置')
@@ -1059,39 +1038,36 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 如果目标文件已存在，会自动覆盖
    * fileData 可以是 Buffer 或 Uint8Array
    */
-  ipcMain.handle(
-    'save-pak-to-game',
-    async (_, fileName: string, fileData: Buffer | Uint8Array, gamePath: string) => {
-      try {
-        if (!fileName || !fileData || !gamePath) {
-          throw new Error('文件名、文件数据或游戏路径为空')
-        }
+  ipc.handle('save-pak-to-game', async (_, fileName, fileData, gamePath) => {
+    try {
+      if (!fileName || !fileData || !gamePath) {
+        throw new Error('文件名、文件数据或游戏路径为空')
+      }
 
-        if (!(await Utils.exists(gamePath))) {
-          throw new Error(`游戏目录不存在: ${gamePath}`)
-        }
+      if (!(await Utils.exists(gamePath))) {
+        throw new Error(`游戏目录不存在: ${gamePath}`)
+      }
 
-        const destPath = join(gamePath, fileName)
-        // 如果 fileData 是 Uint8Array，转换为 Buffer
-        const buffer = Buffer.isBuffer(fileData) ? fileData : Buffer.from(fileData)
-        await writeFile(destPath, buffer)
+      const destPath = join(gamePath, fileName)
+      // 如果 fileData 是 Uint8Array，转换为 Buffer
+      const buffer = Buffer.isBuffer(fileData) ? fileData : Buffer.from(fileData)
+      await writeFile(destPath, buffer)
 
-        return { success: true, destPath }
-      } catch (error) {
-        console.error('[Main] save-pak-to-game 失败:', error)
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : '保存补丁到游戏目录时发生未知错误'
-        }
+      return { success: true, destPath }
+    } catch (error) {
+      console.error('[Main] save-pak-to-game 失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '保存补丁到游戏目录时发生未知错误'
       }
     }
-  )
+  })
 
   /**
    * 将本地补丁（mods 下）复制到游戏目录（保留源文件）
    * 如果目标文件已存在，会自动覆盖（以源文件为准）
    */
-  ipcMain.handle('copy-pak-to-game', async (_, srcPath: string, gamePath: string) => {
+  ipc.handle('copy-pak-to-game', async (_, srcPath, gamePath) => {
     try {
       if (!srcPath || !gamePath) {
         throw new Error('源路径或游戏路径为空')
@@ -1125,7 +1101,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 将游戏内补丁移动到本地 mods 目录（剪切）
    * 如果 mods 目录下已存在同名文件，会自动覆盖（以游戏目录中的文件为准）
    */
-  ipcMain.handle('move-pak-to-mods', async (_, srcPath: string) => {
+  ipc.handle('move-pak-to-mods', async (_, srcPath) => {
     try {
       if (!srcPath) {
         throw new Error('源路径为空')
@@ -1162,7 +1138,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 删除指定补丁文件
    */
-  ipcMain.handle('delete-pak', async (_, srcPath: string) => {
+  ipc.handle('delete-pak', async (_, srcPath) => {
     try {
       if (!srcPath) {
         throw new Error('删除路径为空')
@@ -1190,7 +1166,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * @param username 用户名
    * @param password 密码
    */
-  ipcMain.handle('tcp-login', async (_, username: string, password: string) => {
+  ipc.handle('tcp-login', async (_, username, password) => {
     try {
       if (!username || !password) {
         throw new Error('用户名和密码不能为空')
@@ -1218,7 +1194,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 删除指定截图文件
    */
-  ipcMain.handle('delete-screenshot', async (_event, filePath: string) => {
+  ipc.handle('delete-screenshot', async (_event, filePath) => {
     try {
       if (!filePath) {
         throw new Error('删除路径为空')
@@ -1252,168 +1228,165 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 1. 仅当本地不存在同名文件时才下载
    * 2. version 为字符串，例如: "00026"
    */
-  ipcMain.handle(
-    'download-patch-lists',
-    async (_event, versions: string[], keepLatestOnly: boolean = true) => {
+  ipc.handle('download-patch-lists', async (_event, versions, keepLatestOnly = true) => {
+    try {
+      if (!Array.isArray(versions) || versions.length === 0) {
+        throw new Error('版本列表为空')
+      }
+
+      // 过滤非法版本号（只允许数字字符串）
+      const validVersions = versions.filter((v) => typeof v === 'string' && /^\d+$/.test(v))
+      if (validVersions.length === 0) {
+        throw new Error('没有有效的版本号')
+      }
+
+      const appRoot = Utils.getTargetDir()
+      const targetDir = join(appRoot, 'patch', 'lst')
+
+      // 确保目录存在
       try {
-        if (!Array.isArray(versions) || versions.length === 0) {
-          throw new Error('版本列表为空')
+        if (!(await Utils.exists(targetDir))) {
+          // 使用 fs.promises.mkdir 递归创建目录
+          await mkdir(targetDir, { recursive: true })
+        }
+      } catch (error) {
+        console.error('[Main] 创建 patch/lst 目录失败:', error)
+        throw new Error('创建本地目录失败')
+      }
+
+      // 用于后续解析的本地文件信息
+      const localFiles: { version: string; filePath: string }[] = []
+
+      for (const version of validVersions) {
+        const fileName = `${version}.lst.txt`
+        const filePath = join(targetDir, fileName)
+
+        // 如果已经存在同名文件，则跳过下载
+        if (await Utils.exists(filePath)) {
+          console.log(`[Main] 补丁列表已存在，跳过: ${fileName}`)
+          localFiles.push({ version, filePath })
+          continue
         }
 
-        // 过滤非法版本号（只允许数字字符串）
-        const validVersions = versions.filter((v) => typeof v === 'string' && /^\d+$/.test(v))
-        if (validVersions.length === 0) {
-          throw new Error('没有有效的版本号')
-        }
+        const url = `https://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${version}.lst`
+        console.log('[Main] 开始下载补丁列表:', url)
 
-        const appRoot = Utils.getTargetDir()
-        const targetDir = join(appRoot, 'patch', 'lst')
-
-        // 确保目录存在
         try {
-          if (!(await Utils.exists(targetDir))) {
-            // 使用 fs.promises.mkdir 递归创建目录
-            await mkdir(targetDir, { recursive: true })
-          }
+          await Utils.downloadFile(url, filePath)
+          localFiles.push({ version, filePath })
+          console.log('[Main] 补丁列表下载完成:', filePath)
         } catch (error) {
-          console.error('[Main] 创建 patch/lst 目录失败:', error)
-          throw new Error('创建本地目录失败')
+          const errorMsg = `下载补丁列表失败: ${url} - ${error instanceof Error ? error.message : String(error)}`
+          console.error('[Main]', errorMsg)
+          throw new Error(errorMsg)
         }
+      }
+      // 解析所有 lst 文件，计算补丁详情与总大小
+      let patches: {
+        version: string
+        filePath: string
+        patchFileName: string
+        targetFileName: string
+        originalSize: number
+        compressedSize: number
+        checksum?: string
+        downloadUrl: string
+      }[] = []
 
-        // 用于后续解析的本地文件信息
-        const localFiles: { version: string; filePath: string }[] = []
+      let totalSize = 0
 
-        for (const version of validVersions) {
-          const fileName = `${version}.lst.txt`
-          const filePath = join(targetDir, fileName)
+      for (const { version, filePath } of localFiles) {
+        try {
+          const content = await readFile(filePath, 'utf-8')
+          const lines = content
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .filter((line) => line && !line.startsWith('#') && !line.startsWith(';'))
 
-          // 如果已经存在同名文件，则跳过下载
-          if (await Utils.exists(filePath)) {
-            console.log(`[Main] 补丁列表已存在，跳过: ${fileName}`)
-            localFiles.push({ version, filePath })
-            continue
-          }
-
-          const url = `https://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${version}.lst`
-          console.log('[Main] 开始下载补丁列表:', url)
-
-          try {
-            await Utils.downloadFile(url, filePath)
-            localFiles.push({ version, filePath })
-            console.log('[Main] 补丁列表下载完成:', filePath)
-          } catch (error) {
-            const errorMsg = `下载补丁列表失败: ${url} - ${error instanceof Error ? error.message : String(error)}`
-            console.error('[Main]', errorMsg)
-            throw new Error(errorMsg)
-          }
-        }
-        // 解析所有 lst 文件，计算补丁详情与总大小
-        let patches: {
-          version: string
-          filePath: string
-          patchFileName: string
-          targetFileName: string
-          originalSize: number
-          compressedSize: number
-          checksum?: string
-          downloadUrl: string
-        }[] = []
-
-        let totalSize = 0
-
-        for (const { version, filePath } of localFiles) {
-          try {
-            const content = await readFile(filePath, 'utf-8')
-            const lines = content
-              .split(/\r?\n/)
-              .map((line) => line.trim())
-              .filter((line) => line && !line.startsWith('#') && !line.startsWith(';'))
-
-            for (const line of lines) {
-              const parts = line.split(/\s+/)
-              if (parts.length < 4) {
-                continue
-              }
-
-              const patchFileName = parts[0]
-              let targetFileName = parts[1]
-
-              // 如果 targetFileName 是 VLauncher_New.exe，修改为 VLauncher.exe
-              if (targetFileName === 'VLauncher_New.exe') {
-                targetFileName = 'VLauncher.exe'
-              }
-
-              const originalSize = Number(parts[2]) || 0
-              const compressedSize = Number(parts[3]) || 0
-              const checksum = parts[4]
-
-              const downloadUrl = `http://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${patchFileName}`
-
-              patches.push({
-                version,
-                filePath,
-                patchFileName,
-                targetFileName,
-                originalSize,
-                compressedSize,
-                checksum,
-                downloadUrl
-              })
-
-              // 按原始大小统计总下载体积
-              totalSize += originalSize
-            }
-          } catch (error) {
-            const errorMsg = `解析补丁列表失败: ${filePath} - ${error instanceof Error ? error.message : String(error)}`
-            console.error('[Main]', errorMsg)
-            throw new Error(errorMsg)
-          }
-        }
-
-        if (keepLatestOnly && patches.length > 0) {
-          // 以目标文件名（例如 Game.exe）作为“同名文件”的判断依据
-          const latestMap = new Map<string, (typeof patches)[number]>()
-
-          for (const patch of patches) {
-            const key = patch.targetFileName
-            const existing = latestMap.get(key)
-
-            if (!existing) {
-              latestMap.set(key, patch)
+          for (const line of lines) {
+            const parts = line.split(/\s+/)
+            if (parts.length < 4) {
               continue
             }
 
-            const vNew = parseInt(patch.version, 10)
-            const vOld = parseInt(existing.version, 10)
+            const patchFileName = parts[0]
+            let targetFileName = parts[1]
 
-            if (!Number.isNaN(vNew) && !Number.isNaN(vOld)) {
-              if (vNew > vOld) {
-                latestMap.set(key, patch)
-              }
-            } else if (patch.version > existing.version) {
-              latestMap.set(key, patch)
+            // 如果 targetFileName 是 VLauncher_New.exe，修改为 VLauncher.exe
+            if (targetFileName === 'VLauncher_New.exe') {
+              targetFileName = 'VLauncher.exe'
             }
+
+            const originalSize = Number(parts[2]) || 0
+            const compressedSize = Number(parts[3]) || 0
+            const checksum = parts[4]
+
+            const downloadUrl = `http://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${patchFileName}`
+
+            patches.push({
+              version,
+              filePath,
+              patchFileName,
+              targetFileName,
+              originalSize,
+              compressedSize,
+              checksum,
+              downloadUrl
+            })
+
+            // 按原始大小统计总下载体积
+            totalSize += originalSize
           }
-
-          patches = Array.from(latestMap.values())
-          // 重新按原始大小计算总下载体积
-          totalSize = patches.reduce((sum, p) => sum + (p.originalSize || 0), 0)
-        }
-
-        return {
-          success: true,
-          totalSize,
-          patches
-        }
-      } catch (error) {
-        console.error('[Main] download-patch-lists 处理失败:', error)
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : '下载补丁列表时发生未知错误'
+        } catch (error) {
+          const errorMsg = `解析补丁列表失败: ${filePath} - ${error instanceof Error ? error.message : String(error)}`
+          console.error('[Main]', errorMsg)
+          throw new Error(errorMsg)
         }
       }
+
+      if (keepLatestOnly && patches.length > 0) {
+        // 以目标文件名（例如 Game.exe）作为“同名文件”的判断依据
+        const latestMap = new Map<string, (typeof patches)[number]>()
+
+        for (const patch of patches) {
+          const key = patch.targetFileName
+          const existing = latestMap.get(key)
+
+          if (!existing) {
+            latestMap.set(key, patch)
+            continue
+          }
+
+          const vNew = parseInt(patch.version, 10)
+          const vOld = parseInt(existing.version, 10)
+
+          if (!Number.isNaN(vNew) && !Number.isNaN(vOld)) {
+            if (vNew > vOld) {
+              latestMap.set(key, patch)
+            }
+          } else if (patch.version > existing.version) {
+            latestMap.set(key, patch)
+          }
+        }
+
+        patches = Array.from(latestMap.values())
+        // 重新按原始大小计算总下载体积
+        totalSize = patches.reduce((sum, p) => sum + (p.originalSize || 0), 0)
+      }
+
+      return {
+        success: true,
+        totalSize,
+        patches
+      }
+    } catch (error) {
+      console.error('[Main] download-patch-lists 处理失败:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '下载补丁列表时发生未知错误'
+      }
     }
-  )
+  })
 
   /**
    * 根据补丁列表信息下载并解压补丁文件到项目根目录 patch/file 目录中
@@ -1421,7 +1394,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * - 下载完成后使用 lzma-native 解压，解压后的文件命名为 targetFileName
    * - 解压完成后删除压缩包本身
    */
-  ipcMain.handle('download-patch-files', async (event, info: PatchUpdateInfo) => {
+  ipc.handle('download-patch-files', async (event, info) => {
     try {
       const patches = info?.patches ?? []
       if (!Array.isArray(patches) || patches.length === 0) {
@@ -1478,7 +1451,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         }
         lastProgressTime = now
 
-        event.sender.send('patch-progress', {
+        emitter.send(event.sender, 'patch-progress', {
           percent,
           stage,
           targetFileName,
@@ -1672,7 +1645,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 2. 更新 PatchInfo/Patch.ini 中的 patch.version 为最新版本
    * 3. 清空项目根目录的 patch 目录
    */
-  ipcMain.handle('apply-patch-files', async (_event, gamePath: string, latestVersion: string) => {
+  ipc.handle('apply-patch-files', async (_event, gamePath, latestVersion) => {
     try {
       if (!gamePath || !latestVersion) {
         throw new Error('游戏路径或版本号为空')
@@ -1690,10 +1663,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       // 递归读取所有补丁文件（复用 Utils.getAllFilesInDir）
-      const allFiles = (await Utils.getAllFilesInDir(patchFileDir, { recursive: true })).map((f) => ({
-        path: f.path,
-        relativePath: relative(patchFileDir, f.path)
-      }))
+      const allFiles = (await Utils.getAllFilesInDir(patchFileDir, { recursive: true })).map(
+        (f) => ({
+          path: f.path,
+          relativePath: relative(patchFileDir, f.path)
+        })
+      )
       let hasDeleteFileList = false
       let deleteFileList: string[] = []
 
@@ -1965,7 +1940,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 检查 GitHub releases 版本是否和当前一致
    * 如果有更新返回更新信息，否则返回 undefined
    */
-  ipcMain.handle('check-app-update', async () => {
+  ipc.handle('check-app-update', async () => {
     try {
       const repoOwner = 'nyaruhodoo'
       const repoName = 'r2beat-launcher'
@@ -2011,7 +1986,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 运行游戏内置的修复工具
    */
-  ipcMain.handle('open-game-recovery', async (_, gamePath: string) => {
+  ipc.handle('open-game-recovery', async (_, gamePath) => {
     try {
       if (!gamePath || gamePath.trim() === '') {
         throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
@@ -2024,10 +1999,18 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       await Utils.checkGameRunning()
 
-      const { promise, resolve } = Promise.withResolvers()
+      const { promise, resolve } = Promise.withResolvers<{ success: boolean; error?: string }>()
 
       execFile(gameRecoveryPath, (error) => {
-        if (error) throw error
+        if (error) {
+          resolve({
+            success: false,
+            // 这里不抛出，避免变成 Promise<unknown>，并让返回值符合契约
+            error: error.message
+          })
+          return
+        }
+
         resolve({
           success: true
         })
@@ -2047,7 +2030,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   /**
    * 解析最新官方Q群
    */
-  ipcMain.handle('get-qq', async () => {
+  ipc.handle('get-qq', async () => {
     try {
       // 1. 使用内置 fetch 获取 HTML
       const response = await fetch('http://r2beat.xiyouxi.com/')
@@ -2065,7 +2048,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       if (!firstCard) throw new Error('未找到QQ群')
 
       const imgElement = firstCard.querySelector('img')
-      let imgSrc = imgElement ? imgElement.getAttribute('src') : ''
+      let imgSrc = imgElement?.getAttribute('src') || ''
       if (imgSrc?.startsWith('//')) {
         imgSrc = 'http:' + imgSrc
       }
@@ -2083,8 +2066,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       return {
         success: false,
-        message: error instanceof Error ? error.message : '获取QQ群失败'
+        error: error instanceof Error ? error.message : '获取QQ群失败'
       }
     }
   })
+
+  // 返回清理函数，用于在应用退出时清理 IPC 监听器
+  return () => {
+    ipc.dispose()
+  }
 }

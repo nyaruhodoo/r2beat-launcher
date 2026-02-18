@@ -38,6 +38,7 @@ import type { ScreenshotFileInfo } from '@types'
 import { useToast } from '@renderer/composables/useToast'
 import { confirm } from '@renderer/composables/useConfirm'
 import xiangceImg from '@renderer/assets/imgs/xiangce.png'
+import { ipcEmitter } from '@renderer/ipc'
 
 const props = defineProps<{
   visible: boolean
@@ -64,7 +65,7 @@ const handleClear = async () => {
     return
   }
 
-  const res = await window.api.clearScreenshots?.(props.gamePath)
+  const res = await ipcEmitter.invoke('clear-screenshots', props.gamePath)
 
   if (!res?.success) {
     showError(res?.error || '清空相册失败')
@@ -89,7 +90,7 @@ const load = async () => {
 
   loading.value = true
   try {
-    const res = await window.api.getScreenshots?.(props.gamePath)
+    const res = await ipcEmitter.invoke('get-screenshots', props.gamePath)
 
     if (!res?.success) {
       loadError.value = res?.error || '相册加载失败'
@@ -102,7 +103,7 @@ const load = async () => {
 }
 
 const handleOpen = async (filePath: string) => {
-  const res = await window.api.openScreenshot?.(filePath)
+  const res = await ipcEmitter.invoke('open-screenshot', filePath)
   if (!res?.success) {
     showError(res?.error || '打开图片失败')
   }
@@ -114,7 +115,7 @@ const handleDelete = async (file: ScreenshotFileInfo) => {
       message: `确定要删除 ${file.name} 吗？`
     })
 
-    const res = await window.api.deleteScreenshot?.(file.path)
+    const res = await ipcEmitter.invoke('delete-screenshot', file.path)
     if (!res?.success) {
       showError(res?.error || '删除截图失败')
       return

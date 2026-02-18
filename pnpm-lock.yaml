@@ -11,6 +11,9 @@ importers:
       '@electron-toolkit/preload':
         specifier: ^3.0.2
         version: 3.0.2(electron@39.4.0)
+      '@electron-toolkit/typed-ipc':
+        specifier: ^1.0.2
+        version: 1.0.2(@electron-toolkit/preload@3.0.2(electron@39.4.0))(electron@39.4.0)
       '@electron-toolkit/utils':
         specifier: ^4.0.0
         version: 4.0.0(electron@39.4.0)
@@ -307,6 +310,12 @@ packages:
     resolution: {integrity: sha512-AdPsP770WhW7b260h13SHMdmjEEHJL6xFtgi3jwgdsSQbJOkJLeNnnpZW9qxTPCvmRI6vmdzWz5K3gibFS6SNg==}
     peerDependencies:
       '@types/node': '*'
+
+  '@electron-toolkit/typed-ipc@1.0.2':
+    resolution: {integrity: sha512-N5yV5PzoAQDI4pLRBguY/8qwS7C7b84g2XQHPNqmp5KJTiYGeaQVfglI3979tzIqpSEV8Nmwdlw3ADmYE44WvQ==}
+    peerDependencies:
+      '@electron-toolkit/preload': '>=3.0.0'
+      electron: '>=13.0.0'
 
   '@electron-toolkit/utils@4.0.0':
     resolution: {integrity: sha512-qXSntwEzluSzKl4z5yFNBknmPGjPa3zFhE4mp9+h0cgokY5ornAeP+CJQDBhKsL1S58aOQfcwkD3NwLZCl+64g==}
@@ -3283,6 +3292,11 @@ snapshots:
   '@electron-toolkit/tsconfig@2.0.0(@types/node@22.19.7)':
     dependencies:
       '@types/node': 22.19.7
+
+  '@electron-toolkit/typed-ipc@1.0.2(@electron-toolkit/preload@3.0.2(electron@39.4.0))(electron@39.4.0)':
+    dependencies:
+      '@electron-toolkit/preload': 3.0.2(electron@39.4.0)
+      electron: 39.4.0
 
   '@electron-toolkit/utils@4.0.0(electron@39.4.0)':
     dependencies:
