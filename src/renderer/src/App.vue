@@ -382,9 +382,7 @@ const checkAppUpdate = async () => {
 onMounted(() => {
   // 延迟创建窗口，否则会闪一下很烦
   nextTick(() => {
-    setTimeout(() => {
-      ipcEmitter.send('window-show')
-    }, 200)
+    ipcEmitter.send('window-show')
   })
 
   searchGamePath()
