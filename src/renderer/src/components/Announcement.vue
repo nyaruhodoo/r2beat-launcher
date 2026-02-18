@@ -5,7 +5,7 @@
       <span class="announcement-title">系统公告</span>
     </div>
     <div class="announcement-content">
-      <div v-if="loading && announcementsCache?.data.length === 0" class="loading-state">
+      <div v-if="loading && (announcementsCache?.data.length ?? 0) === 0" class="loading-state">
         <span class="loading-text">
           <span>正在加载公告</span>
           <span class="loading-dots">
@@ -101,7 +101,9 @@ const filterTitle = (title: string): string => {
 // 获取公告数据
 const fetchAnnouncements = async () => {
   try {
-    loading.value = true
+    if ((announcementsCache?.value?.data.length ?? 0) === 0) {
+      loading.value = true
+    }
 
     const data = await ipcEmitter.invoke('get-announcements')
 
