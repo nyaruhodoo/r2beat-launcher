@@ -21,6 +21,17 @@ import type {
 } from '@types'
 
 /**
+ * 通用 IPC 返回类型：
+ * - success/error 为通用字段
+ * - 失败分支允许携带部分数据（例如 files: []），避免实现端返回“附带字段”时类型不匹配
+ */
+export type IpcResult<T extends object | void = void, E extends string = string> =
+  | (T extends void
+      ? { success: true; error?: undefined }
+      : { success: true; error?: undefined } & T)
+  | ({ success: false; error: E } & (T extends void ? unknown : Partial<T>))
+
+/**
  * 主进程 IPC 事件类型
  * 使用联合类型定义 listener 事件和 handler 事件
  */
@@ -40,32 +51,18 @@ export type IpcMainEvents =
   | {
       // ========== 请求-响应 (handle/invoke) ==========
       'get-announcements': () => AnnouncementData[]
-      'get-announcement-detail': (args: { path: string; idx: number }) => {
-        success: boolean
-        data?: R2BeatNoticeData['data']
-        error?: string
-      }
-      'get-remote-version': () => { success: boolean; version?: string; error?: string }
-      'get-r2beat-path': (shortcutPath?: string) => {
-        success: boolean
-        path?: string
-        error?: string
-      }
+      'get-announcement-detail': (args: { path: string; idx: number }) => IpcResult<{
+        data: R2BeatNoticeData['data']
+      }>
+      'get-remote-version': () => IpcResult<{ version: string }>
+      'get-r2beat-path': (shortcutPath?: string) => IpcResult<{ path: string }>
       'select-folder': (currentPath?: string) => string | null
-      'reset-gg': (gamePath: string) => { success: boolean; error?: string }
-      'get-screenshots': (gamePath: string) => {
-        success: boolean
-        files: ScreenshotFileInfo[]
-        error?: string
-      }
-      'get-local-image-library': (libraryPath: string) => {
-        success: boolean
-        files: ScreenshotFileInfo[]
-        error?: string
-      }
-      'clear-screenshots': (gamePath: string) => { success: boolean; error?: string }
-      'open-screenshot': (filePath: string) => { success: boolean; error?: string }
-      'delete-screenshot': (filePath: string) => { success: boolean; error?: string }
+      'reset-gg': (gamePath: string) => IpcResult
+      'get-screenshots': (gamePath: string) => IpcResult<{ files: ScreenshotFileInfo[] }>
+      'get-local-image-library': (libraryPath: string) => IpcResult<{ files: ScreenshotFileInfo[] }>
+      'clear-screenshots': (gamePath: string) => IpcResult
+      'open-screenshot': (filePath: string) => IpcResult
+      'delete-screenshot': (filePath: string) => IpcResult
       'launch-game': (args: {
         gamePath: string
         launchArgs?: string
@@ -75,46 +72,32 @@ export type IpcMainEvents =
         username?: string
         password?: string
         isShieldWordDisabled?: boolean
-      }) => { success: boolean; error?: string }
-      'read-config-ini': (gamePath: string) => {
-        success: boolean
+      }) => IpcResult
+      'read-config-ini': (gamePath: string) => IpcResult<{
         exists: boolean
         data?: AppConfig
-        error?: string
-      }
+      }>
       'write-config-ini': (
         gamePath: string,
         configJson: Record<string, Record<string, unknown>>
-      ) => { success: boolean; error?: string }
-      'read-patch-info': (gamePath: string) => {
-        success: boolean
-        data?: PatchInfo
-        error?: string
-      }
-      'get-paks': (gamePath: string) => {
-        success: boolean
+      ) => IpcResult
+      'read-patch-info': (gamePath: string) => IpcResult<{ data: PatchInfo }>
+      'get-paks': (gamePath: string) => IpcResult<{
         gamePaks: PakFileInfo[]
         modsPaks: PakFileInfo[]
-        error?: string
-      }
+      }>
       'save-pak-to-game': (
         fileName: string,
         fileData: Buffer | Uint8Array,
         gamePath: string
-      ) => { success: boolean; destPath?: string; error?: string }
-      'copy-pak-to-game': (srcPath: string, gamePath: string) => {
-        success: boolean
-        destPath?: string
-        error?: string
-      }
-      'move-pak-to-mods': (srcPath: string) => {
-        success: boolean
-        destPath?: string
-        error?: string
-      }
-      'delete-pak': (srcPath: string) => { success: boolean; error?: string }
-      'tcp-login': (username: string, password: string) => {
-        success: boolean
+      ) => IpcResult<{ destPath: string }>
+      'copy-pak-to-game': (srcPath: string, gamePath: string) => IpcResult<{ destPath: string }>
+      'move-pak-to-mods': (srcPath: string) => IpcResult<{ destPath: string }>
+      'delete-pak': (srcPath: string) => IpcResult
+      'tcp-login': (
+        username: string,
+        password: string
+      ) => IpcResult<{
         status?: 'SUCCESS' | 'FAILURE' | 'ERROR' | 'UNKNOWN'
         message?: string
         data?: {
@@ -127,25 +110,16 @@ export type IpcMainEvents =
           EncryptionKey?: number
           UserID?: number
         }
-        error?: string
-      }
+      }>
       'download-patch-lists': (
         versions: string[],
         keepLatestOnly?: boolean
-      ) => {
-        success: boolean
+      ) => IpcResult<{
         totalSize?: number
         patches?: PatchUpdateFile[]
-        error?: string
-      }
-      'download-patch-files': (info: PatchUpdateInfo) => {
-        success: boolean
-        error?: string
-      }
-      'apply-patch-files': (gamePath: string, latestVersion: string) => {
-        success: boolean
-        error?: string
-      }
+      }>
+      'download-patch-files': (info: PatchUpdateInfo) => IpcResult
+      'apply-patch-files': (gamePath: string, latestVersion: string) => IpcResult
       'check-app-update': () =>
         | {
             currentVersion: string
@@ -153,18 +127,13 @@ export type IpcMainEvents =
             downloadUrl: string
           }
         | undefined
-      'open-game-recovery': (gamePath: string) => {
-        success: boolean
-        error?: string
-      }
-      'get-qq': () => {
-        success: boolean
-        error?: string
+      'open-game-recovery': (gamePath: string) => IpcResult
+      'get-qq': () => IpcResult<{
         data?: {
           imgSrc?: string
           qqNumber?: string
         }
-      }
+      }>
     }
 
 /**
@@ -174,4 +143,3 @@ export type IpcRendererEvents = {
   'announcement-detail-data': [AnnouncementData]
   'patch-progress': [PatchProgressPayload]
 }
-

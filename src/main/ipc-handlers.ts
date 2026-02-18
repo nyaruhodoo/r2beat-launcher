@@ -1175,10 +1175,19 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.log(`[Main] 收到 TCP 登录请求: ${username}`)
       const result = await sendTcpLoginRequest(username, password)
 
+      if (result.status === 'SUCCESS') {
+        return {
+          success: true,
+          status: result.status,
+          message: result.message,
+          data: result.data
+        }
+      }
+
       return {
-        success: result.status === 'SUCCESS',
+        success: false,
         status: result.status,
-        message: result.message,
+        error: result.message || '登录失败',
         data: result.data
       }
     } catch (error) {
@@ -1999,7 +2008,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       await Utils.checkGameRunning()
 
-      const { promise, resolve } = Promise.withResolvers<{ success: boolean; error?: string }>()
+      const { promise, resolve } = Promise.withResolvers<
+        { success: true } | { success: false; error: string }
+      >()
 
       execFile(gameRecoveryPath, (error) => {
         if (error) {
