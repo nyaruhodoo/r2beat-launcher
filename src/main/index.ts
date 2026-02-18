@@ -65,17 +65,14 @@ function createTray(window: BrowserWindow) {
         // 2. 释放托盘（防止图标残留）
         if (tray) tray.destroy()
 
-        // 先走一次正常关闭逻辑
-        app.quit()
+        // BUG: 已知问题，这种卸载方式会导致渲染层无法正确保存数据，但是可以保证相关进程结束
 
-        setTimeout(() => {
-          // 3. 释放单实例锁（非常关键，这能解决第二次启动没缓存的问题）
-          app.releaseSingleInstanceLock()
+        // 3. 释放单实例锁（非常关键，这能解决第二次启动没缓存的问题）
+        app.releaseSingleInstanceLock()
 
-          // 4. 仅杀掉当前进程本身，不触碰子进程
-          // 在 Windows 上，process.kill(process.pid) 相当于只针对该 PID 执行 taskkill /F
-          process.kill(process.pid)
-        }, 100)
+        // 4. 仅杀掉当前进程本身，不触碰子进程
+        // 在 Windows 上，process.kill(process.pid) 相当于只针对该 PID 执行 taskkill /F
+        process.kill(process.pid)
       }
     }
   ])
