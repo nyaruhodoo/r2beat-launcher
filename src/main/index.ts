@@ -68,12 +68,14 @@ function createTray(window: BrowserWindow) {
         // 先走一次正常关闭逻辑
         app.quit()
 
-        // 3. 释放单实例锁（非常关键，这能解决第二次启动没缓存的问题）
-        app.releaseSingleInstanceLock()
+        setTimeout(() => {
+          // 3. 释放单实例锁（非常关键，这能解决第二次启动没缓存的问题）
+          app.releaseSingleInstanceLock()
 
-        // 4. 仅杀掉当前进程本身，不触碰子进程
-        // 在 Windows 上，process.kill(process.pid) 相当于只针对该 PID 执行 taskkill /F
-        process.kill(process.pid)
+          // 4. 仅杀掉当前进程本身，不触碰子进程
+          // 在 Windows 上，process.kill(process.pid) 相当于只针对该 PID 执行 taskkill /F
+          process.kill(process.pid)
+        }, 100)
       }
     }
   ])
