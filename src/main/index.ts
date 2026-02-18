@@ -65,6 +65,9 @@ function createTray(window: BrowserWindow) {
         // 2. 释放托盘（防止图标残留）
         if (tray) tray.destroy()
 
+        // 先走一次正常关闭逻辑
+        app.quit()
+
         // 3. 释放单实例锁（非常关键，这能解决第二次启动没缓存的问题）
         app.releaseSingleInstanceLock()
 
