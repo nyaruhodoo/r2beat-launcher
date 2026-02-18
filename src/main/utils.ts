@@ -6,8 +6,12 @@ import { get as httpGet } from 'http'
 import { get as httpsGet } from 'https'
 import { URL } from 'url'
 import { spawnPromise } from './spawn'
+import { access } from 'fs/promises'
 
 export class Utils {
+  /**
+   * 获取当前环境根目录
+   */
   static getTargetDir() {
     if (is.dev) {
       return app.getAppPath()
@@ -190,6 +194,9 @@ export class Utils {
     return 0
   }
 
+  /**
+   * 检查游戏是否正在运行中
+   */
   static async checkGameRunning() {
     if (process.platform === 'win32') {
       const processesToCheck = ['Game.exe', 'VLauncher.exe']
@@ -219,6 +226,18 @@ export class Utils {
         const processList = runningProcesses.join(' 和 ')
         throw new Error(`${processList} 正在运行中，请关闭后重试`)
       }
+    }
+  }
+
+  /**
+   * 检测文件是否存在
+   */
+  static async exists(path: string) {
+    try {
+      await access(path)
+      return true
+    } catch {
+      return false
     }
   }
 }

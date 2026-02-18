@@ -2,17 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, Notification, shell } from 'electr
 import { join, relative, dirname, basename } from 'path'
 import { homedir } from 'os'
 import { createReadStream, createWriteStream } from 'fs'
-import {
-  access,
-  readFile,
-  writeFile,
-  readdir,
-  mkdir,
-  unlink,
-  stat,
-  copyFile,
-  rm
-} from 'fs/promises'
+import { readFile, writeFile, readdir, mkdir, unlink, stat, copyFile, rm } from 'fs/promises'
 import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
 import { AnnouncementData, R2BeatNoticeData, PatchUpdateInfo, ProcessPriority } from '@types'
 import { sendTcpLoginRequest } from './tcp-login'
@@ -27,16 +17,6 @@ import { JSDOM } from 'jsdom'
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
-  // 异步判断文件/目录是否存在，避免同步阻塞
-  const exists = async (path: string) => {
-    try {
-      await access(path)
-      return true
-    } catch {
-      return false
-    }
-  }
-
   ipcMain.on('window-show', () => {
     mainWindow?.show()
   })
@@ -416,7 +396,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       // 判断快捷方式文件是否存在
-      if (!(await exists(finalShortcutPath))) {
+      if (!(await Utils.exists(finalShortcutPath))) {
         throw new Error(`找不到快捷方式文件: ${finalShortcutPath}`)
       }
 
@@ -430,7 +410,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const targetDir = dirname(shortcutDetails.target)
 
       // 验证目录是否存在
-      if (!(await exists(targetDir))) {
+      if (!(await Utils.exists(targetDir))) {
         throw new Error(`目标目录不存在: ${targetDir}`)
       }
 
@@ -499,7 +479,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       const ggDir = join(gamePath, 'GameGuard')
 
-      if (!(await exists(ggDir))) {
+      if (!(await Utils.exists(ggDir))) {
         // 不存在直接算成功（跳过也算成功）
         return { success: true }
       }
@@ -534,7 +514,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       const screenshotDir = join(gamePath, 'SCREENSHOT')
-      if (!(await exists(screenshotDir))) {
+      if (!(await Utils.exists(screenshotDir))) {
         return { success: true, files: [] as Array<{ name: string; path: string }> }
       }
 
@@ -603,7 +583,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         return { success: true, files: [] as Array<{ name: string; path: string }> }
       }
 
-      if (!(await exists(libraryPath))) {
+      if (!(await Utils.exists(libraryPath))) {
         return { success: true, files: [] as Array<{ name: string; path: string }> }
       }
 
@@ -671,7 +651,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       const screenshotDir = join(gamePath, 'SCREENSHOT')
-      if (!(await exists(screenshotDir))) {
+      if (!(await Utils.exists(screenshotDir))) {
         // 目录本身不存在也视为成功
         return { success: true }
       }
@@ -722,7 +702,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('文件路径为空')
       }
 
-      if (!(await exists(filePath))) {
+      if (!(await Utils.exists(filePath))) {
         throw new Error('文件不存在')
       }
 
@@ -774,13 +754,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         }
 
         const gameExePath = join(gamePath, 'Game.exe')
-        if (!(await exists(gameExePath))) {
+        if (!(await Utils.exists(gameExePath))) {
           throw new Error(`找不到游戏文件: ${gameExePath} 请检查游戏安装目录是否正确`)
         }
 
         // 修补敏感字pak
         const pakPath = join(gamePath, 'rnr_script.pak')
-        if (await exists(pakPath)) {
+        if (await Utils.exists(pakPath)) {
           await patchPak({
             pakPath,
             isShieldWordDisabled
@@ -993,7 +973,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       const configIniPath = join(gamePath, 'config.ini')
-      const iniExists = await exists(configIniPath)
+      const iniExists = await Utils.exists(configIniPath)
 
       if (!iniExists) {
         return { success: true, exists: false }
@@ -1065,7 +1045,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       const patchIniPath = join(gamePath, 'PatchInfo', 'Patch.ini')
       // 检查文件是否存在
-      if (!(await exists(patchIniPath))) {
+      if (!(await Utils.exists(patchIniPath))) {
         throw new Error(`找不到 Patch.ini 文件: ${patchIniPath}`)
       }
 
@@ -1095,7 +1075,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('目录路径未设置')
       }
 
-      const gameDirExists = await exists(gamePath)
+      const gameDirExists = await Utils.exists(gamePath)
       if (!gameDirExists) {
         throw new Error(`目录不存在: ${gamePath}`)
       }
@@ -1119,7 +1099,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const modsRoot = join(appRoot, 'mods')
 
       let modsPaks: { name: string; path: string }[] = []
-      if (await exists(modsRoot)) {
+      if (await Utils.exists(modsRoot)) {
         const modsEntries = await readdir(modsRoot, { withFileTypes: true })
         modsPaks = modsEntries
           .filter((entry) => entry.isFile())
@@ -1160,7 +1140,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           throw new Error('文件名、文件数据或游戏路径为空')
         }
 
-        if (!(await exists(gamePath))) {
+        if (!(await Utils.exists(gamePath))) {
           throw new Error(`游戏目录不存在: ${gamePath}`)
         }
 
@@ -1190,11 +1170,11 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('源路径或游戏路径为空')
       }
 
-      if (!(await exists(srcPath))) {
+      if (!(await Utils.exists(srcPath))) {
         throw new Error(`源文件不存在: ${srcPath}`)
       }
 
-      if (!(await exists(gamePath))) {
+      if (!(await Utils.exists(gamePath))) {
         throw new Error(`游戏目录不存在: ${gamePath}`)
       }
 
@@ -1224,14 +1204,14 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('源路径为空')
       }
 
-      if (!(await exists(srcPath))) {
+      if (!(await Utils.exists(srcPath))) {
         throw new Error(`源文件不存在: ${srcPath}`)
       }
 
       const appRoot = Utils.getTargetDir()
       const modsRoot = join(appRoot, 'mods')
 
-      if (!(await exists(modsRoot))) {
+      if (!(await Utils.exists(modsRoot))) {
         await mkdir(modsRoot, { recursive: true })
       }
 
@@ -1261,7 +1241,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('删除路径为空')
       }
 
-      if (await exists(srcPath)) {
+      if (await Utils.exists(srcPath)) {
         const info = await stat(srcPath)
         if (info.isFile()) {
           await unlink(srcPath)
@@ -1317,7 +1297,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('删除路径为空')
       }
 
-      if (await exists(filePath)) {
+      if (await Utils.exists(filePath)) {
         const info = await stat(filePath)
         if (info.isFile()) {
           await unlink(filePath)
@@ -1364,7 +1344,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         // 确保目录存在
         try {
-          if (!(await exists(targetDir))) {
+          if (!(await Utils.exists(targetDir))) {
             // 使用 fs.promises.mkdir 递归创建目录
             await mkdir(targetDir, { recursive: true })
           }
@@ -1381,7 +1361,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           const filePath = join(targetDir, fileName)
 
           // 如果已经存在同名文件，则跳过下载
-          if (await exists(filePath)) {
+          if (await Utils.exists(filePath)) {
             console.log(`[Main] 补丁列表已存在，跳过: ${fileName}`)
             localFiles.push({ version, filePath })
             continue
@@ -1525,7 +1505,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const targetDir = join(appRoot, 'patch', 'file')
 
       try {
-        if (!(await exists(targetDir))) {
+        if (!(await Utils.exists(targetDir))) {
           await mkdir(targetDir, { recursive: true })
         }
       } catch (error) {
@@ -1609,7 +1589,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             outDir = join(targetDir, ...dirParts)
 
             // 确保目标目录存在
-            if (!(await exists(outDir))) {
+            if (!(await Utils.exists(outDir))) {
               await mkdir(outDir, { recursive: true })
               console.log(`[Main] 已创建目录: ${outDir}`)
             }
@@ -1619,7 +1599,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         const outPath = join(outDir, outFileName)
 
         // 若目标文件已存在，则跳过
-        if (await exists(outPath)) {
+        if (await Utils.exists(outPath)) {
           console.log('[Main] 目标文件已存在，跳过下载与解压:', outPath)
           downloadFraction = 1
           decompressFraction = 1
@@ -1779,7 +1759,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const patchRoot = join(appRoot, 'patch')
       const patchFileDir = join(patchRoot, 'file')
 
-      if (!(await exists(patchFileDir))) {
+      if (!(await Utils.exists(patchFileDir))) {
         throw new Error('未找到补丁文件目录')
       }
 
@@ -1860,7 +1840,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             destDir = join(gamePath, ...dirParts)
 
             // 确保目标目录存在
-            if (!(await exists(destDir))) {
+            if (!(await Utils.exists(destDir))) {
               await mkdir(destDir, { recursive: true })
               console.log(`[Main] 已创建目录: ${destDir}`)
             }
@@ -1882,7 +1862,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           )
         })
 
-        if (shouldDelete || (await exists(dest))) {
+        if (shouldDelete || (await Utils.exists(dest))) {
           // 检查目标文件是否在删除列表中（精确匹配）
           const isInDeleteList = deleteFileList.some((deletePath) => {
             const normalizedDeletePath = deletePath.replace(/[\\/]/g, '/')
@@ -1890,9 +1870,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             return normalizedDestPath === normalizedDeletePath
           })
 
-          if (isInDeleteList || (await exists(dest))) {
+          if (isInDeleteList || (await Utils.exists(dest))) {
             try {
-              if (await exists(dest)) {
+              if (await Utils.exists(dest)) {
                 const statResult = await stat(dest)
                 if (statResult.isFile()) {
                   console.log(`[Main] 复制前删除目标文件: ${dest}`)
@@ -1949,7 +1929,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               )
               // 尝试再次删除并等待
               try {
-                if (await exists(dest)) {
+                if (await Utils.exists(dest)) {
                   await unlink(dest)
                 }
               } catch {
@@ -1966,7 +1946,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       // 更新 PatchInfo/Patch.ini 中的版本号
       try {
         const patchIniPath = join(gamePath, 'PatchInfo', 'Patch.ini')
-        if (await exists(patchIniPath)) {
+        if (await Utils.exists(patchIniPath)) {
           const iniContent = await readFile(patchIniPath, 'utf-8')
           const json = parseIniToJson(iniContent)
           const versionNum = Number(latestVersion)
@@ -2016,7 +1996,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
               console.log(`[Main] 尝试删除文件: ${filePath} -> ${targetPath}`)
 
-              if (await exists(targetPath)) {
+              if (await Utils.exists(targetPath)) {
                 // 检查是否是文件（不是目录）
                 const statResult = await stat(targetPath)
                 if (statResult.isFile()) {
@@ -2139,7 +2119,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
 
       const gameRecoveryPath = join(gamePath, 'GameRecovery.exe')
-      if (!(await exists(gameRecoveryPath))) {
+      if (!(await Utils.exists(gameRecoveryPath))) {
         throw new Error(`找不到修复文件: ${gameRecoveryPath} 请检查游戏安装目录是否正确`)
       }
 
