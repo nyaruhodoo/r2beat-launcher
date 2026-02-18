@@ -130,57 +130,57 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     rechargeWindow.webContents.on('did-finish-load', () => {
       const stringUserName = JSON.stringify(username ?? '')
 
-      rechargeWindow.webContents
-        .executeJavaScript(
-          `
-          const pgPayAmt = document.querySelector("#pg_pay_amt")  
-          if(pgPayAmt) {
-            const newOption = document.createElement('option');
-            newOption.value = 1;
-            newOption.textContent = '1元';
-            pgPayAmt.insertBefore(newOption, pgPayAmt.firstChild);
-          }
-          
-          const noContent = document.querySelector('#no_content')
-          if (noContent) {
-            const timerId = setInterval(() => {
-              const noContent = document.querySelector('#no_content')
-              if (noContent && noContent.children.length > 1) {
-                  clearInterval(timerId)
+      Utils.safeExecute(
+        () =>
+          rechargeWindow.webContents.executeJavaScript(`
+            const pgPayAmt = document.querySelector("#pg_pay_amt")  
+            if(pgPayAmt) {
+              const newOption = document.createElement('option');
+              newOption.value = 1;
+              newOption.textContent = '1元';
+              pgPayAmt.insertBefore(newOption, pgPayAmt.firstChild);
+            }
+            
+            const noContent = document.querySelector('#no_content')
+            if (noContent) {
+              const timerId = setInterval(() => {
+                const noContent = document.querySelector('#no_content')
+                if (noContent && noContent.children.length > 1) {
+                    clearInterval(timerId)
 
-                  noContent.value = 'RB'
-                  const changeEvent = new Event('change', {
-                    bubbles: true,
-                    cancelable: true,
-                  })
-                  noContent.dispatchEvent(changeEvent)
+                    noContent.value = 'RB'
+                    const changeEvent = new Event('change', {
+                      bubbles: true,
+                      cancelable: true,
+                    })
+                    noContent.dispatchEvent(changeEvent)
+                }
+              }, 500)
+            }
+
+            const timerId = setInterval(() => {
+              const gameServer = document.querySelector('#game_server')
+              if(!gameServer) return
+              gameServer.value = '01'
+              const changeEvent = new Event('change', {
+                bubbles: true,
+                cancelable: true,
+              })
+              gameServer.dispatchEvent(changeEvent)
+
+              if (gameServer && gameServer.children.length > 1) {
+                clearInterval(timerId)
               }
             }, 500)
-          }
 
-          const timerId = setInterval(() => {
-            const gameServer = document.querySelector('#game_server')
-            if(!gameServer) return
-            gameServer.value = '01'
-            const changeEvent = new Event('change', {
-              bubbles: true,
-              cancelable: true,
-            })
-            gameServer.dispatchEvent(changeEvent)
-
-            if (gameServer && gameServer.children.length > 1) {
-              clearInterval(timerId)
+            const gameUserId = document.querySelector("#game_user_id") 
+            const gameUserIdC = document.querySelector("#game_user_id_c")
+            if(gameUserId && gameUserIdC){
+              gameUserId.value = gameUserIdC.value = ${stringUserName}
             }
-          }, 500)
-
-          const gameUserId = document.querySelector("#game_user_id") 
-          const gameUserIdC = document.querySelector("#game_user_id_c")
-          if(gameUserId && gameUserIdC){
-            gameUserId.value = gameUserIdC.value = ${stringUserName}
-          }
-        `
-        )
-        .catch((error) => console.error('[Main] 注入充值中心脚本失败:', error))
+          `),
+        '充值中心注入JS脚本失败'
+      )
     })
 
     rechargeWindow.once('ready-to-show', () => {
@@ -518,6 +518,11 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         return { success: true, files: [] as Array<{ name: string; path: string }> }
       }
 
+      const dirStat = await stat(screenshotDir)
+      if (!dirStat.isDirectory()) {
+        return { success: true, files: [] as Array<{ name: string; path: string }> }
+      }
+
       const imageExts = new Set([
         '.png',
         '.jpg',
@@ -530,33 +535,10 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         '.avif'
       ])
 
-      const files: Array<{ name: string; path: string }> = []
-
-      const walk = async (dir: string) => {
-        const entries = await readdir(dir, { withFileTypes: true })
-        for (const entry of entries) {
-          const fullPath = join(dir, entry.name)
-          if (entry.isDirectory()) {
-            await walk(fullPath)
-            continue
-          }
-          if (!entry.isFile()) continue
-
-          const lowerName = entry.name.toLowerCase()
-          const dot = lowerName.lastIndexOf('.')
-          const ext = dot >= 0 ? lowerName.slice(dot) : ''
-          if (!imageExts.has(ext)) continue
-
-          files.push({ name: entry.name, path: fullPath })
-        }
-      }
-
-      const dirStat = await stat(screenshotDir)
-      if (!dirStat.isDirectory()) {
-        return { success: true, files: [] as Array<{ name: string; path: string }> }
-      }
-
-      await walk(screenshotDir)
+      const files = await Utils.getAllFilesInDir(screenshotDir, {
+        recursive: true,
+        filter: (f) => imageExts.has(f.ext)
+      })
 
       // 简单按文件名倒序（通常截图文件名含时间）
       files.sort((a, b) => b.name.localeCompare(a.name))
@@ -587,6 +569,11 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         return { success: true, files: [] as Array<{ name: string; path: string }> }
       }
 
+      const dirStat = await stat(libraryPath)
+      if (!dirStat.isDirectory()) {
+        return { success: true, files: [] as Array<{ name: string; path: string }> }
+      }
+
       const imageExts = new Set([
         '.png',
         '.jpg',
@@ -599,33 +586,10 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         '.avif'
       ])
 
-      const files: Array<{ name: string; path: string }> = []
-
-      const walk = async (dir: string) => {
-        const entries = await readdir(dir, { withFileTypes: true })
-        for (const entry of entries) {
-          const fullPath = join(dir, entry.name)
-          if (entry.isDirectory()) {
-            await walk(fullPath)
-            continue
-          }
-          if (!entry.isFile()) continue
-
-          const lowerName = entry.name.toLowerCase()
-          const dot = lowerName.lastIndexOf('.')
-          const ext = dot >= 0 ? lowerName.slice(dot) : ''
-          if (!imageExts.has(ext)) continue
-
-          files.push({ name: entry.name, path: fullPath })
-        }
-      }
-
-      const dirStat = await stat(libraryPath)
-      if (!dirStat.isDirectory()) {
-        return { success: true, files: [] as Array<{ name: string; path: string }> }
-      }
-
-      await walk(libraryPath)
+      const files = await Utils.getAllFilesInDir(libraryPath, {
+        recursive: true,
+        filter: (f) => imageExts.has(f.ext)
+      })
 
       // 按文件名排序
       files.sort((a, b) => a.name.localeCompare(b.name))
@@ -661,27 +625,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('SCREENSHOT 不是目录')
       }
 
-      const entries = await readdir(screenshotDir, { withFileTypes: true })
-
-      // 递归删除目录内容，但不删除 SCREENSHOT 目录本身
-      const deleteEntry = async (dir: string, name: string, isDir: boolean) => {
-        const target = join(dir, name)
-        if (isDir) {
-          // 先删子内容
-          const subEntries = await readdir(target, { withFileTypes: true })
-          for (const sub of subEntries) {
-            await deleteEntry(target, sub.name, sub.isDirectory())
-          }
-          // 再删空目录
-          await rm(target, { recursive: true, force: true })
-        } else {
-          await unlink(target)
-        }
-      }
-
-      for (const entry of entries) {
-        await deleteEntry(screenshotDir, entry.name, entry.isDirectory())
-      }
+      // 递归删除目录内的所有文件（保留目录本身；子目录若变为空会被保留）
+      await Utils.clearDirFiles(screenshotDir, { recursive: true })
 
       return { success: true }
     } catch (error) {
@@ -769,12 +714,10 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         // 使用传入的 username 参数写入 xyxID.txt
         const xyxIdFilePath = join(gamePath, 'xyxID.txt')
-        try {
+        await Utils.safeExecute(async () => {
           await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
           console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
-        } catch (error) {
-          console.error('[Main] 写入 xyxID.txt 失败:', error)
-        }
+        }, '[Main] 写入 xyxID.txt 失败')
 
         // 解析命令行参数（将字符串按空格分割）
         const args: string[] = []
@@ -809,11 +752,24 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           })
         }
 
+        if (minimizeToTrayOnLaunch) {
+          console.log('[Main] 启动游戏后最小化到托盘（根据用户设置）')
+          // 与主进程 hideToTray 保持一致：只做「最小化 + 隐藏任务栏图标」，避免调用 hide() 导致窗口状态异常
+          if (mainWindow) {
+            mainWindow.setSkipTaskbar(true)
+            if (!mainWindow.isMinimized()) {
+              mainWindow.minimize()
+            }
+          }
+        } else {
+          console.log('[Main] 启动游戏后保持启动器窗口可见（根据用户设置）')
+        }
+
         /**
-         * 等待优先级相关操作结果
+         * 进程优先级相关操作结果
          */
-        try {
-          new Promise((res) => {
+        Utils.safeExecute(() => {
+          return new Promise((res) => {
             if (process.platform !== 'win32') {
               return res(undefined)
             }
@@ -836,7 +792,6 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`
             )
 
-            // 使用 spawnDetached 异步设置优先级（fire and forget）
             spawnDetached('wmic', [
               'process',
               'where',
@@ -844,9 +799,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               'CALL',
               'setpriority',
               String(priorityValue)
-            ]).catch((error) => {
-              console.error('[Main] 设置游戏进程优先级失败:', error)
-            })
+            ])
 
             // 如果启用了降低NP优先级功能，则检测并降低GameMon进程优先级
             if (lowerNPPriority) {
@@ -863,93 +816,67 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
                   return
                 }
 
-                // 使用 spawnPromise 获取进程列表
-                spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
-                  collectStdout: true,
-                  collectStderr: false
-                })
-                  .then((result) => {
-                    // 解析输出，查找包含 GameMon 的进程及其 PID
-                    const lines = result.stdout
-                      .split(/\r?\n/)
-                      .map((line) => line.trim())
-                      .filter(Boolean)
+                // 使用 Utils.safeExecute + spawnPromise 获取并处理进程列表
+                Utils.safeExecute(async () => {
+                  const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
+                    collectStdout: true,
+                    collectStderr: false
+                  })
 
-                    const matches: Array<{ name: string; pid: number }> = []
-                    for (const line of lines) {
-                      // wmic 输出格式：Name  ProcessId
-                      const match = line.match(/^(.*\S)\s+(\d+)$/)
-                      if (match) {
-                        const name = match[1].trim()
-                        const pid = Number(match[2])
-                        if (name.includes('GameMon')) {
-                          matches.push({ name, pid })
-                        }
+                  // 解析输出，查找包含 GameMon 的进程及其 PID
+                  const lines = result.stdout
+                    .split(/\r?\n/)
+                    .map((line) => line.trim())
+                    .filter(Boolean)
+
+                  const matches: Array<{ name: string; pid: number }> = []
+                  for (const line of lines) {
+                    // wmic 输出格式：Name  ProcessId
+                    const match = line.match(/^(.*\S)\s+(\d+)$/)
+                    if (match) {
+                      const name = match[1].trim()
+                      const pid = Number(match[2])
+                      if (name.includes('GameMon')) {
+                        matches.push({ name, pid })
                       }
                     }
+                  }
 
-                    if (matches.length > 0) {
-                      console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：', matches)
-                      clearInterval(intervalId)
+                  if (matches.length > 0) {
+                    console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：', matches)
+                    clearInterval(intervalId)
 
-                      // 将所有匹配的 GameMon 相关进程优先级调为最低（IDLE_PRIORITY_CLASS = 64）
-                      // 并限制只使用一个 CPU 核心
-                      const targetPriorityValue = 64
-                      const processPromises = matches.map(async ({ name, pid }) => {
-                        try {
-                          // 设置进程优先级
-                          console.log(
-                            `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`
-                          )
-                          await spawnDetached('wmic', [
-                            'process',
-                            'where',
-                            `processid=${pid}`,
-                            'CALL',
-                            'setpriority',
-                            String(targetPriorityValue)
-                          ])
-                        } catch (error) {
-                          console.error(`[Main] 设置进程优先级失败: ${name} (pid=${pid})`, error)
-                        }
-                      })
+                    // 将所有匹配的 GameMon 相关进程优先级调为最低（IDLE_PRIORITY_CLASS = 64）
+                    const targetPriorityValue = 64
+                    const processPromises = matches.map(async ({ name, pid }) => {
+                      await Utils.safeExecute(async () => {
+                        // 设置进程优先级
+                        console.log(
+                          `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`
+                        )
+                        await spawnDetached('wmic', [
+                          'process',
+                          'where',
+                          `processid=${pid}`,
+                          'CALL',
+                          'setpriority',
+                          String(targetPriorityValue)
+                        ])
+                      }, `[Main] 设置进程优先级失败: ${name} (pid=${pid})`)
+                    })
 
-                      // 等待所有进程的优先级设置完成
-                      Promise.all(processPromises)
-                        .then(() => {
-                          res(undefined)
-                        })
-                        .catch((error) => {
-                          console.error('[Main] 处理 GameMon 进程时发生错误:', error)
-                          res(undefined) // 即使出错也 resolve，避免阻塞
-                        })
-                    }
-                  })
-                  .catch((error) => {
-                    console.error('[Main] 检测 GameMon 进程时发生错误:', error)
-                  })
+                    // 等待所有进程的优先级设置完成
+                    await Promise.all(processPromises)
+                    res(undefined)
+                  }
+                }, '设置 GameMon 进程优先级失败')
               }, 1000)
             } else {
               // 如果未启用降低NP优先级功能，直接resolve
               res(undefined)
             }
           })
-        } catch (error) {
-          console.error('[Main] 调整进程优先级时发生错误:', error)
-        }
-
-        if (minimizeToTrayOnLaunch) {
-          console.log('[Main] 启动游戏后最小化到托盘（根据用户设置）')
-          // 与主进程 hideToTray 保持一致：只做「最小化 + 隐藏任务栏图标」，避免调用 hide() 导致窗口状态异常
-          if (mainWindow) {
-            mainWindow.setSkipTaskbar(true)
-            if (!mainWindow.isMinimized()) {
-              mainWindow.minimize()
-            }
-          }
-        } else {
-          console.log('[Main] 启动游戏后保持启动器窗口可见（根据用户设置）')
-        }
+        }, '调整进程优先级时发生错误')
 
         return { success: true }
       } catch (error) {
@@ -1682,11 +1609,10 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           })
 
           // 解压完成后删除临时压缩包（异步）
-          try {
-            await unlink(tmpPath)
-          } catch (error) {
-            console.warn('[Main] 删除临时补丁文件失败（可忽略）:', tmpPath, error)
-          }
+          await Utils.safeExecute(
+            () => unlink(tmpPath),
+            `[Main] 删除临时补丁文件失败（可忽略）: ${tmpPath}`
+          )
 
           console.log('[Main] 补丁解压完成:', outPath)
           decompressFraction = 1
@@ -1763,31 +1689,11 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         throw new Error('未找到补丁文件目录')
       }
 
-      // 递归读取所有补丁文件
-      const getAllFiles = async (
-        dir: string,
-        baseDir: string = dir
-      ): Promise<Array<{ path: string; relativePath: string }>> => {
-        const files: Array<{ path: string; relativePath: string }> = []
-        const entries = await readdir(dir, { withFileTypes: true })
-
-        for (const entry of entries) {
-          const fullPath = join(dir, entry.name)
-          const relativePath = relative(baseDir, fullPath)
-
-          if (entry.isDirectory()) {
-            // 递归读取子目录
-            const subFiles = await getAllFiles(fullPath, baseDir)
-            files.push(...subFiles)
-          } else if (entry.isFile()) {
-            files.push({ path: fullPath, relativePath })
-          }
-        }
-
-        return files
-      }
-
-      const allFiles = await getAllFiles(patchFileDir)
+      // 递归读取所有补丁文件（复用 Utils.getAllFilesInDir）
+      const allFiles = (await Utils.getAllFilesInDir(patchFileDir, { recursive: true })).map((f) => ({
+        path: f.path,
+        relativePath: relative(patchFileDir, f.path)
+      }))
       let hasDeleteFileList = false
       let deleteFileList: string[] = []
 
@@ -1801,7 +1707,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           console.log(`[Main] 检测到 DeleteFileList.dat: ${relativePath}`)
 
           // 读取 DeleteFileList.dat 内容（从补丁目录中读取，还未复制到游戏目录）
-          try {
+          await Utils.safeExecute(async () => {
             const deleteFileListContent = await readFile(file.path, 'utf-8')
             deleteFileList = deleteFileListContent
               .split(/\r?\n/)
@@ -1812,9 +1718,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               `[Main] 预读取 DeleteFileList.dat，包含 ${deleteFileList.length} 个待删除文件`
             )
             console.log('[Main] 待删除文件列表:', deleteFileList)
-          } catch (error) {
-            console.warn('[Main] 预读取 DeleteFileList.dat 失败:', error)
-          }
+          }, '[Main] 预读取 DeleteFileList.dat 失败')
           break
         }
       }
@@ -1928,13 +1832,11 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
                 `[Main] 复制文件被锁定，等待后重试 (${copyRetryCount}/${maxCopyRetries}): ${dest}`
               )
               // 尝试再次删除并等待
-              try {
+              await Utils.safeExecute(async () => {
                 if (await Utils.exists(dest)) {
                   await unlink(dest)
                 }
-              } catch {
-                // 忽略删除错误
-              }
+              }, `[Main] 复制前删除目标文件失败: ${dest}`)
               await new Promise((resolve) => setTimeout(resolve, 500))
             } else {
               throw copyError
@@ -1967,7 +1869,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       // 根据 DeleteFileList.dat 清空不再需要的文件
       // 注意：已经在复制阶段处理了在补丁文件中的文件，这里只处理不在补丁文件中的其他文件
       if (hasDeleteFileList && deleteFileList.length > 0) {
-        try {
+        await Utils.safeExecute(async () => {
           console.log('[Main] 开始处理 DeleteFileList.dat 中剩余的待删除文件')
 
           // 获取所有已复制的补丁文件的相对路径（用于排除）
@@ -2035,10 +1937,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             }
           }
           console.log('[Main] DeleteFileList.dat 处理完成')
-        } catch (error) {
-          console.error('[Main] 处理 DeleteFileList.dat 失败:', error)
-          // 不抛出错误，允许继续执行
-        }
+        }, '[Main] 处理 DeleteFileList.dat 失败')
       } else {
         console.log('[Main] 本次更新不包含 DeleteFileList.dat，跳过文件删除')
       }

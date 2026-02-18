@@ -1,12 +1,12 @@
 import { app } from 'electron'
 import { is } from '@electron-toolkit/utils'
-import { dirname } from 'path'
+import { dirname, join } from 'path'
 import { createWriteStream } from 'fs'
 import { get as httpGet } from 'http'
 import { get as httpsGet } from 'https'
 import { URL } from 'url'
 import { spawnPromise } from './spawn'
-import { access } from 'fs/promises'
+import { access, readdir, rm, stat, unlink } from 'fs/promises'
 
 export class Utils {
   /**
@@ -245,17 +245,135 @@ export class Utils {
    * 安全执行 Promise 函数
    * 即使内部抛出异常，也会被捕获并打印，Promise 最终会 resolve
    */
-  static async safeExecute(promiseFn: () => Promise<unknown>, taskName = 'Anonymous Task') {
+  static async safeExecute(promiseFn: () => Promise<unknown>, errorMsg?: string) {
     try {
       // 执行传入的异步函数
       const result = await promiseFn()
       return result
     } catch (error) {
       // 仅打印错误，不向上抛出
-      console.error(`[Utils.safeExecute] Task "${taskName}" failed:`, error)
+      console.error(`[Utils.safeExecute]:`, errorMsg)
+      console.log(error)
 
       // 返回 null 或自定义的默认值，确保外部 await 不会崩溃
       return null
     }
+  }
+
+  /**
+   * 获取指定目录下所有文件（默认递归）
+   * @param dir 目录路径
+   * @param options.recursive 是否递归子目录，默认 true
+   * @param options.filter 自定义过滤规则：返回 true 表示保留该文件
+   * @returns 绝对路径文件列表
+   */
+  static async getAllFilesInDir(
+    dir: string,
+    options?: {
+      recursive?: boolean
+      filter?: (file: { path: string; name: string; ext: string }) => boolean
+    }
+  ): Promise<Array<{ path: string; name: string }>> {
+    const recursive = options?.recursive ?? true
+    const filter = options?.filter
+
+    if (!dir || typeof dir !== 'string' || dir.trim() === '') {
+      return []
+    }
+
+    if (!(await Utils.exists(dir))) {
+      return []
+    }
+
+    const results: Array<{ path: string; name: string }> = []
+
+    const walk = async (currentDir: string) => {
+      const entries = await readdir(currentDir, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = join(currentDir, entry.name)
+        if (entry.isDirectory()) {
+          if (recursive) {
+            await walk(fullPath)
+          }
+          continue
+        }
+        if (!entry.isFile()) continue
+
+        const lowerName = entry.name.toLowerCase()
+        const dot = lowerName.lastIndexOf('.')
+        const ext = dot >= 0 ? lowerName.slice(dot) : ''
+
+        const ok = filter ? filter({ path: fullPath, name: entry.name, ext }) : true
+        if (!ok) continue
+
+        results.push({ path: fullPath, name: entry.name })
+      }
+    }
+
+    const dirStat = await stat(dir)
+    if (!dirStat.isDirectory()) return []
+
+    await walk(dir)
+    return results
+  }
+
+  /**
+   * 清空指定目录下的文件（递归删除文件，默认保留目录结构）
+   * @param dir 目录路径
+   * @param options.recursive 是否递归子目录，默认 true
+   * @param options.filter 自定义过滤规则：返回 true 表示删除该文件
+   * @returns 删除的文件数量
+   */
+  static async clearDirFiles(
+    dir: string,
+    options?: {
+      recursive?: boolean
+      filter?: (file: { path: string; name: string; ext: string }) => boolean
+    }
+  ): Promise<number> {
+    let deleted = 0
+
+    const recursive = options?.recursive ?? true
+    const filter = options?.filter
+
+    if (!dir || typeof dir !== 'string' || dir.trim() === '') return 0
+    if (!(await Utils.exists(dir))) return 0
+
+    const dirStat = await stat(dir)
+    if (!dirStat.isDirectory()) return 0
+
+    // 递归删除目录内容，但不删除 dir 本身
+    const clear = async (currentDir: string) => {
+      const entries = await readdir(currentDir, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = join(currentDir, entry.name)
+
+        if (entry.isDirectory()) {
+          if (recursive) {
+            await clear(fullPath)
+          }
+          // 清空逻辑与历史 clear-screenshots 一致：把子目录也移除
+          await Utils.safeExecute(() => rm(fullPath, { recursive: true, force: true }), `清空目录失败: ${fullPath}`)
+          continue
+        }
+
+        if (!entry.isFile()) continue
+
+        const lowerName = entry.name.toLowerCase()
+        const dot = lowerName.lastIndexOf('.')
+        const ext = dot >= 0 ? lowerName.slice(dot) : ''
+
+        const ok = filter ? filter({ path: fullPath, name: entry.name, ext }) : true
+        if (!ok) continue
+
+        await Utils.safeExecute(async () => {
+          await unlink(fullPath)
+          deleted++
+        }, `清空目录文件失败: ${fullPath}`)
+      }
+    }
+
+    await clear(dir)
+    return deleted
   }
 }
