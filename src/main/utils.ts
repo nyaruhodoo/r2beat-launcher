@@ -240,4 +240,22 @@ export class Utils {
       return false
     }
   }
+
+  /**
+   * 安全执行 Promise 函数
+   * 即使内部抛出异常，也会被捕获并打印，Promise 最终会 resolve
+   */
+  static async safeExecute(promiseFn: () => Promise<unknown>, taskName = 'Anonymous Task') {
+    try {
+      // 执行传入的异步函数
+      const result = await promiseFn()
+      return result
+    } catch (error) {
+      // 仅打印错误，不向上抛出
+      console.error(`[Utils.safeExecute] Task "${taskName}" failed:`, error)
+
+      // 返回 null 或自定义的默认值，确保外部 await 不会崩溃
+      return null
+    }
+  }
 }
