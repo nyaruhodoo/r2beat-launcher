@@ -54,7 +54,7 @@
           <div class="status-text">
             <span v-if="needsUpdate">
               新版本
-              <span>({{ totalSizeGbText ? `${totalSizeGbText} + 'GB'` : '正在计算中' }})</span>
+              <span>({{ totalSizeGbText ? `${totalSizeGbText}GB` : '正在计算中' }})</span>
               <span v-if="hasGameExe"> (包含 Game.exe) </span>
             </span>
             <span v-else>已是最新版本</span>
@@ -199,7 +199,7 @@ const loadLocalVersion = async () => {
     const result = await ipcEmitter.invoke('read-patch-info', path)
     if (result?.success && result.data) {
       currentVersion.value = result.data.patch.version.toString().padStart(5, '0')
-      // currentVersion.value = '00001'
+      currentVersion.value = '00001'
     } else {
       throw new Error(result?.error)
     }
