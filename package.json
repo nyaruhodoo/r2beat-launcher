@@ -20,26 +20,6 @@
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux"
   },
-  "build": {
-    "appId": "com.r2beat-launcher",
-    "win": {
-      "target": "nsis",
-      "icon": "build/game.ico",
-      "requestedExecutionLevel": "requireAdministrator"
-    },
-    "productName": "R2Beat-Launcher",
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "include": "build/installer.nsh"
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "releaseType": "release"
-      }
-    ]
-  },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/typed-ipc": "^1.0.2",

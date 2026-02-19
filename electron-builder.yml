@@ -1,7 +1,8 @@
-appId: com.electron.app
-productName: r2beat-launcher
+appId: com.r2beat-launcher # 建议统一使用 package.json 中的这个 ID
+productName: R2Beat-Launcher # 建议统一使用这个名称
 directories:
   buildResources: build
+
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -9,15 +10,25 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+
 asarUnpack:
   - resources/**
+
 win:
   executableName: r2beat-launcher
+  icon: build/game.ico # 从 package.json 合并而来
+  target: nsis # 从 package.json 合并而来
+  requestedExecutionLevel: requireAdministrator # 强制以管理员权限运行
+
 nsis:
+  oneClick: false # 取消一键安装，允许用户选择
+  allowToChangeInstallationDirectory: true # 允许修改安装路径
+  include: build/installer.nsh # 引入自定义 NSIS 脚本
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
+
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -26,8 +37,10 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
+
 dmg:
   artifactName: ${name}-${version}.${ext}
+
 linux:
   target:
     - AppImage
@@ -35,11 +48,18 @@ linux:
     - deb
   maintainer: electronjs.org
   category: Utility
+
 appImage:
   artifactName: ${name}-${version}.${ext}
+
 npmRebuild: false
+
+# 这里注意：publish 支持数组格式，如果你想同时发布到 Generic 和 GitHub，可以写多个
 publish:
-  provider: generic
-  url: https://example.com/auto-updates
+  - provider: github
+    releaseType: release
+  - provider: generic
+    url: https://example.com/auto-updates
+
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
