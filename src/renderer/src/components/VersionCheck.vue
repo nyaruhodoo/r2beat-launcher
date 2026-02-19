@@ -6,8 +6,7 @@
         <div>
           <div class="version-label">本地版本</div>
           <div class="version-number">
-            <span v-if="isLoading">加载中...</span>
-            <span v-else>{{ currentVersion }}</span>
+            {{ currentVersion }}
           </div>
         </div>
         <div>
@@ -18,50 +17,42 @@
     </div>
 
     <div class="version-patch-info">
-      <!-- 底部区域加载中状态，避免首次请求和切换时闪烁 -->
-      <div v-if="isVersionSectionLoading" class="version-status loading">
-        <div class="status-icon">⏳</div>
-        <div class="status-text">正在加载版本信息...</div>
+      <div v-if="showProgressBar || isApplyPatch" class="patch-progress">
+        <div class="progress-header">
+          <div class="progress-title">
+            <span class="status-icon">⏳</span>
+            <span>{{ patchProgressTitle }}</span>
+            <span class="progress-percent">{{ (patchProgressPercent ?? 0).toFixed(2) }}%</span>
+          </div>
+          <div v-if="patchProgressFileName" class="progress-file">
+            {{ patchProgressFileName }}
+          </div>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-fill" :style="{ width: `${patchProgressPercent ?? 0}%` }" />
+        </div>
       </div>
 
-      <template v-else>
-        <div v-if="showProgressBar || isApplyPatch" class="patch-progress">
-          <div class="progress-header">
-            <div class="progress-title">
-              <span class="status-icon">⏳</span>
-              <span>{{ patchProgressTitle }}</span>
-              <span class="progress-percent">{{ (patchProgressPercent ?? 0).toFixed(2) }}%</span>
-            </div>
-            <div v-if="patchProgressFileName" class="progress-file">
-              {{ patchProgressFileName }}
-            </div>
-          </div>
-
-          <div class="progress-track">
-            <div class="progress-fill" :style="{ width: `${patchProgressPercent ?? 0}%` }" />
-          </div>
+      <div
+        v-else
+        class="version-status"
+        :class="{ 'needs-update': needsUpdate, 'up-to-date': !needsUpdate }"
+      >
+        <div class="status-icon">
+          <span v-if="needsUpdate">⚠️</span>
+          <span v-else>✅</span>
         </div>
-
-        <div
-          v-else
-          class="version-status"
-          :class="{ 'needs-update': needsUpdate, 'up-to-date': !needsUpdate }"
-        >
-          <div class="status-icon">
-            <span v-if="needsUpdate">⚠️</span>
-            <span v-else>✅</span>
-          </div>
-          <div class="status-text">
-            <span v-if="needsUpdate">
-              新版本
-              <span>({{ totalSizeGbText ? `${totalSizeGbText}GB` : '正在计算中' }})</span>
-              <span v-if="hasGameExe"> (包含 Game.exe) </span>
-            </span>
-            <span v-else>已是最新版本</span>
-          </div>
-          <button v-if="needsUpdate" class="update-btn" @click="handleUpdate">立即更新</button>
+        <div class="status-text">
+          <span v-if="needsUpdate">
+            新版本
+            <span>({{ totalSizeGbText ? `${totalSizeGbText}GB` : '正在计算中' }})</span>
+            <span v-if="hasGameExe"> (包含 Game.exe) </span>
+          </span>
+          <span v-else>已是最新版本</span>
         </div>
-      </template>
+        <button v-if="needsUpdate" class="update-btn" @click="handleUpdate">立即更新</button>
+      </div>
     </div>
   </div>
 </template>
@@ -83,10 +74,8 @@ const { error: showError, success: showSuccess } = useToast()
 
 const currentVersion = ref('--')
 const latestVersion = ref('--')
-const lastNotifiedRemoteVersion = ref<string>()
+// 是否需要更新（远程版本号大于本地版本号）
 const needsUpdate = ref(false)
-const isLoading = ref(false)
-
 const preDownloadList = ref<PatchUpdateInfo>()
 
 // 补丁下载/解压进度（来自主进程 IPC）
@@ -96,10 +85,7 @@ const patchProgressFileName = ref<string>('')
 
 // 记录更新是否出错，如果出错则不再自动更新
 const hasUpdateError = ref(false)
-
-// 底部版本信息区域加载状态（远程版本 + 预下载列表）
-const isVersionSectionLoading = ref(true)
-
+// 是否正在应用补丁(避免无UI显示，进度条本身没考虑到这一步)
 const isApplyPatch = ref(false)
 
 const showProgressBar = computed(() => {
@@ -146,6 +132,59 @@ const hasGameExe = computed<boolean | null>(() => {
   return patches.some((p) => p.targetFileName?.toLowerCase() === 'game.exe')
 })
 
+// 使用计算属性提取 gamePath，便于watch监听
+const gamePathComputed = computed(() => props.gameSettings?.gamePath || '')
+
+// 读取本地版本
+const loadLocalVersion = async () => {
+  const path = gamePathComputed.value
+  if (!path || path.trim() === '') {
+    return
+  }
+
+  try {
+    const result = await ipcEmitter.invoke('read-patch-info', path)
+    if (result?.success && result.data) {
+      currentVersion.value = result.data.patch.version.toString().padStart(5, '0')
+      // currentVersion.value = '00033'
+
+      updateStatus()
+    } else {
+      throw new Error(result?.error)
+    }
+  } catch (error) {
+    console.error('读取本地版本失败:', error)
+  }
+}
+
+// 获取远程版本
+const loadRemoteVersion = async () => {
+  try {
+    const result = await ipcEmitter.invoke('get-remote-version')
+    if (result?.success && result.version) {
+      const newRemote = result.version
+      const oldRemote = latestVersion.value
+      latestVersion.value = newRemote
+
+      // 首次加载不提示；仅在后续轮询中检测到远程版本变化时提醒
+      if (+oldRemote && newRemote !== oldRemote) {
+        ipcEmitter.send('show-notification', {
+          title: '发现新的游戏版本',
+          body: `远程版本已更新至 ${newRemote}，建议尽快更新游戏客户端。`
+        })
+      }
+
+      getPreDownloadList()
+    } else {
+      throw new Error(result?.error)
+    }
+  } catch (error) {
+    console.error('获取远程版本异常:', error)
+    showError('获取远程版本异常')
+    latestVersion.value = '--'
+  }
+}
+
 /**
  * 计算是否有新版本
  */
@@ -154,11 +193,6 @@ const updateStatus = () => {
   const remote = latestVersion.value
 
   const versionsToUpdate: string[] = []
-
-  if (!local || !remote || local === '--' || remote === '--') {
-    needsUpdate.value = false
-    return versionsToUpdate
-  }
 
   const localNum = parseInt(local, 10)
   const remoteNum = parseInt(remote, 10)
@@ -180,73 +214,13 @@ const updateStatus = () => {
     needsUpdate.value = false
   }
 
+  // 重置数据，已无需要更新内容
+  if (versionsToUpdate.length === 0) {
+    preDownloadList.value = undefined
+    hasUpdateError.value = false
+  }
+
   return versionsToUpdate
-}
-
-// 使用计算属性提取 gamePath，便于监听
-const gamePathComputed = computed(() => props.gameSettings?.gamePath || '')
-
-// 读取本地版本
-const loadLocalVersion = async () => {
-  const path = gamePathComputed.value
-  if (!path || path.trim() === '') {
-    currentVersion.value = '未设置'
-    return
-  }
-
-  isLoading.value = true
-  try {
-    const result = await ipcEmitter.invoke('read-patch-info', path)
-    if (result?.success && result.data) {
-      currentVersion.value = result.data.patch.version.toString().padStart(5, '0')
-      // currentVersion.value = '00001'
-    } else {
-      throw new Error(result?.error)
-    }
-  } catch (error) {
-    console.error('读取本地版本失败:', error)
-    currentVersion.value = '读取失败'
-  } finally {
-    isLoading.value = false
-    updateStatus()
-  }
-}
-
-// 获取远程版本
-const loadRemoteVersion = async (isLoading?: boolean) => {
-  // 避免二次刷新时UI闪烁
-  if (isLoading) {
-    isVersionSectionLoading.value = true
-  }
-
-  try {
-    const result = await ipcEmitter.invoke('get-remote-version')
-    if (result?.success && result.version) {
-      const newRemote = result.version
-      const oldRemote = lastNotifiedRemoteVersion.value
-
-      latestVersion.value = newRemote
-
-      // 首次加载不提示；仅在后续轮询中检测到远程版本变化时提醒
-      if (oldRemote && newRemote !== oldRemote) {
-        ipcEmitter.send('show-notification', {
-          title: '发现新的游戏版本',
-          body: `远程版本已更新至 ${newRemote}，建议尽快更新游戏客户端。`
-        })
-      }
-
-      lastNotifiedRemoteVersion.value = newRemote
-    } else {
-      throw new Error(result?.error)
-    }
-  } catch (error) {
-    console.error('获取远程版本异常:', error)
-    showError('获取远程版本异常')
-    latestVersion.value = '--'
-  } finally {
-    isVersionSectionLoading.value = false
-    await getPreDownloadList()
-  }
 }
 
 /**
@@ -254,12 +228,8 @@ const loadRemoteVersion = async (isLoading?: boolean) => {
  */
 const getPreDownloadList = async () => {
   const updateList = updateStatus()
-  if (!updateList.length) {
-    preDownloadList.value = undefined
-    // 重置错误状态，因为已经没有需要更新的版本了
-    hasUpdateError.value = false
-    return
-  }
+  if (!updateList.length) return
+
   try {
     const res = await ipcEmitter.invoke('download-patch-lists', updateList)
 
@@ -278,7 +248,6 @@ const getPreDownloadList = async () => {
     }
   } catch (error) {
     console.error('下载补丁列表异常:', error)
-
     showError(error instanceof Error ? error.message : '下载补丁列表异常')
     preDownloadList.value = undefined
   }
@@ -350,8 +319,8 @@ const handleUpdate = async () => {
   }
 }
 
-// 组件挂载时加载版本
 onMounted(() => {
+  // 订阅更新进度事件
   const off = ipcListener.on('patch-progress', (_event, payload: PatchProgressPayload) => {
     patchProgressPercent.value = payload.percent
     patchProgressStage.value = payload.stage
@@ -363,18 +332,19 @@ onMounted(() => {
       }`
     )
   })
-
   onUnmounted(() => off?.())
 
+  // 初始化版本数据
   loadLocalVersion()
-  loadRemoteVersion(true)
+  loadRemoteVersion()
 })
 
-// 监听游戏路径变化，自动重新加载版本
+// 监听游戏路径变化，重新加载本地版本
 watch(gamePathComputed, () => {
   loadLocalVersion()
 })
 
+// 定时检测远程版本更新
 useInterval(() => {
   loadRemoteVersion()
 }, checkRemoteVersionTime)

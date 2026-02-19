@@ -355,7 +355,7 @@ const checkAppUpdate = async () => {
   const timeSinceLastCheck = now - (lastUpdateCheckTime.value || 0)
 
   if (timeSinceLastCheck >= checkUpdateIntervalTime) {
-    // 距离上次检查已超过30分钟，执行检查
+    // 距离上次检查已超过15分钟，执行检查
     try {
       const result = await ipcEmitter.invoke('check-app-update')
       // 更新最后检查时间
@@ -371,10 +371,10 @@ const checkAppUpdate = async () => {
       setLastUpdateCheckTime(now)
     }
   } else {
-    // 距离上次检查不足30分钟，跳过本次检查
+    // 距离上次检查不足15分钟，跳过本次检查
     const remainingMinutes = Math.ceil((checkUpdateIntervalTime - timeSinceLastCheck) / (60 * 1000))
     console.log(
-      `[App] 距离上次检查更新不足30分钟，跳过本次检查（还需等待约 ${remainingMinutes} 分钟）`
+      `[App] 距离上次检查更新不足15分钟，跳过本次检查（还需等待约 ${remainingMinutes} 分钟）`
     )
   }
 }

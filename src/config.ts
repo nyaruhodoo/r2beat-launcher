@@ -40,4 +40,3 @@ export const windowWidth = 1280 * 0.9
 export const windowHeight = 720 * 0.9
 export const minWindowWidth = 1024
 export const minWindowHeight = 768
-
