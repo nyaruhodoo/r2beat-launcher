@@ -2,6 +2,13 @@ appId: com.r2beat-launcher # 建议统一使用 package.json 中的这个 ID
 productName: R2Beat-Launcher # 建议统一使用这个名称
 directories:
   buildResources: build
+electronFuses:
+  # 启用 ASAR 完整性校验
+  enableEmbeddedAsarIntegrityValidation: true
+  # （可选，但推荐）确保 Electron 仅从 app.asar 加载应用程序代码
+  onlyLoadAppFromAsar: true
+  # 禁用进程以 node 模式运行，提高安全性
+  runAsNode: false
 
 files:
   - '!**/.vscode/*'

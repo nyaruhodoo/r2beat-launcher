@@ -6,7 +6,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 export default defineConfig({
   main: {
     build: {
-      reportCompressedSize: false
+      reportCompressedSize: false,
+      bytecode: true
     }
   },
   preload: {
