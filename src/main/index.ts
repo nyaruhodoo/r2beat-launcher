@@ -103,6 +103,7 @@ function createWindow() {
     autoHideMenuBar: true,
     frame: false,
     titleBarStyle: 'hidden',
+    fullscreenable: false, // 禁用全屏功能（包括 F11 快捷键）
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
