@@ -1,6 +1,6 @@
 {
   "name": "r2beat-launcher",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "音速觉醒启动器",
   "main": "./out/main/index.js",
   "author": "https://github.com/nyaruhodoo",
