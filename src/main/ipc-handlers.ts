@@ -740,7 +740,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
 
         if (launchArgs === 'xyxOpen') {
-          hookDll({
+          await hookDll({
             pid: gameProcess.pid,
             username,
             password
