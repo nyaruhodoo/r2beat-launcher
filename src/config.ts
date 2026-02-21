@@ -9,7 +9,7 @@ function minutesToMilliseconds(minutes: number) {
 }
 
 /**
- * 版本检查间隔时间
+ * 游戏版本检查间隔时间
  */
 export const checkRemoteVersionTime = minutesToMilliseconds(10)
 
@@ -31,7 +31,7 @@ export const checkUnknownServerStatusTime = minutesToMilliseconds(1)
 /**
  * 登录器版本检查间隔时间
  */
-export const checkUpdateIntervalTime = minutesToMilliseconds(15)
+export const checkUpdateIntervalTime = minutesToMilliseconds(30)
 
 /**
  * 窗口大小
