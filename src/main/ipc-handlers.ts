@@ -764,113 +764,116 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
          * 进程优先级相关操作结果
          */
         Utils.safeExecute(() => {
-          return new Promise((res) => {
-            if (process.platform !== 'win32') {
-              return res(undefined)
-            }
+          const { promise, resolve } = Promise.withResolvers()
 
-            // 在 Windows 上，根据用户设置调整游戏进程优先级
-            const priorityKey: ProcessPriority = processPriority || 'normal'
-            // 对应 Windows PriorityClass 数值
-            const priorityMap: Record<ProcessPriority, number> = {
-              realtime: 256, // REALTIME_PRIORITY_CLASS
-              high: 128, // HIGH_PRIORITY_CLASS
-              abovenormal: 32768, // ABOVE_NORMAL_PRIORITY_CLASS
-              normal: 32, // NORMAL_PRIORITY_CLASS
-              belownormal: 16384, // BELOW_NORMAL_PRIORITY_CLASS
-              low: 64 // IDLE_PRIORITY_CLASS，近似“低”
-            }
+          if (process.platform !== 'win32') {
+            resolve(undefined)
+            return promise
+          }
 
-            const priorityValue = priorityMap[priorityKey] ?? priorityMap.normal
+          // 在 Windows 上，根据用户设置调整游戏进程优先级
+          const priorityKey: ProcessPriority = processPriority || 'normal'
+          // 对应 Windows PriorityClass 数值
+          const priorityMap: Record<ProcessPriority, number> = {
+            realtime: 256, // REALTIME_PRIORITY_CLASS
+            high: 128, // HIGH_PRIORITY_CLASS
+            abovenormal: 32768, // ABOVE_NORMAL_PRIORITY_CLASS
+            normal: 32, // NORMAL_PRIORITY_CLASS
+            belownormal: 16384, // BELOW_NORMAL_PRIORITY_CLASS
+            low: 64 // IDLE_PRIORITY_CLASS，近似“低”
+          }
 
-            console.log(
-              `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`
-            )
+          const priorityValue = priorityMap[priorityKey] ?? priorityMap.normal
 
-            spawnDetached('wmic', [
-              'process',
-              'where',
-              `processid=${gameProcess.pid}`,
-              'CALL',
-              'setpriority',
-              String(priorityValue)
-            ])
+          console.log(
+            `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`
+          )
 
-            // 如果启用了降低NP优先级功能，则检测并降低GameMon进程优先级
-            if (lowerNPPriority) {
-              // 启动后按 1 秒间隔检查系统进程，直到发现包含关键字 "GameMon" 的进程或超时
-              let checkCount = 0
-              const maxChecks = 15
+          spawnDetached('wmic', [
+            'process',
+            'where',
+            `processid=${gameProcess.pid}`,
+            'CALL',
+            'setpriority',
+            String(priorityValue)
+          ])
 
-              const intervalId = setInterval(() => {
-                checkCount++
-                if (checkCount > maxChecks) {
-                  clearInterval(intervalId)
-                  console.warn('[Main] 未发现 GameMon 相关进程（已超时）')
-                  res(undefined)
-                  return
-                }
+          // 如果启用了降低NP优先级功能，则检测并降低GameMon进程优先级
+          if (lowerNPPriority) {
+            // 启动后按 1 秒间隔检查系统进程，直到发现包含关键字 "GameMon" 的进程或超时
+            let checkCount = 0
+            const maxChecks = 15
 
-                // 使用 Utils.safeExecute + spawnPromise 获取并处理进程列表
-                Utils.safeExecute(async () => {
-                  const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
-                    collectStdout: true,
-                    collectStderr: false
-                  })
+            const intervalId = setInterval(() => {
+              checkCount++
+              if (checkCount > maxChecks) {
+                clearInterval(intervalId)
+                console.warn('[Main] 未发现 GameMon 相关进程（已超时）')
+                resolve(undefined)
+                return
+              }
 
-                  // 解析输出，查找包含 GameMon 的进程及其 PID
-                  const lines = result.stdout
-                    .split(/\r?\n/)
-                    .map((line) => line.trim())
-                    .filter(Boolean)
+              // 使用 Utils.safeExecute + spawnPromise 获取并处理进程列表
+              Utils.safeExecute(async () => {
+                const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
+                  collectStdout: true,
+                  collectStderr: false
+                })
 
-                  const matches: Array<{ name: string; pid: number }> = []
-                  for (const line of lines) {
-                    // wmic 输出格式：Name  ProcessId
-                    const match = line.match(/^(.*\S)\s+(\d+)$/)
-                    if (match) {
-                      const name = match[1].trim()
-                      const pid = Number(match[2])
-                      if (name.includes('GameMon')) {
-                        matches.push({ name, pid })
-                      }
+                // 解析输出，查找包含 GameMon 的进程及其 PID
+                const lines = result.stdout
+                  .split(/\r?\n/)
+                  .map((line) => line.trim())
+                  .filter(Boolean)
+
+                const matches: Array<{ name: string; pid: number }> = []
+                for (const line of lines) {
+                  // wmic 输出格式：Name  ProcessId
+                  const match = line.match(/^(.*\S)\s+(\d+)$/)
+                  if (match) {
+                    const name = match[1].trim()
+                    const pid = Number(match[2])
+                    if (name.includes('GameMon')) {
+                      matches.push({ name, pid })
                     }
                   }
+                }
 
-                  if (matches.length > 0) {
-                    console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：', matches)
-                    clearInterval(intervalId)
+                if (matches.length > 0) {
+                  console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：', matches)
+                  clearInterval(intervalId)
 
-                    // 将所有匹配的 GameMon 相关进程优先级调为最低（IDLE_PRIORITY_CLASS = 64）
-                    const targetPriorityValue = 64
-                    const processPromises = matches.map(async ({ name, pid }) => {
-                      await Utils.safeExecute(async () => {
-                        // 设置进程优先级
-                        console.log(
-                          `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`
-                        )
-                        await spawnDetached('wmic', [
-                          'process',
-                          'where',
-                          `processid=${pid}`,
-                          'CALL',
-                          'setpriority',
-                          String(targetPriorityValue)
-                        ])
-                      }, `[Main] 设置进程优先级失败: ${name} (pid=${pid})`)
-                    })
+                  // 将所有匹配的 GameMon 相关进程优先级调为最低（IDLE_PRIORITY_CLASS = 64）
+                  const targetPriorityValue = 64
+                  const processPromises = matches.map(async ({ name, pid }) => {
+                    await Utils.safeExecute(async () => {
+                      // 设置进程优先级
+                      console.log(
+                        `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`
+                      )
+                      await spawnDetached('wmic', [
+                        'process',
+                        'where',
+                        `processid=${pid}`,
+                        'CALL',
+                        'setpriority',
+                        String(targetPriorityValue)
+                      ])
+                    }, `[Main] 设置进程优先级失败: ${name} (pid=${pid})`)
+                  })
 
-                    // 等待所有进程的优先级设置完成
-                    await Promise.all(processPromises)
-                    res(undefined)
-                  }
-                }, '设置 GameMon 进程优先级失败')
-              }, 1000)
-            } else {
-              // 如果未启用降低NP优先级功能，直接resolve
-              res(undefined)
-            }
-          })
+                  // 等待所有进程的优先级设置完成
+                  await Promise.all(processPromises)
+                  resolve(undefined)
+                }
+              }, '设置 GameMon 进程优先级失败')
+            }, 1000)
+          } else {
+            // 如果未启用降低NP优先级功能，直接resolve
+            resolve(undefined)
+          }
+
+          return promise
         }, '调整进程优先级时发生错误')
 
         return { success: true }
