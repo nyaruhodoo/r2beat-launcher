@@ -62,9 +62,8 @@ const fetchDetail = async (payload: AnnouncementData) => {
 const formatRichTextImage = (html: string) => {
   if (!html) return ''
 
-  // 匹配 <img> 标签及其 style 属性
-  return html.replace(/<img [^>]*style="([^"]+)"[^>]*>/gi, (match, styleStr) => {
-    // 提取 width 和 height 的数值 (支持 px 或纯数字)
+  // 1. 处理 <img> 标签的 aspect-ratio
+  let processedHtml = html.replace(/<img [^>]*style="([^"]+)"[^>]*>/gi, (match, styleStr) => {
     const widthMatch = styleStr.match(/width:\s*(\d+)px/i)
     const heightMatch = styleStr.match(/height:\s*(\d+)px/i)
 
@@ -77,9 +76,20 @@ const formatRichTextImage = (html: string) => {
         return match.replace(`style="${styleStr}"`, `style="${aspectRatioStyle} ${styleStr}"`)
       }
     }
-
     return match
   })
+
+  // 2. 处理 <a> 标签，增加外部打开属性
+  // 这里增加了 target="_blank" (标准浏览器) 和 rel="noopener noreferrer" (安全性)
+  processedHtml = processedHtml.replace(/<a\s+([^>]+)>/gi, (match, attributes) => {
+    // 如果已经有了 target 属性，就不重复添加（或者你可以选择替换它）
+    if (/target\s*=/i.test(attributes)) {
+      return match
+    }
+    return `<a ${attributes} target="_blank" rel="noopener noreferrer">`
+  })
+
+  return processedHtml
 }
 
 onMounted(() => {
@@ -135,6 +145,9 @@ onMounted(() => {
 
   &:deep(div) {
     text-align: center !important;
+  }
+  &:deep(a) {
+    text-decoration: underline;
   }
 }
 

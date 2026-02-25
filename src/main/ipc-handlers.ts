@@ -197,6 +197,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     const mainBounds = mainWindow?.getBounds()
     const baseHeight = mainBounds?.height ?? 720
 
+    const x = Math.floor(mainBounds!.x + (mainBounds!.width - baseHeight) / 2)
+    const y = Math.floor(mainBounds!.y + (mainBounds!.height - baseHeight) / 2)
+
     const detailWindow = new BrowserWindow({
       width: 800,
       height: baseHeight,
@@ -205,15 +208,22 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       autoHideMenuBar: true,
       frame: false,
       titleBarStyle: 'hidden',
-      parent: mainWindow,
       modal: false,
       show: false,
+      x,
+      y,
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false,
         contextIsolation: true,
         nodeIntegration: false
       }
+    })
+
+    // 拦截所有的 <a> 标签跳转，强制使用系统默认浏览器打开
+    detailWindow.webContents.setWindowOpenHandler((details) => {
+      shell.openExternal(details.url)
+      return { action: 'deny' }
     })
 
     const isDevUrl = process.env['ELECTRON_RENDERER_URL']
