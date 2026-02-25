@@ -123,7 +123,7 @@ const totalSizeGbText = computed<string | null>(() => {
   if (!preDownloadList.value || typeof preDownloadList.value.totalSize !== 'number') return null
   const gb = preDownloadList.value.totalSize / (1024 * 1024 * 1024)
   if (!Number.isFinite(gb) || gb <= 0) return null
-  return gb.toFixed(2)
+  return Math.max(0.01, gb).toFixed(2) // 最小显示0.01GB，避免过小显示0.00
 })
 
 const hasGameExe = computed<boolean | null>(() => {
