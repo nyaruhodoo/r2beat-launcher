@@ -46,7 +46,7 @@
         <Dropdown :items="patchSettingsItems">
           <template #trigger="{ isOpen }">
             <button class="nav-btn">
-              <img :src="budingImg" />
+              <img :src="shezhiImg" />
               <span class="nav-text">设置</span>
               <div class="dropdown-icon" :class="{ rotated: isOpen }">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -196,7 +196,7 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
     onClick: () => (showSettings.value = true)
   },
   {
-    label: 'MOD',
+    label: '补丁',
     icon: budingImg,
     onClick: () => (showPakModal.value = true)
   },
