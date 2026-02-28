@@ -124,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick, computed } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import CustomTitleBar from './components/CustomTitleBar.vue'
 import Announcement from './components/Announcement.vue'
@@ -380,13 +380,6 @@ const checkAppUpdate = async () => {
 }
 
 onMounted(() => {
-  // 延迟创建窗口，否则会闪一下很烦
-  nextTick(() => {
-    setTimeout(() => {
-      ipcEmitter.send('window-show')
-    }, 0)
-  })
-
   searchGamePath()
   checkAppUpdate()
 })
