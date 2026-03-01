@@ -23,7 +23,6 @@
         v-else
         :key="item.idx || index"
         class="announcement-item"
-        :title="filterTitle(item.title)"
         @click="handleAnnouncementClick(item)"
       >
         <span class="announcement-time">{{ formatDate(item.created_at) }}</span>
