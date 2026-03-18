@@ -66,7 +66,6 @@ export type IpcMainEvents =
       'launch-game': (args: {
         gamePath: string
         launchArgs?: string
-        minimizeToTrayOnLaunch?: boolean
         processPriority?: ProcessPriority
         lowerNPPriority?: boolean
         username?: string

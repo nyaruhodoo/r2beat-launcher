@@ -200,7 +200,6 @@ const executeLaunch = async () => {
     const result = await ipcEmitter.invoke('launch-game', {
       gamePath: props.gameSettings.gamePath,
       launchArgs,
-      minimizeToTrayOnLaunch: props.gameSettings.minimizeToTrayOnLaunch,
       processPriority: props.gameSettings.processPriority,
       lowerNPPriority: props.gameSettings.lowerNPPriority,
       username: props.userInfo.username,
@@ -209,7 +208,9 @@ const executeLaunch = async () => {
     })
 
     if (result?.success) {
-      if (!props.gameSettings?.minimizeToTrayOnLaunch) {
+      if (props.gameSettings?.minimizeToTrayOnLaunch) {
+        ipcEmitter.send('window-close')
+      } else {
         showSuccess('游戏启动成功！')
       }
     } else {
