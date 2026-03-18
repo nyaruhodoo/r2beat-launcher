@@ -13,7 +13,6 @@ import { hookDll } from './hook-dll'
 import icon from '../../build/game.ico?asset'
 import { patchPak } from './patch-pak'
 import { execFile } from 'child_process'
-import { JSDOM } from 'jsdom'
 import { IpcListener, IpcEmitter } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents, IpcRendererEvents } from '../ipc/contracts'
 
@@ -2065,49 +2064,6 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     }
   })
 
-  /**
-   * 解析最新官方Q群
-   */
-  ipc.handle('get-qq', async () => {
-    try {
-      // 1. 使用内置 fetch 获取 HTML
-      const response = await fetch('http://r2beat.xiyouxi.com/')
-
-      if (!response.ok) {
-        throw new Error(`网络请求失败: ${response.status}`)
-      }
-
-      const htmlString = await response.text()
-
-      const document = new JSDOM(htmlString).window.document
-
-      // --- 逻辑处理部分：根据页面结构获取 QQ 群号 ---
-      const firstCard = document.querySelector('.qr-list .qr-card')
-      if (!firstCard) throw new Error('未找到QQ群')
-
-      const imgElement = firstCard.querySelector('img')
-      let imgSrc = imgElement?.getAttribute('src') || ''
-      if (imgSrc?.startsWith('//')) {
-        imgSrc = 'http:' + imgSrc
-      }
-
-      // 3. 获取 .copyTarget 中的文本内容（群号）
-      const copyTarget = firstCard.querySelector('.copyTarget')
-      const qqNumber = copyTarget ? copyTarget.textContent.trim() : ''
-
-      return {
-        success: true,
-        data: { imgSrc, qqNumber }
-      }
-    } catch (error) {
-      console.error('获取QQ群失败:', error)
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '获取QQ群失败'
-      }
-    }
-  })
 
   // 返回清理函数，用于在应用退出时清理 IPC 监听器
   return () => {

@@ -128,12 +128,6 @@ export type IpcMainEvents =
           }
         | undefined
       'open-game-recovery': (gamePath: string) => IpcResult
-      'get-qq': () => IpcResult<{
-        data?: {
-          imgSrc?: string
-          qqNumber?: string
-        }
-      }>
     }
 
 /**
