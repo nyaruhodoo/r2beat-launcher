@@ -23,7 +23,11 @@
         >
           <span v-if="item.color || item.icon" class="menu-icon">
             <!-- 优先显示颜色块 -->
-            <div v-if="item.color" class="color-indicator" :style="{ backgroundColor: item.color }"></div>
+            <div
+              v-if="item.color"
+              class="color-indicator"
+              :style="{ backgroundColor: item.color }"
+            ></div>
             <!-- 如果没有颜色，则显示图标 -->
             <template v-else>
               <img

@@ -28,8 +28,6 @@ export interface GameSettings {
   processPriority: ProcessPriority
   // 降低NP优先级（GameMon检测）
   lowerNPPriority: boolean
-  /** 避免二次登录 */
-  avoidSecondLogin: boolean
   // 屏蔽字
   isShieldWordDisabled: boolean
 }

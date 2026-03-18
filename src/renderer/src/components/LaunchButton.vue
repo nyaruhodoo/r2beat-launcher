@@ -208,8 +208,8 @@ const executeLaunch = async () => {
       isShieldWordDisabled: props.gameSettings.isShieldWordDisabled
     })
 
-    if (result?.success) {
-      !props.gameSettings?.minimizeToTrayOnLaunch && showSuccess('游戏启动成功！')
+    if (result?.success && !props.gameSettings?.minimizeToTrayOnLaunch) {
+      showSuccess('游戏启动成功！')
     } else {
       throw new Error(result?.error)
     }

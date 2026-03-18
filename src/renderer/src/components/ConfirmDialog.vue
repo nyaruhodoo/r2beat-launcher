@@ -8,7 +8,6 @@
     @close="handleCancel"
     @confirm="handleConfirm"
     @cancel="handleCancel"
-    max-width="400px"
   >
     <p class="dialog-message">{{ message }}</p>
   </Modal>

@@ -353,7 +353,10 @@ export class Utils {
             await clear(fullPath)
           }
           // 清空逻辑与历史 clear-screenshots 一致：把子目录也移除
-          await Utils.safeExecute(() => rm(fullPath, { recursive: true, force: true }), `清空目录失败: ${fullPath}`)
+          await Utils.safeExecute(
+            () => rm(fullPath, { recursive: true, force: true }),
+            `清空目录失败: ${fullPath}`
+          )
           continue
         }
 
@@ -375,5 +378,13 @@ export class Utils {
 
     await clear(dir)
     return deleted
+  }
+
+  /**
+   * 返回一个指定时间后决议为 resolve 的 promise
+   */
+  static wait(millisecond: number) {
+    if (millisecond <= 0) return
+    return new Promise((resolve) => setTimeout(resolve, millisecond))
   }
 }

@@ -9,8 +9,6 @@
     @confirm="handleSave"
     @cancel="handleClose"
   >
-    
-
     <div class="settings-section">
       <h3 class="section-title">游戏路径</h3>
       <div class="setting-item">
@@ -93,7 +91,6 @@
       <div class="checkbox-group">
         <Checkbox v-model="settings.autoUpdate">自动更新游戏</Checkbox>
         <Checkbox v-model="settings.minimizeToTrayOnLaunch">启动游戏后最小化到托盘</Checkbox>
-        <Checkbox v-model="settings.avoidSecondLogin">跳过密码登录</Checkbox>
         <Checkbox v-model="settings.isShieldWordDisabled">关闭屏蔽字</Checkbox>
       </div>
     </div>
@@ -134,281 +131,273 @@
 </template>
 
 <script setup lang="ts">
-import qrcode from "@renderer/assets/imgs/qrcode.jpg";
-import shezhiImg from "@renderer/assets/imgs/shezhi.png";
-import { useToast } from "@renderer/composables/useToast";
-import { ipcEmitter } from "@renderer/ipc";
-import type { AppConfig, GameSettings } from "@types";
-import { computed, ref, watch } from "vue";
-import Checkbox from "./Checkbox.vue";
-import CustomSelect from "./CustomSelect.vue";
-import Modal from "./Modal.vue";
+import qrcode from '@renderer/assets/imgs/qrcode.jpg'
+import shezhiImg from '@renderer/assets/imgs/shezhi.png'
+import { useToast } from '@renderer/composables/useToast'
+import { ipcEmitter } from '@renderer/ipc'
+import type { AppConfig, GameSettings } from '@types'
+import { computed, ref, watch } from 'vue'
+import Checkbox from './Checkbox.vue'
+import CustomSelect from './CustomSelect.vue'
+import Modal from './Modal.vue'
 
 const props = defineProps<{
-	visible: boolean;
-	gameSettings?: GameSettings;
-}>();
+  visible: boolean
+  gameSettings?: GameSettings
+}>()
 
 const emit = defineEmits<{
-	(e: "close"): void;
-	(e: "save", settings: GameSettings): void;
-}>();
+  (e: 'close'): void
+  (e: 'save', settings: GameSettings): void
+}>()
 
-const { error: showError } = useToast();
+const { error: showError } = useToast()
 
 // 创建一个本地的响应式对象用于 v-model 绑定
 const settings = ref<GameSettings>({
-	gamePath: "",
-	localImageLibrary: "",
-	autoUpdate: true,
-	minimizeToTrayOnLaunch: true,
-	processPriority: "normal",
-	lowerNPPriority: false,
-	avoidSecondLogin: true,
-	isShieldWordDisabled: false,
-});
+  gamePath: '',
+  localImageLibrary: '',
+  autoUpdate: true,
+  minimizeToTrayOnLaunch: true,
+  processPriority: 'normal',
+  lowerNPPriority: false,
+  isShieldWordDisabled: false
+})
 
 // 保存 config.ini 转换后的 JSON 数据
-const configIniJson = ref<AppConfig>();
+const configIniJson = ref<AppConfig>()
 
 // 从 configIniJson 读取并双向绑定的计算属性
 const resolution = computed({
-	get: () => {
-		if (!configIniJson.value?.VIDEO) return [1920, 1080] as const;
-		const width = configIniJson.value.VIDEO.WIDTH || 1920;
-		const height = configIniJson.value.VIDEO.HEIGHT || 1080;
-		return [width, height] as const;
-	},
-	set: (value: [number, number]) => {
-		if (!configIniJson.value) return;
-		if (!configIniJson.value.VIDEO)
-			configIniJson.value.VIDEO = {
-				WIDTH: 1920,
-				HEIGHT: 1080,
-				FULLSCREEN: 0,
-				OUTLINE: 0,
-				OUTLINING: 0,
-			};
-		if (!configIniJson.value.FONT)
-			configIniJson.value.FONT = { FILEPATH: "", WIDTH: 1920, HEIGHT: 1080 };
+  get: () => {
+    if (!configIniJson.value?.VIDEO) return [1920, 1080] as const
+    const width = configIniJson.value.VIDEO.WIDTH || 1920
+    const height = configIniJson.value.VIDEO.HEIGHT || 1080
+    return [width, height] as const
+  },
+  set: (value: [number, number]) => {
+    if (!configIniJson.value) return
+    if (!configIniJson.value.VIDEO)
+      configIniJson.value.VIDEO = {
+        WIDTH: 1920,
+        HEIGHT: 1080,
+        FULLSCREEN: 0,
+        OUTLINE: 0,
+        OUTLINING: 0
+      }
+    if (!configIniJson.value.FONT)
+      configIniJson.value.FONT = { FILEPATH: '', WIDTH: 1920, HEIGHT: 1080 }
 
-		configIniJson.value.VIDEO.WIDTH = value[0];
-		configIniJson.value.VIDEO.HEIGHT = value[1];
-		configIniJson.value.FONT.WIDTH = value[0];
-		configIniJson.value.FONT.HEIGHT = value[1];
-	},
-});
+    configIniJson.value.VIDEO.WIDTH = value[0]
+    configIniJson.value.VIDEO.HEIGHT = value[1]
+    configIniJson.value.FONT.WIDTH = value[0]
+    configIniJson.value.FONT.HEIGHT = value[1]
+  }
+})
 
 const fullscreen = computed({
-	get: () => {
-		if (!configIniJson.value?.VIDEO) return false;
-		return configIniJson.value.VIDEO.FULLSCREEN === 1;
-	},
-	set: (value: boolean) => {
-		if (!configIniJson.value) return;
-		if (!configIniJson.value.VIDEO)
-			configIniJson.value.VIDEO = {
-				WIDTH: 1920,
-				HEIGHT: 1080,
-				FULLSCREEN: 0,
-				OUTLINE: 0,
-				OUTLINING: 0,
-			};
-		configIniJson.value.VIDEO.FULLSCREEN = value ? 1 : 0;
-	},
-});
+  get: () => {
+    if (!configIniJson.value?.VIDEO) return false
+    return configIniJson.value.VIDEO.FULLSCREEN === 1
+  },
+  set: (value: boolean) => {
+    if (!configIniJson.value) return
+    if (!configIniJson.value.VIDEO)
+      configIniJson.value.VIDEO = {
+        WIDTH: 1920,
+        HEIGHT: 1080,
+        FULLSCREEN: 0,
+        OUTLINE: 0,
+        OUTLINING: 0
+      }
+    configIniJson.value.VIDEO.FULLSCREEN = value ? 1 : 0
+  }
+})
 
 const graphicsQuality = computed({
-	get: () => {
-		if (!configIniJson.value?.VIDEO) return true;
-		return configIniJson.value.VIDEO.OUTLINING === 1;
-	},
-	set: (value: boolean) => {
-		if (!configIniJson.value) return;
-		if (!configIniJson.value.VIDEO)
-			configIniJson.value.VIDEO = {
-				WIDTH: 1920,
-				HEIGHT: 1080,
-				FULLSCREEN: 0,
-				OUTLINE: 2,
-				OUTLINING: 1,
-			};
-		configIniJson.value.VIDEO.OUTLINING = value ? 1 : 0;
-	},
-});
+  get: () => {
+    if (!configIniJson.value?.VIDEO) return true
+    return configIniJson.value.VIDEO.OUTLINING === 1
+  },
+  set: (value: boolean) => {
+    if (!configIniJson.value) return
+    if (!configIniJson.value.VIDEO)
+      configIniJson.value.VIDEO = {
+        WIDTH: 1920,
+        HEIGHT: 1080,
+        FULLSCREEN: 0,
+        OUTLINE: 2,
+        OUTLINING: 1
+      }
+    configIniJson.value.VIDEO.OUTLINING = value ? 1 : 0
+  }
+})
 
 const jitterShake = computed({
-	get: () => {
-		if (!configIniJson.value?.JITTER) return false;
-		return configIniJson.value.JITTER.ONOFF === 1;
-	},
-	set: (value: boolean) => {
-		if (!configIniJson.value) return;
-		if (!configIniJson.value.JITTER) {
-			configIniJson.value.JITTER = { ONOFF: 0 };
-		}
-		configIniJson.value.JITTER.ONOFF = value ? 1 : 0;
-	},
-});
+  get: () => {
+    if (!configIniJson.value?.JITTER) return false
+    return configIniJson.value.JITTER.ONOFF === 1
+  },
+  set: (value: boolean) => {
+    if (!configIniJson.value) return
+    if (!configIniJson.value.JITTER) {
+      configIniJson.value.JITTER = { ONOFF: 0 }
+    }
+    configIniJson.value.JITTER.ONOFF = value ? 1 : 0
+  }
+})
 
 const audioEffects = computed({
-	get: () => {
-		if (!configIniJson.value?.SOUND) return true;
-		return configIniJson.value.SOUND.EFFECT === 1;
-	},
-	set: (value: boolean) => {
-		if (!configIniJson.value) return;
-		if (!configIniJson.value.SOUND)
-			configIniJson.value.SOUND = {
-				BG: 1,
-				EFFECT: 1,
-				BGVOL: 100,
-				EFFECTVOL: 100,
-			};
-		configIniJson.value.SOUND.EFFECT = value ? 1 : 0;
-	},
-});
+  get: () => {
+    if (!configIniJson.value?.SOUND) return true
+    return configIniJson.value.SOUND.EFFECT === 1
+  },
+  set: (value: boolean) => {
+    if (!configIniJson.value) return
+    if (!configIniJson.value.SOUND)
+      configIniJson.value.SOUND = {
+        BG: 1,
+        EFFECT: 1,
+        BGVOL: 100,
+        EFFECTVOL: 100
+      }
+    configIniJson.value.SOUND.EFFECT = value ? 1 : 0
+  }
+})
 
 const backgroundMusic = computed({
-	get: () => {
-		if (!configIniJson.value?.SOUND) return true;
-		return configIniJson.value.SOUND.BG === 1;
-	},
-	set: (value: boolean) => {
-		if (!configIniJson.value) return;
-		if (!configIniJson.value.SOUND)
-			configIniJson.value.SOUND = {
-				BG: 1,
-				EFFECT: 1,
-				BGVOL: 100,
-				EFFECTVOL: 100,
-			};
-		configIniJson.value.SOUND.BG = value ? 1 : 0;
-	},
-});
+  get: () => {
+    if (!configIniJson.value?.SOUND) return true
+    return configIniJson.value.SOUND.BG === 1
+  },
+  set: (value: boolean) => {
+    if (!configIniJson.value) return
+    if (!configIniJson.value.SOUND)
+      configIniJson.value.SOUND = {
+        BG: 1,
+        EFFECT: 1,
+        BGVOL: 100,
+        EFFECTVOL: 100
+      }
+    configIniJson.value.SOUND.BG = value ? 1 : 0
+  }
+})
 
 const resolutionOptions = [
-	{ value: [1920, 1080], label: "1920 × 1080" },
-	{ value: [1024, 768], label: "1024 × 768" },
-	{ value: [800, 600], label: "800 × 600" },
-];
+  { value: [1920, 1080], label: '1920 × 1080' },
+  { value: [1024, 768], label: '1024 × 768' },
+  { value: [800, 600], label: '800 × 600' }
+]
 
 const processPriorityOptions = [
-	{ value: "realtime", label: "实时" },
-	{ value: "high", label: "高" },
-	{ value: "abovenormal", label: "高于正常" },
-	{ value: "normal", label: "正常" },
-	{ value: "belownormal", label: "低于正常" },
-	{ value: "low", label: "低" },
-];
+  { value: 'realtime', label: '实时' },
+  { value: 'high', label: '高' },
+  { value: 'abovenormal', label: '高于正常' },
+  { value: 'normal', label: '正常' },
+  { value: 'belownormal', label: '低于正常' },
+  { value: 'low', label: '低' }
+]
 
 const handleClose = () => {
-	emit("close");
-};
+  emit('close')
+}
 
 const handleSave = async () => {
-	// 保存游戏设置
-	emit("save", { ...settings.value });
+  // 保存游戏设置
+  emit('save', { ...settings.value })
 
-	// 如果存在 configIniJson，将其保存回 config.ini 文件
-	if (configIniJson.value && settings.value.gamePath) {
-		try {
-			// 使用 JSON 序列化/反序列化来确保对象可以被 IPC 传递
-			const serializedConfig = JSON.parse(JSON.stringify(configIniJson.value));
-			const result = await ipcEmitter.invoke(
-				"write-config-ini",
-				settings.value.gamePath,
-				serializedConfig,
-			);
-			if (result?.success) {
-				console.log("config.ini 保存成功");
-			} else {
-				throw new Error(result?.error);
-			}
-		} catch (error) {
-			showError(`保存 config.ini 失败: ${error}`);
-		}
-	}
+  // 如果存在 configIniJson，将其保存回 config.ini 文件
+  if (configIniJson.value && settings.value.gamePath) {
+    try {
+      // 使用 JSON 序列化/反序列化来确保对象可以被 IPC 传递
+      const serializedConfig = JSON.parse(JSON.stringify(configIniJson.value))
+      const result = await ipcEmitter.invoke(
+        'write-config-ini',
+        settings.value.gamePath,
+        serializedConfig
+      )
+      if (result?.success) {
+        console.log('config.ini 保存成功')
+      } else {
+        throw new Error(result?.error)
+      }
+    } catch (error) {
+      showError(`保存 config.ini 失败: ${error}`)
+    }
+  }
 
-	handleClose();
-};
+  handleClose()
+}
 
 const handleBrowse = async () => {
-	try {
-		// 传递当前已保存的路径，让对话框从该位置打开
-		const selectedPath = await ipcEmitter.invoke(
-			"select-folder",
-			settings.value.gamePath,
-		);
-		if (selectedPath) {
-			settings.value.gamePath = selectedPath;
-		}
-	} catch (error) {
-		console.error("选择文件夹失败:", error);
-	}
-};
+  try {
+    // 传递当前已保存的路径，让对话框从该位置打开
+    const selectedPath = await ipcEmitter.invoke('select-folder', settings.value.gamePath)
+    if (selectedPath) {
+      settings.value.gamePath = selectedPath
+    }
+  } catch (error) {
+    console.error('选择文件夹失败:', error)
+  }
+}
 
 const handleBrowseLibrary = async () => {
-	try {
-		// 传递当前已保存的路径，让对话框从该位置打开
-		const selectedPath = await ipcEmitter.invoke(
-			"select-folder",
-			settings.value.localImageLibrary,
-		);
-		if (selectedPath) {
-			settings.value.localImageLibrary = selectedPath;
-		}
-	} catch (error) {
-		console.error("选择图库文件夹失败:", error);
-	}
-};
+  try {
+    // 传递当前已保存的路径，让对话框从该位置打开
+    const selectedPath = await ipcEmitter.invoke('select-folder', settings.value.localImageLibrary)
+    if (selectedPath) {
+      settings.value.localImageLibrary = selectedPath
+    }
+  } catch (error) {
+    console.error('选择图库文件夹失败:', error)
+  }
+}
 
 // 读取并转换 config.ini 为 JSON
 const loadConfigIni = async () => {
-	const gamePath = settings.value.gamePath;
-	if (!gamePath || gamePath.trim() === "") {
-		configIniJson.value = undefined;
-		return;
-	}
+  const gamePath = settings.value.gamePath
+  if (!gamePath || gamePath.trim() === '') {
+    configIniJson.value = undefined
+    return
+  }
 
-	try {
-		const result = await ipcEmitter.invoke("read-config-ini", gamePath);
+  try {
+    const result = await ipcEmitter.invoke('read-config-ini', gamePath)
 
-		if (result?.success && result.exists && result.data) {
-			configIniJson.value = result.data;
-			console.log("config.ini 已读取并转换为 JSON:", configIniJson.value);
-		} else {
-			throw new Error(result?.error);
-		}
-	} catch {
-		configIniJson.value = undefined;
-		showError(`读取 config.ini 异常`);
-	}
-};
+    if (result?.success && result.exists && result.data) {
+      configIniJson.value = result.data
+      console.log('config.ini 已读取并转换为 JSON:', configIniJson.value)
+    } else {
+      throw new Error(result?.error)
+    }
+  } catch {
+    configIniJson.value = undefined
+    showError(`读取 config.ini 异常`)
+  }
+}
 
 // 当模态框打开时，从 props 加载设置并读取 config.ini
 watch(
-	() => props.visible,
-	(isVisible) => {
-		if (isVisible && props.gameSettings) {
-			settings.value = { ...props.gameSettings };
-			// 弹窗打开时读取并转换 config.ini
-			loadConfigIni();
-		}
-	},
-	{ immediate: true },
-);
+  () => props.visible,
+  (isVisible) => {
+    if (isVisible && props.gameSettings) {
+      settings.value = { ...props.gameSettings }
+      // 弹窗打开时读取并转换 config.ini
+      loadConfigIni()
+    }
+  },
+  { immediate: true }
+)
 
 // 监听游戏路径变化，自动重新读取 config.ini
 watch(
-	() => settings.value.gamePath,
-	(newPath, oldPath) => {
-		if (props.visible && newPath && oldPath) {
-			console.log(2);
-			loadConfigIni();
-		}
-	},
-);
+  () => settings.value.gamePath,
+  (newPath, oldPath) => {
+    if (props.visible && newPath && oldPath) {
+      loadConfigIni()
+    }
+  }
+)
 </script>
 
 <style scoped>

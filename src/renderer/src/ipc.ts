@@ -41,5 +41,3 @@ export function ipcArg<T>(value: T): T {
     return raw as T
   }
 }
-
-
