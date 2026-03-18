@@ -748,14 +748,14 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
 
-        if (launchArgs === 'xyxOpen') { 
+        if (launchArgs === 'xyxOpen') {
           await hookDll({
             pid: gameProcess.pid,
             username,
             password
           })
         }
-       
+
         if (minimizeToTrayOnLaunch) {
           console.log('[Main] 启动游戏后最小化到托盘（根据用户设置）')
           // 与主进程 hideToTray 保持一致：只做「最小化 + 隐藏任务栏图标」，避免调用 hide() 导致窗口状态异常
@@ -2063,7 +2063,6 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       }
     }
   })
-
 
   // 返回清理函数，用于在应用退出时清理 IPC 监听器
   return () => {
