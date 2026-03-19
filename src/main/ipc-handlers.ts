@@ -15,6 +15,8 @@ import { patchPak } from './patch-pak'
 import { execFile } from 'child_process'
 import { IpcListener, IpcEmitter } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents, IpcRendererEvents } from '../ipc/contracts'
+import { webLogin } from './web-login'
+import { exportLotteryItemsTxt } from './export-lottery-items-txt'
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
@@ -2046,6 +2048,22 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       return {
         success: false,
         error: error instanceof Error ? error.message : '运行修复工具失败'
+      }
+    }
+  })
+
+  /**
+   * 导出当前账号抽奖物品
+   */
+  ipc.handle('export-lottery-stats', async (_, userInfo) => {
+    try {
+      const token = await webLogin(userInfo)
+      await exportLotteryItemsTxt(token)
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '导出失败'
       }
     }
   })

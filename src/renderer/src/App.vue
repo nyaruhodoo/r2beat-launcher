@@ -149,6 +149,7 @@ import shanchuImg from '@renderer/assets/imgs/shanchu.png'
 import xiangceImg from '@renderer/assets/imgs/xiangce.png'
 import xiufuImg from '@renderer/assets/imgs/xiufu.png'
 import wangzhanImg from '@renderer/assets/imgs/wangzhan.png'
+import biaogeImg from '@renderer/assets/imgs/biaoge.png'
 import WindowResizer from './components/WindowResizer.vue'
 import { useToast } from './composables/useToast'
 import { checkUpdateIntervalTime } from '@config'
@@ -185,6 +186,27 @@ const giftRechargeItems = computed<DropdownItem[]>(() => [
     icon: wangzhanImg,
     href: 'https://r2beat.xiyouxi.com/',
     target: '_blank'
+  },
+  {
+    label: '抽奖统计',
+    icon: biaogeImg,
+    onClick: async () => {
+      if (!userInfo.value) {
+        showLoginModal.value = true
+        return
+      }
+
+      info('正在获取数据，请耐心等待!')
+
+      const res = await ipcEmitter.invoke('export-lottery-stats', {
+        username: userInfo.value?.username,
+        password: userInfo.value?.password
+      })
+
+      if (res.error) {
+        error(res?.error ?? '导出失败，请稍后重试')
+      }
+    }
   }
 ])
 

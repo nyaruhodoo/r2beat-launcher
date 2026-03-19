@@ -127,6 +127,7 @@ export type IpcMainEvents =
           }
         | undefined
       'open-game-recovery': (gamePath: string) => IpcResult
+      'export-lottery-stats': (userInfo: { username?: string; password?: string }) => IpcResult
     }
 
 /**
