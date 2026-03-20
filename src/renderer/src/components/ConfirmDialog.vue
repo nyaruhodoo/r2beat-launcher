@@ -27,8 +27,8 @@ withDefaults(
   {
     title: '确认',
     confirmText: '确认',
-    cancelText: '取消'
-  }
+    cancelText: '取消',
+  },
 )
 
 const emit = defineEmits<{

@@ -170,7 +170,7 @@ const loadRemoteVersion = async () => {
       if (+oldRemote && newRemote !== oldRemote) {
         ipcEmitter.send('show-notification', {
           title: '发现新的游戏版本',
-          body: `远程版本已更新至 ${newRemote}，建议尽快更新游戏客户端。`
+          body: `远程版本已更新至 ${newRemote}，建议尽快更新游戏客户端。`,
         })
       }
 
@@ -239,7 +239,7 @@ const getPreDownloadList = async () => {
 
     preDownloadList.value = {
       totalSize: res.totalSize,
-      patches: res.patches
+      patches: res.patches,
     }
 
     // 只有在自动更新开启且之前没有更新错误时才自动更新
@@ -281,7 +281,7 @@ const handleUpdate = async () => {
   try {
     const res = await ipcEmitter.invoke(
       'download-patch-files',
-      JSON.parse(JSON.stringify(preDownloadList.value))
+      JSON.parse(JSON.stringify(preDownloadList.value)),
     )
 
     if (!res?.success) {
@@ -329,7 +329,7 @@ onMounted(() => {
     console.log(
       `[PatchProgress] ${payload.percent.toFixed(2)}% - ${payload.stage} - ${payload.targetFileName ?? ''} ${
         payload.message ?? ''
-      }`
+      }`,
     )
   })
   onUnmounted(() => off?.())

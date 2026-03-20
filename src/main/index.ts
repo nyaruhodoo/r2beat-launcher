@@ -64,7 +64,7 @@ function createTray(window: BrowserWindow) {
   const contextMenu = Menu.buildFromTemplate([
     {
       label: '显示启动器',
-      click: () => showFromTray(window)
+      click: () => showFromTray(window),
     },
     { type: 'separator' }, // 分割线
     {
@@ -72,8 +72,8 @@ function createTray(window: BrowserWindow) {
       click: () => {
         isQuitting = true // 设置退出标记，绕过窗口关闭拦截
         app.quit()
-      }
-    }
+      },
+    },
   ])
 
   tray.setToolTip('R2Beat Launcher')
@@ -110,9 +110,9 @@ function createWindow() {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
     },
-    icon
+    icon,
   })
 
   // 当窗口准备好时再显示，避免白屏闪烁
@@ -198,12 +198,12 @@ if (!gotTheLock) {
           '.jpeg': 'image/jpeg',
           '.gif': 'image/gif',
           '.webp': 'image/webp',
-          '.bmp': 'image/bmp'
+          '.bmp': 'image/bmp',
         }
 
         return new Response(data, {
           status: 200,
-          headers: { 'Content-Type': mimeMap[ext] || 'application/octet-stream' }
+          headers: { 'Content-Type': mimeMap[ext] || 'application/octet-stream' },
         })
       } catch (error) {
         console.error('[Protocol] r2shot 协议加载失败:', error)

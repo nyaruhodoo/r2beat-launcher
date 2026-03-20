@@ -163,14 +163,14 @@ const emit = defineEmits<{
   (e: 'close'): void
   (
     e: 'login-success',
-    data: { username: string; password: string; rememberPassword: boolean; remark?: string }
+    data: { username: string; password: string; rememberPassword: boolean; remark?: string },
   ): void
 }>()
 
 const formData = ref({
   username: '',
   password: '',
-  remark: ''
+  remark: '',
 })
 const selectedAccount = ref<UserInfo>()
 
@@ -194,7 +194,7 @@ watch(
       showPassword.value = false
       isLoading.value = false
     }
-  }
+  },
 )
 
 // 监听用户名输入
@@ -205,7 +205,7 @@ watch(
       return i.username === userName
     })
     selectedAccount.value = account
-  }
+  },
 )
 
 // 点击外部关闭下拉框
@@ -252,7 +252,7 @@ const handleDeleteAccount = async (userInfo: UserInfo) => {
       title: '删除账号',
       message: `确定要删除账号 "${displayName}" 吗？`,
       confirmText: '删除',
-      cancelText: '取消'
+      cancelText: '取消',
     })
 
     const wasSelected = formData.value.username === username
@@ -317,7 +317,7 @@ const handleLogin = async () => {
     const result = await ipcEmitter.invoke(
       'tcp-login',
       formData.value.username.trim(),
-      formData.value.password.trim()
+      formData.value.password.trim(),
     )
 
     console.log(result)
@@ -331,7 +331,7 @@ const handleLogin = async () => {
         username: formData.value.username,
         password: formData.value.password,
         rememberPassword: rememberPassword.value,
-        remark: formData.value.remark
+        remark: formData.value.remark,
       })
     } else {
       throw new Error(result?.message || result?.error)

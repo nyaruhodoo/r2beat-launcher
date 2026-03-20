@@ -57,7 +57,7 @@ const files = ref<ScreenshotFileInfo[]>([])
 
 const handleClear = async () => {
   await confirm({
-    message: '确定要清空所有照片吗？此操作会删除 SCREENSHOT 目录下的所有截图文件，且无法恢复。'
+    message: '确定要清空所有照片吗？此操作会删除 SCREENSHOT 目录下的所有截图文件，且无法恢复。',
   })
 
   if (!props.gamePath) {
@@ -112,7 +112,7 @@ const handleOpen = async (filePath: string) => {
 const handleDelete = async (file: ScreenshotFileInfo) => {
   try {
     await confirm({
-      message: `确定要删除 ${file.name} 吗？`
+      message: `确定要删除 ${file.name} 吗？`,
     })
 
     const res = await ipcEmitter.invoke('delete-screenshot', file.path)
@@ -131,7 +131,7 @@ watch(
   () => props.visible,
   (v) => {
     if (v) load()
-  }
+  },
 )
 </script>
 

@@ -129,7 +129,7 @@ watch(
   () => {
     selectedLeftIds.value = []
     selectedRightIds.value = []
-  }
+  },
 )
 </script>
 
