@@ -75,8 +75,8 @@ const props = withDefaults(
     items?: DropdownItem[]
   }>(),
   {
-    items: () => [],
-  },
+    items: () => []
+  }
 )
 
 const showMenu = ref(false)
@@ -115,7 +115,7 @@ const menuStyle = computed((): CSSProperties => {
     position: 'fixed',
     top: `${top}px`,
     left: `${left}px`,
-    zIndex: 10001, // 确保在 CustomTitleBar (z-index: 10000) 之上
+    zIndex: 10001 // 确保在 CustomTitleBar (z-index: 10000) 之上
   }
 })
 
@@ -142,7 +142,7 @@ const vClickOutside = {
     if (el.clickOutsideEvent) {
       document.removeEventListener('click', el.clickOutsideEvent, true)
     }
-  },
+  }
 }
 
 const toggleMenu = () => {

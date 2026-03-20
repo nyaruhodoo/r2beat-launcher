@@ -74,7 +74,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           title,
           body,
           silent: false,
-          icon,
+          icon
         })
 
         // 点击通知时唤醒主窗口
@@ -118,8 +118,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       modal: false,
       show: false,
       webPreferences: {
-        sandbox: false,
-      },
+        sandbox: false
+      }
     })
 
     rechargeWindow
@@ -182,7 +182,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               gameUserId.value = gameUserIdC.value = ${stringUserName}
             }
           `),
-        '充值中心注入JS脚本失败',
+        '充值中心注入JS脚本失败'
       )
     })
 
@@ -217,8 +217,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false,
         contextIsolation: true,
-        nodeIntegration: false,
-      },
+        nodeIntegration: false
+      }
     })
 
     // 拦截所有的 <a> 标签跳转，强制使用系统默认浏览器打开
@@ -269,7 +269,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] 获取公告详情异常:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '获取公告详情时发生异常',
+        error: error instanceof Error ? error.message : '获取公告详情时发生异常'
       }
     }
   })
@@ -288,7 +288,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
             if (!response.ok) {
               throw new Error(
-                `[Main] Failed to fetch ${url}: ${response.status} ${response.statusText}`,
+                `[Main] Failed to fetch ${url}: ${response.status} ${response.statusText}`
               )
             }
 
@@ -307,7 +307,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             console.error(`[Main] Error fetching ${url}:`, error)
             return []
           }
-        }),
+        })
       )
 
       // 合并所有数据
@@ -394,7 +394,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         }
         finalShortcutPath = join(
           appData,
-          'Microsoft\\Windows\\Start Menu\\Programs\\R2beat\\音速觉醒.lnk',
+          'Microsoft\\Windows\\Start Menu\\Programs\\R2beat\\音速觉醒.lnk'
         )
       }
 
@@ -419,13 +419,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       return {
         success: true,
-        path: targetDir,
+        path: targetDir
       }
     } catch (error) {
       console.error('[Main] 获取 R2beat 路径失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '获取 R2beat 路径失败',
+        error: error instanceof Error ? error.message : '获取 R2beat 路径失败'
       }
     }
   })
@@ -452,7 +452,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         ...(process.platform === 'win32' &&
           {
             // Windows 特定的选项
-          }),
+          })
       })
 
       if (result.canceled || result.filePaths.length === 0) {
@@ -500,7 +500,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] reset-gg 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '重置 GameGuard 时发生未知错误',
+        error: error instanceof Error ? error.message : '重置 GameGuard 时发生未知错误'
       }
     }
   })
@@ -535,12 +535,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         '.bmp',
         '.tif',
         '.tiff',
-        '.avif',
+        '.avif'
       ])
 
       const files = await Utils.getAllFilesInDir(screenshotDir, {
         recursive: true,
-        filter: (f) => imageExts.has(f.ext),
+        filter: (f) => imageExts.has(f.ext)
       })
 
       // 简单按文件名倒序（通常截图文件名含时间）
@@ -552,7 +552,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       return {
         success: false,
         files: [],
-        error: error instanceof Error ? error.message : '获取截图列表时发生未知错误',
+        error: error instanceof Error ? error.message : '获取截图列表时发生未知错误'
       }
     }
   })
@@ -586,12 +586,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         '.bmp',
         '.tif',
         '.tiff',
-        '.avif',
+        '.avif'
       ])
 
       const files = await Utils.getAllFilesInDir(libraryPath, {
         recursive: true,
-        filter: (f) => imageExts.has(f.ext),
+        filter: (f) => imageExts.has(f.ext)
       })
 
       // 按文件名排序
@@ -603,7 +603,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       return {
         success: false,
         files: [],
-        error: error instanceof Error ? error.message : '获取本地图库列表时发生未知错误',
+        error: error instanceof Error ? error.message : '获取本地图库列表时发生未知错误'
       }
     }
   })
@@ -636,7 +636,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] clear-screenshots 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '清空截图目录时发生未知错误',
+        error: error instanceof Error ? error.message : '清空截图目录时发生未知错误'
       }
     }
   })
@@ -664,7 +664,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] open-screenshot 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '打开图片失败',
+        error: error instanceof Error ? error.message : '打开图片失败'
       }
     }
   })
@@ -683,8 +683,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         lowerNPPriority,
         username,
         password,
-        isShieldWordDisabled,
-      },
+        isShieldWordDisabled
+      }
     ) => {
       try {
         if (!gamePath || gamePath.trim() === '') {
@@ -709,8 +709,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           tasks.push(
             patchPak({
               pakPath,
-              isShieldWordDisabled,
-            }),
+              isShieldWordDisabled
+            })
           )
         }
 
@@ -718,7 +718,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           Utils.safeExecute(async () => {
             await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
             console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
-          }, '[Main] 写入 xyxID.txt 失败'),
+          }, '[Main] 写入 xyxID.txt 失败')
         )
 
         // 等待所有非关键任务完成（即便失败也不会中断整体流程）
@@ -739,12 +739,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           gameExePath,
           args,
           {
-            cwd: gamePath, // 设置工作目录为游戏目录
+            cwd: gamePath // 设置工作目录为游戏目录
           },
           (code, signal) => {
             // 监听进程退出（仅用于日志记录）
             console.log(`[Main] 游戏进程退出: code=${code}, signal=${signal}`)
-          },
+          }
         )
 
         if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
@@ -753,7 +753,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           await hookDll({
             pid: gameProcess.pid,
             username,
-            password,
+            password
           })
         }
 
@@ -777,13 +777,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             abovenormal: 32768, // ABOVE_NORMAL_PRIORITY_CLASS
             normal: 32, // NORMAL_PRIORITY_CLASS
             belownormal: 16384, // BELOW_NORMAL_PRIORITY_CLASS
-            low: 64, // IDLE_PRIORITY_CLASS，近似“低”
+            low: 64 // IDLE_PRIORITY_CLASS，近似“低”
           }
 
           const priorityValue = priorityMap[priorityKey] ?? priorityMap.normal
 
           console.log(
-            `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`,
+            `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`
           )
 
           spawnDetached('wmic', [
@@ -792,7 +792,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             `processid=${gameProcess.pid}`,
             'CALL',
             'setpriority',
-            String(priorityValue),
+            String(priorityValue)
           ])
 
           // 如果启用了降低NP优先级功能，则检测并降低GameMon进程优先级
@@ -814,7 +814,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               Utils.safeExecute(async () => {
                 const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
                   collectStdout: true,
-                  collectStderr: false,
+                  collectStderr: false
                 })
 
                 // 解析输出，查找包含 GameMon 的进程及其 PID
@@ -846,7 +846,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
                     await Utils.safeExecute(async () => {
                       // 设置进程优先级
                       console.log(
-                        `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`,
+                        `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`
                       )
                       await spawnDetached('wmic', [
                         'process',
@@ -854,7 +854,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
                         `processid=${pid}`,
                         'CALL',
                         'setpriority',
-                        String(targetPriorityValue),
+                        String(targetPriorityValue)
                       ])
                     }, `[Main] 设置进程优先级失败: ${name} (pid=${pid})`)
                   })
@@ -878,10 +878,10 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         console.error('[Main] 启动游戏时发生错误:', error)
         return {
           success: false,
-          error: error instanceof Error ? error.message : '启动游戏时发生未知错误',
+          error: error instanceof Error ? error.message : '启动游戏时发生未知错误'
         }
       }
-    },
+    }
   )
 
   /**
@@ -914,7 +914,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       return {
         success: false,
         exists: false,
-        error: error instanceof Error ? error.message : '读取 config.ini 文件时发生未知错误',
+        error: error instanceof Error ? error.message : '读取 config.ini 文件时发生未知错误'
       }
     }
   })
@@ -948,7 +948,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] 保存 config.ini 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '保存 config.ini 文件时发生未知错误',
+        error: error instanceof Error ? error.message : '保存 config.ini 文件时发生未知错误'
       }
     }
   })
@@ -978,7 +978,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] 读取 Patch.ini 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '读取 Patch.ini 文件时发生未知错误',
+        error: error instanceof Error ? error.message : '读取 Patch.ini 文件时发生未知错误'
       }
     }
   })
@@ -1011,7 +1011,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         .filter((name) => name.toLowerCase().endsWith('.pak') && chineseReg.test(name))
         .map((name) => ({
           name,
-          path: join(gamePath, name),
+          path: join(gamePath, name)
         }))
 
       // 2. 启动器根目录 mods 目录下的 pak（无需必须包含中文）
@@ -1027,14 +1027,14 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           .filter((name) => name.toLowerCase().endsWith('.pak'))
           .map((name) => ({
             name,
-            path: join(modsRoot, name),
+            path: join(modsRoot, name)
           }))
       }
 
       return {
         success: true,
         gamePaks,
-        modsPaks,
+        modsPaks
       }
     } catch (error) {
       console.error('[Main] 获取 pak 文件列表失败:', error)
@@ -1042,7 +1042,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         success: false,
         gamePaks: [],
         modsPaks: [],
-        error: error instanceof Error ? error.message : '获取 pak 文件列表时发生未知错误',
+        error: error instanceof Error ? error.message : '获取 pak 文件列表时发生未知错误'
       }
     }
   })
@@ -1072,7 +1072,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] save-pak-to-game 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '保存补丁到游戏目录时发生未知错误',
+        error: error instanceof Error ? error.message : '保存补丁到游戏目录时发生未知错误'
       }
     }
   })
@@ -1106,7 +1106,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] copy-pak-to-game 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '复制补丁到游戏目录时发生未知错误',
+        error: error instanceof Error ? error.message : '复制补丁到游戏目录时发生未知错误'
       }
     }
   })
@@ -1144,7 +1144,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] move-pak-to-mods 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '移动补丁到 mods 目录时发生未知错误',
+        error: error instanceof Error ? error.message : '移动补丁到 mods 目录时发生未知错误'
       }
     }
   })
@@ -1170,7 +1170,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] delete-pak 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '删除补丁文件时发生未知错误',
+        error: error instanceof Error ? error.message : '删除补丁文件时发生未知错误'
       }
     }
   })
@@ -1194,7 +1194,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           success: true,
           status: result.status,
           message: result.message,
-          data: result.data,
+          data: result.data
         }
       }
 
@@ -1202,14 +1202,14 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         success: false,
         status: result.status,
         error: result.message || '登录失败',
-        data: result.data,
+        data: result.data
       }
     } catch (error) {
       console.error('[Main] TCP 登录失败:', error)
       return {
         success: false,
         status: 'ERROR',
-        error: error instanceof Error ? error.message : 'TCP 登录时发生未知错误',
+        error: error instanceof Error ? error.message : 'TCP 登录时发生未知错误'
       }
     }
   })
@@ -1240,7 +1240,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] delete-screenshot 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '删除截图时发生未知错误',
+        error: error instanceof Error ? error.message : '删除截图时发生未知错误'
       }
     }
   })
@@ -1354,7 +1354,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               originalSize,
               compressedSize,
               checksum,
-              downloadUrl,
+              downloadUrl
             })
 
             // 按原始大小统计总下载体积
@@ -1400,13 +1400,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       return {
         success: true,
         totalSize,
-        patches,
+        patches
       }
     } catch (error) {
       console.error('[Main] download-patch-lists 处理失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '下载补丁列表时发生未知错误',
+        error: error instanceof Error ? error.message : '下载补丁列表时发生未知错误'
       }
     }
   })
@@ -1453,7 +1453,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         currentFileDownloadFraction: number,
         currentFileDecompressFraction: number,
         targetFileName?: string,
-        message?: string,
+        message?: string
       ) => {
         downloadFractions[index] = currentFileDownloadFraction
         decompressFractions[index] = currentFileDecompressFraction
@@ -1478,7 +1478,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           percent,
           stage,
           targetFileName,
-          message,
+          message
         })
       }
 
@@ -1532,7 +1532,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             downloadFraction,
             decompressFraction,
             targetFileName,
-            '目标文件已存在，跳过',
+            '目标文件已存在，跳过'
           )
           return
         }
@@ -1550,7 +1550,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               downloadFraction,
               decompressFraction,
               targetFileName,
-              '补丁下载中',
+              '补丁下载中'
             )
           })
 
@@ -1563,7 +1563,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             downloadFraction,
             decompressFraction,
             targetFileName,
-            '补丁下载完成',
+            '补丁下载完成'
           )
 
           // 使用流的方式解压 .lzma 到目标文件
@@ -1592,7 +1592,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
                   downloadFraction,
                   decompressFraction,
                   targetFileName,
-                  '补丁解压中',
+                  '补丁解压中'
                 )
               }
             })
@@ -1607,7 +1607,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           // 解压完成后删除临时压缩包（异步）
           await Utils.safeExecute(
             () => unlink(tmpPath),
-            `[Main] 删除临时补丁文件失败（可忽略）: ${tmpPath}`,
+            `[Main] 删除临时补丁文件失败（可忽略）: ${tmpPath}`
           )
 
           console.log('[Main] 补丁解压完成:', outPath)
@@ -1618,7 +1618,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             downloadFraction,
             decompressFraction,
             targetFileName,
-            '补丁解压完成',
+            '补丁解压完成'
           )
         } catch (error) {
           const errorMsg = `处理补丁文件失败: ${patch.downloadUrl} - ${error instanceof Error ? error.message : String(error)}`
@@ -1651,13 +1651,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       emitProgress(totalFiles - 1, 'decompress', 1, 1, undefined, '所有补丁文件处理完成')
 
       return {
-        success: true,
+        success: true
       }
     } catch (error) {
       console.error('[Main] download-patch-files 处理失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '下载并解压补丁文件时发生未知错误',
+        error: error instanceof Error ? error.message : '下载并解压补丁文件时发生未知错误'
       }
     }
   })
@@ -1689,8 +1689,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const allFiles = (await Utils.getAllFilesInDir(patchFileDir, { recursive: true })).map(
         (f) => ({
           path: f.path,
-          relativePath: relative(patchFileDir, f.path),
-        }),
+          relativePath: relative(patchFileDir, f.path)
+        })
       )
       let hasDeleteFileList = false
       let deleteFileList: string[] = []
@@ -1713,7 +1713,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
               .filter((line) => line && !line.startsWith('#') && !line.startsWith(';'))
 
             console.log(
-              `[Main] 预读取 DeleteFileList.dat，包含 ${deleteFileList.length} 个待删除文件`,
+              `[Main] 预读取 DeleteFileList.dat，包含 ${deleteFileList.length} 个待删除文件`
             )
             console.log('[Main] 待删除文件列表:', deleteFileList)
           }, '[Main] 预读取 DeleteFileList.dat 失败')
@@ -1827,7 +1827,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             if (err.code === 'EBUSY' && copyRetryCount < maxCopyRetries - 1) {
               copyRetryCount++
               console.warn(
-                `[Main] 复制文件被锁定，等待后重试 (${copyRetryCount}/${maxCopyRetries}): ${dest}`,
+                `[Main] 复制文件被锁定，等待后重试 (${copyRetryCount}/${maxCopyRetries}): ${dest}`
               )
               // 尝试再次删除并等待
               await Utils.safeExecute(async () => {
@@ -1915,7 +1915,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
                       if (err.code === 'EBUSY' && deleteRetryCount < maxDeleteRetries - 1) {
                         deleteRetryCount++
                         console.warn(
-                          `[Main] 文件被锁定，等待后重试删除 (${deleteRetryCount}/${maxDeleteRetries}): ${targetPath}`,
+                          `[Main] 文件被锁定，等待后重试删除 (${deleteRetryCount}/${maxDeleteRetries}): ${targetPath}`
                         )
                         await new Promise((resolve) => setTimeout(resolve, 500))
                       } else {
@@ -1953,7 +1953,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       console.error('[Main] apply-patch-files 失败:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : '应用补丁文件时发生未知错误',
+        error: error instanceof Error ? error.message : '应用补丁文件时发生未知错误'
       }
     }
   })
@@ -1988,12 +1988,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         return {
           currentVersion,
           latestVersion,
-          downloadUrl,
+          downloadUrl
         }
       } else {
         if (comparison < 0) {
           console.log(
-            `[Main] ⚠️ 当前版本 (${currentVersion}) 比 GitHub 最新版本 (${latestVersion}) 更新（可能是开发版本）`,
+            `[Main] ⚠️ 当前版本 (${currentVersion}) 比 GitHub 最新版本 (${latestVersion}) 更新（可能是开发版本）`
           )
         } else {
           console.log(`[Main] ✓ 当前版本 (${currentVersion}) 已是最新版本`)
@@ -2031,13 +2031,13 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           resolve({
             success: false,
             // 这里不抛出，避免变成 Promise<unknown>，并让返回值符合契约
-            error: error.message,
+            error: error.message
           })
           return
         }
 
         resolve({
-          success: true,
+          success: true
         })
       })
 
@@ -2047,7 +2047,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : '运行修复工具失败',
+        error: error instanceof Error ? error.message : '运行修复工具失败'
       }
     }
   })
@@ -2063,7 +2063,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : '导出失败',
+        error: error instanceof Error ? error.message : '导出失败'
       }
     }
   })

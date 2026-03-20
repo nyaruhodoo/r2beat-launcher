@@ -8,7 +8,7 @@ const REPLACE_STR = 'filte1.txt'
  */
 export const patchPak = async ({
   pakPath,
-  isShieldWordDisabled,
+  isShieldWordDisabled
 }: {
   pakPath: string
   isShieldWordDisabled?: boolean

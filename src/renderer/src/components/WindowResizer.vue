@@ -23,7 +23,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   minWidth: minWindowWidth,
-  minHeight: minWindowHeight,
+  minHeight: minWindowHeight
 })
 
 /**
@@ -36,7 +36,7 @@ const state = {
   startWidth: 0, // 拖拽开始时的窗口宽度
   startHeight: 0, // 拖拽开始时的窗口高度
   startLeft: 0, // 拖拽开始时的窗口左边缘屏幕X坐标
-  startTop: 0, // 拖拽开始时的窗口顶部屏幕Y坐标
+  startTop: 0 // 拖拽开始时的窗口顶部屏幕Y坐标
 }
 
 const directions: ResizeDirection[] = ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se']

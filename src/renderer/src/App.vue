@@ -172,20 +172,20 @@ const giftRechargeItems = computed<DropdownItem[]>(() => [
     label: '抽奖中心',
     icon: mangheImg,
     href: 'https://r2beat.xiyouxi.com/gift/draw',
-    target: '_blank',
+    target: '_blank'
   },
   {
     label: '充值中心',
     icon: zuanshiImg,
     onClick: () => {
       ipcEmitter.send('open-recharge-center', userInfo.value?.username)
-    },
+    }
   },
   {
     label: '游戏官网',
     icon: wangzhanImg,
     href: 'https://r2beat.xiyouxi.com/',
-    target: '_blank',
+    target: '_blank'
   },
   {
     label: '抽奖统计',
@@ -200,14 +200,14 @@ const giftRechargeItems = computed<DropdownItem[]>(() => [
 
       const res = await ipcEmitter.invoke('export-lottery-stats', {
         username: userInfo.value?.username,
-        password: userInfo.value?.password,
+        password: userInfo.value?.password
       })
 
       if (res.error) {
         error(res?.error ?? '导出失败，请稍后重试')
       }
-    },
-  },
+    }
+  }
 ])
 
 // 补丁和设置下拉菜单
@@ -215,17 +215,17 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
   {
     label: '设置',
     icon: shezhiImg,
-    onClick: () => (showSettings.value = true),
+    onClick: () => (showSettings.value = true)
   },
   {
     label: '补丁',
     icon: budingImg,
-    onClick: () => (showPakModal.value = true),
+    onClick: () => (showPakModal.value = true)
   },
   {
     label: '相册',
     icon: xiangceImg,
-    onClick: () => (showAlbumModal.value = true),
+    onClick: () => (showAlbumModal.value = true)
   },
   {
     label: '修复',
@@ -242,7 +242,7 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
       if (!res?.success) {
         error(res?.error ?? '无法运行 GameRecovery')
       }
-    },
+    }
   },
   {
     label: '重置GG',
@@ -250,7 +250,7 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
     onClick: async () => {
       await confirm({
         message:
-          '该功能会移除游戏目录下的 GameGuard ，如果你经常遇到游戏弹出相关警告，或许可以通过该功能修复',
+          '该功能会移除游戏目录下的 GameGuard ，如果你经常遇到游戏弹出相关警告，或许可以通过该功能修复'
       })
 
       const gamePath = gameSettings.value?.gamePath
@@ -267,8 +267,8 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
       }
 
       success('重置GG完成')
-    },
-  },
+    }
+  }
 ])
 
 /**
@@ -282,16 +282,16 @@ const [gameSettings, setGameSettings] = useLocalStorageState<GameSettings>('r2be
     minimizeToTrayOnLaunch: true,
     processPriority: 'normal',
     lowerNPPriority: false,
-    isShieldWordDisabled: false,
-  },
+    isShieldWordDisabled: false
+  }
 })
 
 // 已登录过账号
 const [savedAccounts, setSavedAccounts] = useLocalStorageState<UserInfo[]>(
   'r2beat_saved_accounts',
   {
-    defaultValue: [],
-  },
+    defaultValue: []
+  }
 )
 
 /* 当前登录账号 - 应用内状态，不永久存储 */
@@ -315,7 +315,7 @@ const [theme, setTheme] = useLocalStorageState<string>('r2beat-launcher-theme', 
   defaultValue: (() => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     return prefersDark ? 'dark' : 'light'
-  })(),
+  })()
 })
 const applyTheme = (newTheme?: string) => {
   if (!newTheme) return
@@ -329,8 +329,8 @@ const applyTheme = (newTheme?: string) => {
 const [lastUpdateCheckTime, setLastUpdateCheckTime] = useLocalStorageState<number>(
   'r2beat_last_update_check_time',
   {
-    defaultValue: 0,
-  },
+    defaultValue: 0
+  }
 )
 
 // 监听主题变化
@@ -339,7 +339,7 @@ watch(
   (newTheme) => {
     applyTheme(newTheme)
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 /**
@@ -363,7 +363,7 @@ const searchGamePath = async () => {
   if (res?.path && res.success && !gameSettings.value?.gamePath) {
     setGameSettings({
       ...gameSettings.value!,
-      gamePath: res.path,
+      gamePath: res.path
     })
   }
 }
@@ -395,7 +395,7 @@ const checkAppUpdate = async () => {
     // 距离上次检查不足30分钟，跳过本次检查
     const remainingMinutes = Math.ceil((checkUpdateIntervalTime - timeSinceLastCheck) / (60 * 1000))
     console.log(
-      `[App] 距离上次检查更新不足30分钟，跳过本次检查（还需等待约 ${remainingMinutes} 分钟）`,
+      `[App] 距离上次检查更新不足30分钟，跳过本次检查（还需等待约 ${remainingMinutes} 分钟）`
     )
   }
 }

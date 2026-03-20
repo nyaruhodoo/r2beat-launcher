@@ -44,10 +44,10 @@ async function requestGiftList(token: string, params: Record<string, unknown>) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: token,
+      Authorization: token
     },
     body: JSON.stringify(params),
-    signal: AbortSignal.timeout(10000), // 原生超时控制
+    signal: AbortSignal.timeout(10000) // 原生超时控制
   })
 
   if (!response.ok) {
@@ -136,7 +136,7 @@ function processGiftData(items: GiftItem[]): GroupedData[] {
         _unit: currentUnit,
         list: [],
         total: '',
-        code,
+        code
       }
     }
 
@@ -146,7 +146,7 @@ function processGiftData(items: GiftItem[]): GroupedData[] {
 
   return Object.values(groups).map((g) => ({
     ...g,
-    total: `${g._countValue}${g._unit}`,
+    total: `${g._countValue}${g._unit}`
   }))
 }
 
@@ -159,7 +159,7 @@ async function exportToTxtLegacy(groupedData: GroupedData[]): Promise<void> {
   try {
     // 1. 排序：大类按中文排序
     const sortedData = [...groupedData].sort((a, b) =>
-      (a.name || '').localeCompare(b.name || '', 'zh-CN'),
+      (a.name || '').localeCompare(b.name || '', 'zh-CN')
     )
 
     // 2. 构造文本内容
@@ -217,8 +217,8 @@ async function exportToTxtLegacy(groupedData: GroupedData[]): Promise<void> {
       defaultPath: defaultFileName, // 默认文件名
       filters: [
         { name: '文本文档', extensions: ['txt'] }, // 仅显示txt文件
-        { name: '所有文件', extensions: ['*'] },
-      ],
+        { name: '所有文件', extensions: ['*'] }
+      ]
     })
 
     // 如果用户取消保存，直接返回

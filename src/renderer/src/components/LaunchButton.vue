@@ -67,7 +67,7 @@ const autoLoginEnabled = ref(false)
 
 // 缓存上次检测时间戳
 const [lastCheckTimestamp, setLastCheckTimestamp] = useLocalStorageState<number>(
-  'r2beat_server_status_last_check',
+  'r2beat_server_status_last_check'
 )
 
 // 获取状态文本
@@ -88,7 +88,7 @@ const checkServerStatus = async () => {
     const result = await ipcEmitter.invoke(
       'tcp-login',
       props.userInfo?.username,
-      props.userInfo?.password,
+      props.userInfo?.password
     )
 
     const previousStatus = serverStatus.value
@@ -204,7 +204,7 @@ const executeLaunch = async () => {
       lowerNPPriority: props.gameSettings.lowerNPPriority,
       username: props.userInfo.username,
       password: props.userInfo.password,
-      isShieldWordDisabled: props.gameSettings.isShieldWordDisabled,
+      isShieldWordDisabled: props.gameSettings.isShieldWordDisabled
     })
 
     if (result?.success) {

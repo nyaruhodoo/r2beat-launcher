@@ -50,8 +50,8 @@ interface AnnouncementsCache {
 const [announcementsCache, setAnnouncementsCache] = useLocalStorageState<AnnouncementsCache | null>(
   'r2beat_announcements_cache',
   {
-    defaultValue: null,
-  },
+    defaultValue: null
+  }
 )
 
 // 记录上一次公告列表中第一条公告的 idx，用于判断是否有新公告
@@ -120,7 +120,7 @@ const fetchAnnouncements = async () => {
 
       const newCache: AnnouncementsCache = {
         data,
-        timestamp: Date.now(),
+        timestamp: Date.now()
       }
       setAnnouncementsCache(newCache)
     } else {

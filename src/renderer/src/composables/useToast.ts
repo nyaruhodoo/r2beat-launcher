@@ -31,7 +31,7 @@ const initToastContainer = () => {
   toastApp = createApp({
     setup() {
       return () => h(Toast)
-    },
+    }
   })
 
   // 挂载应用
@@ -48,7 +48,7 @@ export const useToast = () => {
       id,
       message,
       type,
-      duration,
+      duration
     }
 
     toasts.value.push(toast)
@@ -93,6 +93,6 @@ export const useToast = () => {
     success,
     error,
     warning,
-    info,
+    info
   }
 }

@@ -32,7 +32,7 @@ export class Utils {
   static async downloadFile(
     url: string,
     filePath: string,
-    onProgress?: (downloaded: number, total: number, progress: number) => void,
+    onProgress?: (downloaded: number, total: number, progress: number) => void
   ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       try {
@@ -50,7 +50,7 @@ export class Utils {
             res.resume() // 丢弃数据，避免内存泄漏
             fileStream.destroy()
             return reject(
-              new Error(`下载文件失败: ${url} (${statusCode} ${res.statusMessage || 'Unknown'})`),
+              new Error(`下载文件失败: ${url} (${statusCode} ${res.statusMessage || 'Unknown'})`)
             )
           }
 
@@ -113,7 +113,7 @@ export class Utils {
    */
   static async checkLatestVersion(
     repoOwner: string,
-    repoName: string,
+    repoName: string
   ): Promise<{
     success: boolean
     latestVersion?: string
@@ -126,8 +126,8 @@ export class Utils {
       const response = await fetch(apiUrl, {
         headers: {
           'User-Agent': 'r2beat-launcher',
-          Accept: 'application/vnd.github.v3+json',
-        },
+          Accept: 'application/vnd.github.v3+json'
+        }
       })
 
       if (!response.ok) {
@@ -206,7 +206,7 @@ export class Utils {
         try {
           const result = await spawnPromise('tasklist', ['/FI', `IMAGENAME eq ${processName}`], {
             collectStdout: true,
-            collectStderr: false,
+            collectStderr: false
           })
 
           const output = result.stdout.toLowerCase()
@@ -272,7 +272,7 @@ export class Utils {
     options?: {
       recursive?: boolean
       filter?: (file: { path: string; name: string; ext: string }) => boolean
-    },
+    }
   ): Promise<Array<{ path: string; name: string }>> {
     const recursive = options?.recursive ?? true
     const filter = options?.filter
@@ -329,7 +329,7 @@ export class Utils {
     options?: {
       recursive?: boolean
       filter?: (file: { path: string; name: string; ext: string }) => boolean
-    },
+    }
   ): Promise<number> {
     let deleted = 0
 
@@ -355,7 +355,7 @@ export class Utils {
           // 清空逻辑与历史 clear-screenshots 一致：把子目录也移除
           await Utils.safeExecute(
             () => rm(fullPath, { recursive: true, force: true }),
-            `清空目录失败: ${fullPath}`,
+            `清空目录失败: ${fullPath}`
           )
           continue
         }

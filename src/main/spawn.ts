@@ -36,7 +36,7 @@ export interface SpawnPromiseOptions extends SpawnOptions {
 export function spawnPromise(
   command: string,
   args: string[] = [],
-  options: SpawnPromiseOptions = {},
+  options: SpawnPromiseOptions = {}
 ): Promise<SpawnResult> {
   return new Promise((resolve, reject) => {
     const { collectStdout = true, collectStderr = true, timeout = 0, ...spawnOptions } = options
@@ -47,7 +47,7 @@ export function spawnPromise(
         spawnOptions.stdio = [
           'ignore',
           collectStdout ? 'pipe' : 'ignore',
-          collectStderr ? 'pipe' : 'ignore',
+          collectStderr ? 'pipe' : 'ignore'
         ]
       }
     }
@@ -82,7 +82,7 @@ export function spawnPromise(
         code,
         stdout: stdout.trim(),
         stderr: stderr.trim(),
-        pid: child.pid,
+        pid: child.pid
       })
     })
 
@@ -118,13 +118,13 @@ export function spawnPromise(
 export function spawnDetached(
   command: string,
   args: string[] = [],
-  options: SpawnOptions = {},
+  options: SpawnOptions = {}
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       ...options,
       detached: true,
-      stdio: 'ignore',
+      stdio: 'ignore'
     })
 
     child.on('error', (error) => {
@@ -156,13 +156,13 @@ export function spawnGameProcess(
   command: string,
   args: string[] = [],
   options: SpawnOptions = {},
-  onExit?: (code: number | null, signal: NodeJS.Signals | null) => void,
+  onExit?: (code: number | null, signal: NodeJS.Signals | null) => void
 ): Promise<ChildProcess> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       ...options,
       detached: true,
-      stdio: 'ignore',
+      stdio: 'ignore'
     })
 
     // 处理启动错误

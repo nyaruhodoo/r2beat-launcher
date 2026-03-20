@@ -146,7 +146,7 @@ function parseLoginResponse(data: Buffer): LoginResponse {
     MagicHeader: MagicHeader,
     PayloadLength: PayloadLength,
     CommandID: CommandID,
-    SessionID: SessionID,
+    SessionID: SessionID
   }
 
   // === 核心状态判断与解析 ===
@@ -159,29 +159,29 @@ function parseLoginResponse(data: Buffer): LoginResponse {
       data: {
         ...basicInfo,
         // 成功负载的解析从 ErrorCode 之后开始，即 offset=20
-        ...parseSuccessPayload(data, offset),
-      },
+        ...parseSuccessPayload(data, offset)
+      }
     }
   } else if (CommandID === 48) {
     // 账号不存在 (30 00 00 00)
     return {
       status: 'FAILURE',
       message: '登录失败：账号不存在',
-      data: basicInfo,
+      data: basicInfo
     }
   } else if (CommandID === 47) {
     // 密码错误 (2F 00 00 00)
     return {
       status: 'FAILURE',
       message: '登录失败：密码错误',
-      data: basicInfo,
+      data: basicInfo
     }
   } else {
     // 其他未知错误
     return {
       status: 'UNKNOWN',
       message: `收到未知响应状态码: ${CommandID}`,
-      data: basicInfo,
+      data: basicInfo
     }
   }
 }
@@ -231,7 +231,7 @@ export function sendTcpLoginRequest(username: string, password: string): Promise
 
       if (result.status === 'SUCCESS') {
         console.log(
-          `[TCP Login] 用户ID: ${result.data?.UserID}, 登录凭证: ${result.data?.LoginTicket}`,
+          `[TCP Login] 用户ID: ${result.data?.UserID}, 登录凭证: ${result.data?.LoginTicket}`
         )
       }
 

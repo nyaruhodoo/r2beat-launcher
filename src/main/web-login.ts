@@ -18,7 +18,7 @@ export const webLogin = async (userInfo: {
         // 无需手动设置 Content-Type，fetch 会自动根据 FormData 生成（包含boundary）
         // 如需自定义其他请求头可在此添加，例如：
         // 'Accept': 'application/json'
-      },
+      }
     })
 
     // 3. 检查请求是否成功

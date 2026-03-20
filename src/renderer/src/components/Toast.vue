@@ -17,7 +17,7 @@ const getIcon = (type: 'success' | 'error' | 'warning' | 'info') => {
     success: '✅',
     error: '❌',
     warning: '⚠️',
-    info: 'ℹ️',
+    info: 'ℹ️'
   }
   return icons[type] || icons.info
 }
