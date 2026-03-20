@@ -222,6 +222,7 @@ onMounted(() => {
         height: 100%;
         margin: 0 auto;
         object-fit: cover;
+        object-position: center top;
         border-radius: 16px;
         border: 2px solid var(--color-border);
         box-shadow: var(--shadow-md);
