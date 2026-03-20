@@ -32,7 +32,7 @@ const props = defineProps<{
 // 获取本地图片（作为后备）
 const images = import.meta.glob('../assets/imgs/mujica/*.avif', {
   eager: true,
-  import: 'default'
+  import: 'default',
 })
 
 // 将图片对象转换为路径数组
@@ -140,8 +140,8 @@ const handleImageClick = async () => {
       {
         duration: 300,
         easing: 'ease-in-out',
-        fill: 'forwards'
-      }
+        fill: 'forwards',
+      },
     )
 
     await firstAnimation.finished
@@ -155,8 +155,8 @@ const handleImageClick = async () => {
       {
         duration: 300,
         easing: 'ease-in-out',
-        fill: 'forwards'
-      }
+        fill: 'forwards',
+      },
     )
 
     await secondAnimation.finished
@@ -179,7 +179,7 @@ watch(
       loadRandomGameImage()
     })
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 // 组件挂载时加载随机图片

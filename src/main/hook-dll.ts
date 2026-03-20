@@ -69,7 +69,7 @@ const createFridaScriptTemplate = (username: string, password: string) => {
 export async function hookDll({
   pid,
   username,
-  password
+  password,
 }: {
   pid: number
   username: string

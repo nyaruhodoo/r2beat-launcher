@@ -42,7 +42,7 @@ const themes = [
   { value: 'gaoyahui', label: '高雅灰', color: '#b2bec3' },
   { value: 'xinchunhong', label: '新春红', color: '#ff4d4d' },
   { value: 'dark', label: '暗夜紫', color: '#4B247A' },
-  { value: 'anyehei', label: '暗夜黑', color: '#000' }
+  { value: 'anyehei', label: '暗夜黑', color: '#000' },
 ]
 
 // 生成下拉菜单项
@@ -52,7 +52,7 @@ const themeItems = computed<DropdownItem[]>(() => {
     color: theme.color,
     onClick: () => {
       props.toggleTheme(theme.value)
-    }
+    },
   }))
 })
 </script>

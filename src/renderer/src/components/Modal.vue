@@ -79,8 +79,8 @@ const props = withDefaults(
     confirmDisabled: false,
     cancelDisabled: false,
     maxWidth: '600px',
-    maxHeight: '80vh'
-  }
+    maxHeight: '80vh',
+  },
 )
 
 const emit = defineEmits<{

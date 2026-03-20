@@ -80,10 +80,10 @@ export function confirm(options: ConfirmOptions): Promise<void> {
             confirmText: options.confirmText ?? '确认',
             cancelText: options.cancelText ?? '取消',
             onConfirm: handleConfirm,
-            onCancel: handleCancel
+            onCancel: handleCancel,
           })
         }
-      }
+      },
     })
 
     // 挂载应用

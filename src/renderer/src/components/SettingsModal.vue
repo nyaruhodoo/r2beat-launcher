@@ -161,7 +161,7 @@ const settings = ref<GameSettings>({
   minimizeToTrayOnLaunch: true,
   processPriority: 'normal',
   lowerNPPriority: false,
-  isShieldWordDisabled: false
+  isShieldWordDisabled: false,
 })
 
 // 保存 config.ini 转换后的 JSON 数据
@@ -183,7 +183,7 @@ const resolution = computed({
         HEIGHT: 1080,
         FULLSCREEN: 0,
         OUTLINE: 0,
-        OUTLINING: 0
+        OUTLINING: 0,
       }
     if (!configIniJson.value.FONT)
       configIniJson.value.FONT = { FILEPATH: '', WIDTH: 1920, HEIGHT: 1080 }
@@ -192,7 +192,7 @@ const resolution = computed({
     configIniJson.value.VIDEO.HEIGHT = value[1]
     configIniJson.value.FONT.WIDTH = value[0]
     configIniJson.value.FONT.HEIGHT = value[1]
-  }
+  },
 })
 
 const fullscreen = computed({
@@ -208,10 +208,10 @@ const fullscreen = computed({
         HEIGHT: 1080,
         FULLSCREEN: 0,
         OUTLINE: 0,
-        OUTLINING: 0
+        OUTLINING: 0,
       }
     configIniJson.value.VIDEO.FULLSCREEN = value ? 1 : 0
-  }
+  },
 })
 
 const graphicsQuality = computed({
@@ -227,10 +227,10 @@ const graphicsQuality = computed({
         HEIGHT: 1080,
         FULLSCREEN: 0,
         OUTLINE: 2,
-        OUTLINING: 1
+        OUTLINING: 1,
       }
     configIniJson.value.VIDEO.OUTLINING = value ? 1 : 0
-  }
+  },
 })
 
 const jitterShake = computed({
@@ -244,7 +244,7 @@ const jitterShake = computed({
       configIniJson.value.JITTER = { ONOFF: 0 }
     }
     configIniJson.value.JITTER.ONOFF = value ? 1 : 0
-  }
+  },
 })
 
 const audioEffects = computed({
@@ -259,10 +259,10 @@ const audioEffects = computed({
         BG: 1,
         EFFECT: 1,
         BGVOL: 100,
-        EFFECTVOL: 100
+        EFFECTVOL: 100,
       }
     configIniJson.value.SOUND.EFFECT = value ? 1 : 0
-  }
+  },
 })
 
 const backgroundMusic = computed({
@@ -277,16 +277,16 @@ const backgroundMusic = computed({
         BG: 1,
         EFFECT: 1,
         BGVOL: 100,
-        EFFECTVOL: 100
+        EFFECTVOL: 100,
       }
     configIniJson.value.SOUND.BG = value ? 1 : 0
-  }
+  },
 })
 
 const resolutionOptions = [
   { value: [1920, 1080], label: '1920 × 1080' },
   { value: [1024, 768], label: '1024 × 768' },
-  { value: [800, 600], label: '800 × 600' }
+  { value: [800, 600], label: '800 × 600' },
 ]
 
 const processPriorityOptions = [
@@ -295,7 +295,7 @@ const processPriorityOptions = [
   { value: 'abovenormal', label: '高于正常' },
   { value: 'normal', label: '正常' },
   { value: 'belownormal', label: '低于正常' },
-  { value: 'low', label: '低' }
+  { value: 'low', label: '低' },
 ]
 
 const handleClose = () => {
@@ -314,7 +314,7 @@ const handleSave = async () => {
       const result = await ipcEmitter.invoke(
         'write-config-ini',
         settings.value.gamePath,
-        serializedConfig
+        serializedConfig,
       )
       if (result?.success) {
         console.log('config.ini 保存成功')
@@ -386,7 +386,7 @@ watch(
       loadConfigIni()
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 // 监听游戏路径变化，自动重新读取 config.ini
@@ -396,7 +396,7 @@ watch(
     if (props.visible && newPath && oldPath) {
       loadConfigIni()
     }
-  }
+  },
 )
 </script>
 

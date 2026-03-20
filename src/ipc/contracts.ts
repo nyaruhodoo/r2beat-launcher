@@ -17,7 +17,7 @@ import type {
   PatchProgressPayload,
   PatchUpdateFile,
   PakFileInfo,
-  ScreenshotFileInfo
+  ScreenshotFileInfo,
 } from '@types'
 
 /**
@@ -78,7 +78,7 @@ export type IpcMainEvents =
       }>
       'write-config-ini': (
         gamePath: string,
-        configJson: Record<string, Record<string, unknown>>
+        configJson: Record<string, Record<string, unknown>>,
       ) => IpcResult
       'read-patch-info': (gamePath: string) => IpcResult<{ data: PatchInfo }>
       'get-paks': (gamePath: string) => IpcResult<{
@@ -88,14 +88,14 @@ export type IpcMainEvents =
       'save-pak-to-game': (
         fileName: string,
         fileData: Buffer | Uint8Array,
-        gamePath: string
+        gamePath: string,
       ) => IpcResult<{ destPath: string }>
       'copy-pak-to-game': (srcPath: string, gamePath: string) => IpcResult<{ destPath: string }>
       'move-pak-to-mods': (srcPath: string) => IpcResult<{ destPath: string }>
       'delete-pak': (srcPath: string) => IpcResult
       'tcp-login': (
         username: string,
-        password: string
+        password: string,
       ) => IpcResult<{
         status?: 'SUCCESS' | 'FAILURE' | 'ERROR' | 'UNKNOWN'
         message?: string
@@ -112,7 +112,7 @@ export type IpcMainEvents =
       }>
       'download-patch-lists': (
         versions: string[],
-        keepLatestOnly?: boolean
+        keepLatestOnly?: boolean,
       ) => IpcResult<{
         totalSize?: number
         patches?: PatchUpdateFile[]
