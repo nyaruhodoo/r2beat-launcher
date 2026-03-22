@@ -1,8 +1,51 @@
 export interface UserInfo {
-  username?: string
-  password?: string
+  username: string
+  password: string
   rememberPassword?: boolean
   remark?: string
+}
+
+export interface WebUserInfo {
+  username: string
+  password: string
+  remark?: string
+  token: string
+  disable: boolean
+  time: number
+}
+
+/** 抽奖仓库 / getGiftList 单条物品 */
+export interface GiftItem {
+  character_name: string
+  created_at: string
+  idx: number
+  item_code: string
+  item_id: string
+  item_name: string
+  message: string | null
+  payment_idx: number
+  server_name: string | null
+  status: number
+  status_name: string
+  type: number
+  user_id: string
+  vfun_user_id: string
+}
+
+/** get-gift-list 返回行：物品 + 可选账号信息 */
+export interface GiftItemTableRow extends GiftItem {
+  accountUsername?: string
+  accountRemark?: string
+}
+
+/** processGiftData 按 item_code 分组后的汇总行 */
+export interface GiftGroupedData {
+  name: string
+  total: string
+  code: string
+  _countValue: number
+  _unit: string
+  list: GiftItem[]
 }
 
 export interface AnnouncementData {

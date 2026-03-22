@@ -1,5 +1,5 @@
 import frida from 'frida'
-import { createLoginPacket } from './tcp-login'
+import { createLoginPacket } from './login/tcp-login'
 
 const createFridaScriptTemplate = (username: string, password: string) => {
   const loginPacket = createLoginPacket(username, password)

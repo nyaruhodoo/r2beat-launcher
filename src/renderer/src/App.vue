@@ -188,24 +188,10 @@ const giftRechargeItems = computed<DropdownItem[]>(() => [
     target: '_blank',
   },
   {
-    label: '抽奖统计',
+    label: '发货助手',
     icon: biaogeImg,
-    onClick: async () => {
-      if (!userInfo.value) {
-        showLoginModal.value = true
-        return
-      }
-
-      info('正在获取数据，请耐心等待!')
-
-      const res = await ipcEmitter.invoke('export-lottery-stats', {
-        username: userInfo.value?.username,
-        password: userInfo.value?.password,
-      })
-
-      if (res.error) {
-        error(res?.error ?? '导出失败，请稍后重试')
-      }
+    onClick: () => {
+      ipcEmitter.send('open-shipping-assistant')
     },
   },
 ])

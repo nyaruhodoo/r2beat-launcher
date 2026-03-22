@@ -7,6 +7,15 @@ import { get as httpsGet } from 'https'
 import { URL } from 'url'
 import { spawnPromise } from './spawn'
 import { access, readdir, rm, stat, unlink } from 'fs/promises'
+import { http } from './http'
+
+/** GitHub `GET .../releases/latest` 响应（仅用到的字段） */
+interface GitHubLatestRelease {
+  tag_name?: string
+  name?: string
+  html_url?: string
+  assets?: Array<{ browser_download_url?: string }>
+}
 
 export class Utils {
   /**
@@ -123,25 +132,12 @@ export class Utils {
     const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`
 
     try {
-      const response = await fetch(apiUrl, {
+      const { data } = await http.get<GitHubLatestRelease>(apiUrl, {
         headers: {
           'User-Agent': 'r2beat-launcher',
           Accept: 'application/vnd.github.v3+json',
         },
       })
-
-      if (!response.ok) {
-        const errorMsg = `GitHub API 请求失败: ${response.status} ${response.statusText}`
-        console.error('[Utils]', errorMsg)
-        return { success: false, error: errorMsg }
-      }
-
-      const data = (await response.json()) as {
-        tag_name?: string
-        name?: string
-        html_url?: string
-        assets?: Array<{ browser_download_url?: string }>
-      }
       const latestVersion = data.tag_name || data.name
 
       if (!latestVersion) {

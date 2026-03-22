@@ -126,7 +126,7 @@
       </div>
 
       <div class="form-options">
-        <Checkbox v-model="rememberPassword" label="记住密码" />
+        <Checkbox v-model="rememberPassword" label="保存账号" />
       </div>
     </div>
 
@@ -174,7 +174,7 @@ const formData = ref({
 })
 const selectedAccount = ref<UserInfo>()
 
-const rememberPassword = ref(false)
+const rememberPassword = ref(true)
 const showPassword = ref(false)
 const isLoading = ref(false)
 const isAccountDropdownOpen = ref(false)
@@ -190,7 +190,7 @@ watch(
     // 打开时，先重置表单，确保输入框可编辑
     if (visible) {
       formData.value = { username: '', password: '', remark: '' }
-      rememberPassword.value = false
+      rememberPassword.value = true
       showPassword.value = false
       isLoading.value = false
     }

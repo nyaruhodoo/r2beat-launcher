@@ -1,23 +1,7 @@
 import { dialog } from 'electron'
 import { writeFile } from 'fs/promises'
-
-interface GiftItem {
-  character_name: string
-  created_at: string
-  idx: number
-  // 可以拿去请求图片
-  item_code: string
-  item_id: string
-  item_name: string
-  message: string | null
-  payment_idx: number
-  server_name: string | null
-  status: number
-  status_name: string
-  type: number
-  user_id: string
-  vfun_user_id: string
-}
+import type { GiftItem } from '@types'
+import { http } from './http'
 
 interface GroupedData {
   name: string
@@ -34,84 +18,84 @@ interface DetailInfo {
   unit: string
 }
 
-/**
- * API 请求封装 (Fetch 版)
- */
+interface GiftListApiResponse {
+  list: GiftItem[]
+  current_page: number
+  end_page: number
+  // 分页大小
+  per_page: number
+  total: number
+  result: number
+}
+
 async function requestGiftList(token: string, params: Record<string, unknown>) {
   const API_URL = 'http://external-api.xiyouxi.com/api/gift/getGiftList'
 
-  const response = await fetch(API_URL, {
-    method: 'POST',
+  const { data } = await http.post<
+    GiftListApiResponse & {
+      code: number
+      status: number
+      message: string
+    }
+  >(API_URL, params, {
     headers: {
-      'Content-Type': 'application/json',
       Authorization: token,
     },
-    body: JSON.stringify(params),
-    signal: AbortSignal.timeout(10000), // 原生超时控制
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP Error: ${response.status}`)
-  }
-
-  return response.json() as Promise<{
-    list: GiftItem[]
-    current_page: number
-    end_page: number
-    per_page: number
-    total: number
-    result: 0 | 1
-  }>
+  return data
 }
 
+const FETCH_GIFTS_PAGE_CONCURRENCY = 3
+
 /**
- * 获取所有分页数据（并发数为 3，且任一失败即报错）
+ * 获取所有分页数据（第 2 页起并发至多 3 路；任一失败则置位 aborted，其余 worker 不再领取新任务）
  */
-async function fetchAllGifts(token: string): Promise<GiftItem[]> {
-  const CONCURRENCY_LIMIT = 3
-  // 第一页依然先串行获取，以确定总页数
+export async function fetchAllGifts(token: string): Promise<GiftItem[]> {
   const firstPage = await requestGiftList(token, { page: 1, status: 1 })
-  const allItems: GiftItem[] = [...(firstPage.list || [])]
 
+  if (firstPage.message) {
+    throw new Error(firstPage.message)
+  }
+
+  const firstItems: GiftItem[] = [...(firstPage.list || [])]
   const totalPages = firstPage.end_page
-  if (totalPages <= 1) return allItems
+  if (totalPages <= 1) return firstItems
 
-  console.log(`🚀 开始并发抓取，总页数: ${totalPages}，并发数: ${CONCURRENCY_LIMIT}`)
+  const extraPageCount = totalPages - 1
+  const perPage: GiftItem[][] = new Array(extraPageCount)
+  let cursor = 0
+  let aborted = false
 
-  // 待处理的任务队列
-  const pageQueue = Array.from({ length: totalPages - 1 }, (_, i) => i + 2)
+  const pickNext = (): number | undefined => {
+    if (aborted) return undefined
+    const i = cursor++
+    if (i >= extraPageCount) return undefined
+    return i
+  }
 
-  // 执行器：如果内部发生错误，直接 throw，这将导致 Promise.all 中断
-  const worker = async () => {
-    while (pageQueue.length > 0) {
-      const p = pageQueue.shift()
-      if (p === undefined) break
-
-      // 注意：这里不再内部 catch，让错误向上冒泡
-      const res = await requestGiftList(token, { page: p, per_page: 100, status: 1 })
-
-      if (res.list) {
-        allItems.push(...res.list)
+  async function worker(): Promise<void> {
+    while (!aborted) {
+      const slot = pickNext()
+      if (slot === undefined) return
+      const pageNum = slot + 2
+      try {
+        const res = await requestGiftList(token, { page: pageNum, per_page: 100, status: 1 })
+        if (res.message) {
+          throw new Error(res.message)
+        }
+        perPage[slot] = res.list ?? []
+      } catch (e) {
+        aborted = true
+        throw e
       }
-      console.log(`✅ 已获取第 ${p} 页`)
     }
   }
 
-  try {
-    // 启动并发 Worker
-    const workers = Array(Math.min(CONCURRENCY_LIMIT, pageQueue.length))
-      .fill(null)
-      .map(() => worker())
+  const poolSize = Math.min(FETCH_GIFTS_PAGE_CONCURRENCY, extraPageCount)
+  await Promise.all(Array.from({ length: poolSize }, () => worker()))
 
-    // 关键点：Promise.all 会在任何一个 worker 抛出异常时立即触发 catch
-    await Promise.all(workers)
-
-    return allItems
-  } catch (err) {
-    console.error('❌ 分页抓取过程中出现异常，任务已中断')
-    // 向上抛出错误，供调用者处理
-    throw err
-  }
+  return [...firstItems, ...perPage.flat()]
 }
 
 /**

@@ -7,7 +7,7 @@
     "src/preload/*.d.ts",
     "src/types.ts",
     "src/config.ts",
-    "src/ipc/**/*"
+    "src/ipc/**/*",
   ],
   "compilerOptions": {
     "composite": true,
@@ -15,7 +15,8 @@
     "paths": {
       "@renderer/*": ["src/renderer/src/*"],
       "@types": ["./src/types.ts"],
-      "@config": ["./src/config.ts"]
-    }
-  }
+      "@config": ["./src/config.ts"],
+    },
+    "types": ["element-plus/global"],
+  },
 }

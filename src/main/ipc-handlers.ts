@@ -5,7 +5,7 @@ import { createReadStream, createWriteStream } from 'fs'
 import { readFile, writeFile, readdir, mkdir, unlink, stat, copyFile, rm } from 'fs/promises'
 import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
 import { AnnouncementData, R2BeatNoticeData, ProcessPriority, AppConfig, PatchInfo } from '@types'
-import { sendTcpLoginRequest } from './tcp-login'
+import { sendTcpLoginRequest } from './login/tcp-login'
 import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
 import lzma from 'lzma-native'
 import { Utils } from './utils'
@@ -15,8 +15,12 @@ import { patchPak } from './patch-pak'
 import { execFile } from 'child_process'
 import { IpcListener, IpcEmitter } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents, IpcRendererEvents } from '../ipc/contracts'
-import { webLogin } from './web-login'
-import { exportLotteryItemsTxt } from './export-lottery-items-txt'
+import { webLogin } from './login/web-login'
+import { checkWebLoginForUsers } from './login/check-web-login'
+import { refreshWebUsersConcurrent } from './login/refresh-web-users'
+import { fetchGiftItemsForEnabledAccounts } from './gift-list-all-accounts'
+import { http } from './http'
+import { logError, logInfo, logSuccess } from './log'
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
@@ -251,14 +255,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     const fetchUrl = `https://external-api.xiyouxi.com/api/vfunlounge/posts/r2beat/all/${idx}`
 
     try {
-      const response = await fetch(fetchUrl)
-
-      if (!response.ok) {
-        console.error('[Main] 获取公告详情失败:', response.status, response.statusText)
-        throw new Error('获取公告详情失败')
-      }
-
-      const data = (await response.json()) as R2BeatNoticeData
+      const { data } = await http.get<R2BeatNoticeData>(fetchUrl)
 
       if (data.result !== 1) {
         throw new Error('获取公告详情失败')
@@ -284,18 +281,10 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       const responses = await Promise.all(
         urls.map(async (url, index) => {
           try {
-            const response = await fetch(url)
-
-            if (!response.ok) {
-              throw new Error(
-                `[Main] Failed to fetch ${url}: ${response.status} ${response.statusText}`,
-              )
-            }
-
-            const result = (await response.json()) as {
+            const { data: result } = await http.get<{
               data: AnnouncementData[]
               result: number
-            }
+            }>(url)
 
             if (result && result.data && Array.isArray(result.data)) {
               return result.data
@@ -335,13 +324,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   ipc.handle('get-remote-version', async () => {
     const url = 'https://r2beat-cdn.xiyouxi.com/live/vpatch/patchVersionInfo.txt'
     try {
-      const response = await fetch(url)
-      if (!response.ok) {
-        console.error('[Main] 获取远程版本失败:', response.status, response.statusText)
-        throw new Error('远程版本请求失败')
-      }
-
-      const text = await response.text()
+      const { data: text } = await http.get<string>(url, { responseType: 'text' })
       const lines = text.split(/\r?\n/).map((line) => line.trim())
 
       const userOpenIndex = lines.findIndex((line) => line.toLowerCase() === '[useropen]')
@@ -2053,18 +2036,138 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   })
 
   /**
-   * 导出当前账号抽奖物品
+   * 打开发货助手
    */
-  ipc.handle('export-lottery-stats', async (_, userInfo) => {
+  ipc.on('open-shipping-assistant', () => {
+    const mainBounds = mainWindow?.getBounds()
+
+    // 计算新尺寸
+    const scaleFactor = 1.2
+    const newWidth = Math.floor(mainBounds!.width * scaleFactor)
+    const newHeight = Math.floor(mainBounds!.height * scaleFactor)
+
+    // 计算居中坐标 (公式：父坐标 - 超出长度的一半)
+    // x = mainBounds.x + (mainBounds.width - newWidth) / 2
+    const x = Math.floor(mainBounds!.x + (mainBounds!.width - newWidth) / 2)
+    const y = Math.floor(mainBounds!.y + (mainBounds!.height - newHeight) / 2)
+
+    const detailWindow = new BrowserWindow({
+      width: newWidth,
+      height: newHeight,
+      minWidth: newWidth,
+      minHeight: newHeight,
+      x,
+      y,
+      autoHideMenuBar: true,
+      frame: false,
+      titleBarStyle: 'hidden',
+      modal: false,
+      show: false,
+      webPreferences: {
+        preload: join(__dirname, '../preload/index.js'),
+        sandbox: false,
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    })
+
+    // 拦截所有的 <a> 标签跳转，强制使用系统默认浏览器打开
+    detailWindow.webContents.setWindowOpenHandler((details) => {
+      shell.openExternal(details.url)
+      return { action: 'deny' }
+    })
+
+    const isDevUrl = process.env['ELECTRON_RENDERER_URL']
+    const url = isDevUrl
+      ? `${isDevUrl}?windowType=shippingAssistant`
+      : `file://${join(__dirname, '../renderer/index.html')}?windowType=shippingAssistant`
+
+    detailWindow.loadURL(url).catch((error) => {
+      console.error('[Main] 打开发货助手窗口失败:', error)
+      detailWindow.close()
+    })
+
+    detailWindow.webContents.once('did-finish-load', () => {
+      detailWindow.show()
+    })
+  })
+
+  /**
+   * web 登录
+   */
+  ipc.handle('web-login', async (_, userInfoParams) => {
+    const userInfo = await webLogin(userInfoParams)
+
+    return {
+      success: true,
+      userInfo,
+    }
+  })
+
+  /**
+   * 登录状态检查
+   */
+  ipc.handle('check-web-login', async (_, userInfoList) => {
     try {
-      const token = await webLogin(userInfo)
-      await exportLotteryItemsTxt(token)
-      return { success: true }
+      logInfo(`正在检查登录态，当前已启用${userInfoList.length}个账号`)
+      const result = await checkWebLoginForUsers(userInfoList)
+      logSuccess(`${userInfoList.length}个账号，登录态检查成功`)
+
+      return {
+        success: true,
+        userInfoList: result.userInfoList,
+      }
     } catch (error) {
+      const message = error instanceof Error ? error.message : `登录态检查失败`
+
+      logError(message)
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : '导出失败',
+        error: message,
       }
+    }
+  })
+
+  /**
+   * 并发重新网页登录，刷新 token（与 check-web-login 同并发策略；须全部成功）
+   */
+  ipc.handle('refresh-web-users', async (_, userInfoList) => {
+    try {
+      logInfo(`正在刷新网页登录态，当前已启用 ${userInfoList.length} 个账号`)
+      const userInfoListOut = await refreshWebUsersConcurrent(userInfoList)
+      logSuccess(`${userInfoList.length} 个账号 token 已刷新`)
+
+      return {
+        success: true,
+        userInfoList: userInfoListOut,
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `刷新网页登录态失败`
+
+      logError(message)
+
+      return {
+        success: false,
+        error: message,
+      }
+    }
+  })
+
+  /**
+   * 获取所有已启用账号的抽奖仓库物品（顺序拉取，任一失败即中断）
+   */
+  ipc.handle('get-gift-list', async (_, userInfoList) => {
+    try {
+      logInfo(`开始统计抽奖物品，当前已启用${userInfoList.length}个账号`)
+      const items = await fetchGiftItemsForEnabledAccounts(userInfoList)
+      logSuccess(`${userInfoList.length}个账号，物品已统计完成，共${items.length}个道具`)
+
+      return { success: true, items }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : `统计抽奖物品失败`
+      logError(message)
+      return { success: false, error: message, items: [] }
     }
   })
 

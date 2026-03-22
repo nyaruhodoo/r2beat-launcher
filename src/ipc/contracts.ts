@@ -18,6 +18,9 @@ import type {
   PatchUpdateFile,
   PakFileInfo,
   ScreenshotFileInfo,
+  UserInfo,
+  WebUserInfo,
+  GiftItemTableRow,
 } from '@types'
 
 /**
@@ -47,6 +50,7 @@ export type IpcMainEvents =
       'show-notification': [{ title?: string; body?: string } | undefined | null]
       'open-recharge-center': [string | undefined]
       'open-announcement-detail': [AnnouncementData]
+      'open-shipping-assistant': []
     }
   | {
       // ========== 请求-响应 (handle/invoke) ==========
@@ -127,8 +131,30 @@ export type IpcMainEvents =
           }
         | undefined
       'open-game-recovery': (gamePath: string) => IpcResult
-      'export-lottery-stats': (userInfo: { username?: string; password?: string }) => IpcResult
+      'web-login': (userInfo: UserInfo) => IpcResult<{
+        userInfo: WebUserInfo
+      }>
+      'check-web-login': (userInfoList: WebUserInfo[]) => IpcResult<{
+        userInfoList: WebUserInfo[]
+        failedUsername?: string
+      }>
+      /** 并发重新登录，全部成功则返回与入参顺序一致的新 WebUserInfo 列表 */
+      'refresh-web-users': (userInfoList: WebUserInfo[]) => IpcResult<{
+        userInfoList: WebUserInfo[]
+      }>
+      'get-gift-list': (userInfoList: WebUserInfo[]) => IpcResult<{
+        items: GiftItemTableRow[]
+      }>
     }
+
+/** 主进程 → 渲染进程日志（正常 / 错误 / 成功） */
+export type MainLogKind = 'info' | 'error' | 'success'
+
+export interface MainLogPayload {
+  at: number
+  kind: MainLogKind
+  text: string
+}
 
 /**
  * 渲染进程 IPC 事件类型（主进程发送到渲染进程）
@@ -136,4 +162,5 @@ export type IpcMainEvents =
 export type IpcRendererEvents = {
   'announcement-detail-data': [AnnouncementData]
   'patch-progress': [PatchProgressPayload]
+  'main-log': [MainLogPayload]
 }

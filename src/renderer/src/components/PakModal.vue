@@ -19,7 +19,12 @@
     >
       <p class="pak-desc">你可以通过拖拽文件来快速安装补丁</p>
       <div v-if="mergedPaks.length > 0" class="pak-list">
-        <div v-for="item in mergedPaks" :key="item.name" class="pak-item-row">
+        <div
+          v-for="item in mergedPaks"
+          :key="item.name"
+          class="pak-item-row"
+          :class="{ 'pak-item-row--inactive': pakRowInactiveByName[item.name] }"
+        >
           <Checkbox v-model="selected[item.name]">
             {{ item.name }}
           </Checkbox>
@@ -45,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Modal from './Modal.vue'
 import Checkbox from './Checkbox.vue'
 import { confirm } from '@renderer/composables/useConfirm'
@@ -82,6 +87,16 @@ const originalEnabledMap = ref<Record<string, boolean>>({})
 
 // 当前勾选状态：true 表示希望该补丁存在于游戏目录中
 const selected = ref<Record<string, boolean>>({})
+
+/** 未勾选行样式：用 computed 聚合读取，避免模板里对 ref 动态下标追踪不稳定 */
+const pakRowInactiveByName = computed(() => {
+  const map = selected.value
+  const out: Record<string, boolean> = {}
+  for (const item of mergedPaks.value) {
+    out[item.name] = map[item.name] !== true
+  }
+  return out
+})
 
 // 拖拽状态
 const isDragging = ref(false)
@@ -356,14 +371,27 @@ watch(
   align-items: center;
   gap: 8px;
   justify-content: space-between;
+  transition: opacity 0.3s ease;
 
   .checkbox-wrapper {
     max-width: 70%;
+    min-width: 0;
+  }
+
+  .checkbox-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   button {
     flex-shrink: 0;
   }
+}
+
+/* 单独写出复合选择器，避免嵌套 &-- 在部分构建下未命中 */
+.pak-item-row.pak-item-row--inactive {
+  opacity: 0.65;
 }
 
 .pak-delete {
