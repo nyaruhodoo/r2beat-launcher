@@ -1,6 +1,12 @@
 <template>
   <div class="main-log-panel">
     <div class="main-log-toolbar">
+      <div class="main-log-toolbar-actions">
+        <el-button size="small" @click="clearLogs">清空</el-button>
+        <el-button size="small" :disabled="logsList.length === 0" @click="exportLogsTxt"
+          >导出</el-button
+        >
+      </div>
       <el-button size="small" @click="autoScroll = !autoScroll">
         {{ autoScroll ? '自动滚动中' : '已暂停滚动' }}
       </el-button>
@@ -12,9 +18,10 @@
             v-if="height > 0 && width > 0"
             ref="tableRef"
             :columns="columnsFor(width)"
-            :data="logs"
+            :data="logsList"
             :width="width"
             :height="height"
+            :header-height="0"
             row-key="id"
             :estimated-row-height="22"
             :h-scrollbar-size="0"
@@ -32,9 +39,13 @@
 
 <script lang="ts" setup>
 import type { TableV2Instance } from 'element-plus'
-import { h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useLocalStorageState } from 'vue-hooks-plus'
 import { ipcListener } from '@renderer/ipc'
+import { useToast } from '@renderer/composables/useToast'
 import type { MainLogKind, MainLogPayload } from '../../../../ipc/contracts'
+
+const { success: toastSuccess } = useToast()
 
 const MAX_LOGS = 500
 
@@ -47,8 +58,22 @@ interface LogRow {
   text: string
 }
 
-const logs = ref<LogRow[]>([])
+const [logs, setLogs] = useLocalStorageState<LogRow[]>('r2beat_shipping_main_log_v1', {
+  defaultValue: [],
+})
+
+const logsList = computed(() => logs.value ?? [])
+
 let seq = 0
+
+function syncSeqFromStoredLogs() {
+  let max = 0
+  for (const r of logs.value ?? []) {
+    const n = parseInt(r.id, 10)
+    if (!Number.isNaN(n) && n > max) max = n
+  }
+  seq = max
+}
 
 const tableRef = ref<TableV2Instance>()
 
@@ -71,8 +96,42 @@ function append(payload: MainLogPayload) {
     time,
     text: payload.text,
   }
-  const next = logs.value.concat(row)
-  logs.value = next.length > MAX_LOGS ? next.slice(-MAX_LOGS) : next
+  const list = logs.value ?? []
+  const next = list.concat(row)
+  setLogs(next.length > MAX_LOGS ? next.slice(-MAX_LOGS) : next)
+}
+
+function clearLogs() {
+  setLogs([])
+  seq = 0
+}
+
+function formatExportFileName() {
+  const d = new Date()
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `shipping-assistant-log_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.txt`
+}
+
+function exportLogsTxt() {
+  const rows = logsList.value
+  if (!rows.length) return
+
+  const lines = rows.map((r) => {
+    const textOneLine = r.text.replace(/\r?\n/g, ' ')
+    return `${r.time}\t${textOneLine}`
+  })
+  const content = `\uFEFF${lines.join('\r\n')}`
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = formatExportFileName()
+  a.rel = 'noopener'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+  toastSuccess('已导出日志')
 }
 
 function columnsFor(w: number) {
@@ -124,6 +183,7 @@ function columnsFor(w: number) {
 let offMainLog: (() => void) | undefined
 
 onMounted(() => {
+  syncSeqFromStoredLogs()
   offMainLog = ipcListener.on('main-log', (_e, payload: MainLogPayload) => {
     append(payload)
   })
@@ -134,11 +194,11 @@ onUnmounted(() => {
 })
 
 watch(
-  () => logs.value.length,
+  () => logsList.value.length,
   () => {
     if (autoScroll.value && tableRef.value) {
       nextTick(() => {
-        const lastIndex = logs.value.length - 1
+        const lastIndex = logsList.value.length - 1
         if (lastIndex >= 0) {
           tableRef.value?.scrollToRow(lastIndex)
         }
@@ -161,8 +221,17 @@ watch(
   flex: none;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
   padding: 0 2px;
+}
+
+.main-log-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .main-log-body {
