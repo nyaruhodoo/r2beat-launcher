@@ -674,12 +674,11 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 4px 0;
 }
 
 .user-list-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   margin-bottom: 0;
   color: var(--color-text-primary);
 }
@@ -705,7 +704,7 @@ watch(
 
   .checkbox-wrapper {
     max-width: 70%;
-    min-width: 0;
+    min-width: 150px;
   }
 
   .checkbox-text {

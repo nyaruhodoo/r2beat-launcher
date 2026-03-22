@@ -90,8 +90,6 @@ const props = defineProps<{
 
 const { error: toastError, success: toastSuccess } = useToast()
 
-const GIFT_ITEM_IMAGE_BASE = 'https://r2beat-web-cdn.xiyouxi.com/images/sub/gift/item'
-
 /**
  * 原始道具数据
  */
@@ -115,12 +113,18 @@ const tableRef = ref<InstanceType<typeof ElTable>>()
 const canFetch = computed(() => props.accounts.length > 0)
 
 /**
- * 道具分组
+ * 道具分组：只保留 user_id 仍属于当前启用账号（与 username 一致）的道具
  */
 const groupedRows = computed(() => {
   const items = storedGiftItems.value ?? []
   if (!items.length) return []
-  const grouped = processGiftData(items)
+
+  const enabledIds = new Set(props.accounts.map((a) => a.username))
+  const filtered = items.filter((item) => enabledIds.has(item.user_id))
+
+  if (!filtered.length) return []
+
+  const grouped = processGiftData(filtered)
   grouped.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'))
   return grouped
 })
@@ -179,8 +183,7 @@ function rowMatches(row: GiftGroupedData, kw: string): boolean {
       item.character_name,
       item.created_at,
       item.server_name,
-      (item as { accountUsername?: string }).accountUsername,
-      (item as { accountRemark?: string }).accountRemark,
+      item.user_id,
     ]
       .filter(Boolean)
       .join(' ')
@@ -189,10 +192,13 @@ function rowMatches(row: GiftGroupedData, kw: string): boolean {
   })
 }
 
+/**
+ * 获取道具图片
+ */
 function giftItemImageUrl(item: GiftGroupedData) {
   const code = String(item.code ?? '').trim()
   if (!code) return ''
-  return `${GIFT_ITEM_IMAGE_BASE}/${encodeURIComponent(code)}.png`
+  return `https://r2beat-web-cdn.xiyouxi.com/images/sub/gift/item/${code}.png`
 }
 
 function onSelectionChange(rows: GiftGroupedData[]) {
