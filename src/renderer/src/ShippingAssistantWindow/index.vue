@@ -31,12 +31,11 @@
 import CustomTitleBar from '../components/CustomTitleBar.vue'
 import UserInfoCom from './components/UserInfo.vue'
 import LoginModal from './components/LoginModal.vue'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import { WebUserInfo } from '@types'
-import { ipcEmitter, ipcArg, ipcListener } from '@renderer/ipc'
+import { ipcEmitter, ipcArg } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'
-import type { MainLogPayload } from '../../../ipc/contracts'
 import ItemTable from './components/ItemTable.vue'
 
 const { error: toastError } = useToast()
@@ -136,19 +135,6 @@ const applyTheme = (newTheme?: string) => {
   root.classList.add(`${newTheme.trim()}-theme`)
 }
 applyTheme('qingchunlv')
-
-/**
- * 日志行为
- */
-onMounted(() => {
-  const offMainLog = ipcListener.on('main-log', (_e, payload: MainLogPayload) => {
-    const t = new Date(payload.at).toLocaleString()
-    const line = `[main] ${t} [${payload.kind}] ${payload.text}`
-    if (payload.kind === 'error') console.error(line)
-    else console.log(line)
-  })
-  onUnmounted(() => offMainLog?.())
-})
 </script>
 
 <style scoped>

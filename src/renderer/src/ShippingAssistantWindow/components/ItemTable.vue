@@ -65,7 +65,9 @@
       </div>
     </el-splitter-panel>
     <el-splitter-panel size="40%" :resizable="false">
-      <div class="logs">123</div>
+      <div class="log-wrap">
+        <MainLogPanel />
+      </div>
     </el-splitter-panel>
   </el-splitter>
 </template>
@@ -79,6 +81,7 @@ import { useToast } from '@renderer/composables/useToast'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import type { ElTable } from 'element-plus'
 import { Utils } from '../utils'
+import MainLogPanel from './MainLogPanel.vue'
 
 const props = defineProps<{
   accounts: WebUserInfo[]
@@ -109,7 +112,6 @@ const loading = ref(false)
 const keyword = ref('')
 const selectedRows = ref<GiftGroupedData[]>([])
 const tableRef = ref<InstanceType<typeof ElTable>>()
-
 const canFetch = computed(() => props.accounts.length > 0)
 
 /**
@@ -240,6 +242,8 @@ watch(keyword, () => {
 <style scoped>
 .el-splitter {
   gap: 10px;
+  height: 100%;
+  min-height: 0;
 }
 .item-table-wrap {
   display: flex;
@@ -315,5 +319,16 @@ watch(keyword, () => {
   color: var(--color-text-tertiary, var(--el-text-color-placeholder));
   background: var(--color-bg-card, var(--el-fill-color));
   border-radius: 6px;
+}
+
+.log-wrap {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--el-fill-color-blank);
 }
 </style>
