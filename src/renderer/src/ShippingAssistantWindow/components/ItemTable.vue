@@ -82,7 +82,6 @@ import { Utils } from '../utils'
 
 const props = defineProps<{
   accounts: WebUserInfo[]
-  /** 数据同步前校验网页登录；返回 true 时继续拉取礼物列表 */
   verifyLoginBeforeSync: () => Promise<boolean>
 }>()
 
@@ -101,7 +100,6 @@ const [lastSyncAt, setLastSyncAt] = useLocalStorageState<number | null>(
 )
 
 const loading = ref(false)
-const lastError = ref('')
 const keyword = ref('')
 const selectedRows = ref<GiftGroupedData[]>([])
 const tableRef = ref<InstanceType<typeof ElTable>>()
@@ -181,26 +179,26 @@ function onSelectionChange(rows: GiftGroupedData[]) {
   selectedRows.value = rows
 }
 
+/**
+ * 获取已启用账户道具
+ */
 async function fetchAndStoreGifts() {
   const result = await ipcEmitter.invoke('get-gift-list', ipcArg(props.accounts))
   if (!result.success) {
-    lastError.value = result.error ?? '获取失败'
-    toastError(lastError.value)
+    toastError(result.error ?? '获取道具数据失败')
     return false
   }
   const raw = result.items ?? []
   const grouped = processGiftData(raw)
   grouped.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'))
   setStoredGroups(grouped)
-  lastError.value = ''
   return true
 }
 
 async function syncData() {
-  if (!canFetch.value) return
+  if (!canFetch.value || loading.value) return
 
   loading.value = true
-  lastError.value = ''
   try {
     const ready = await props.verifyLoginBeforeSync()
     if (!ready) return
@@ -212,7 +210,6 @@ async function syncData() {
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    lastError.value = msg
     toastError(msg)
   } finally {
     loading.value = false
