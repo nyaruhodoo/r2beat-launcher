@@ -72,7 +72,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import type { GiftGroupedData, WebUserInfo } from '@types'
+import type { GiftGroupedData, GiftItem, WebUserInfo } from '@types'
 import { processGiftData } from '../gift-process'
 import { ipcEmitter, ipcArg } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'
@@ -89,11 +89,17 @@ const { error: toastError, success: toastSuccess } = useToast()
 
 const GIFT_ITEM_IMAGE_BASE = 'https://r2beat-web-cdn.xiyouxi.com/images/sub/gift/item'
 
-const [storedGroups, setStoredGroups] = useLocalStorageState<GiftGroupedData[]>(
-  'r2beat_shipping_gift_table_groups_v1',
+/**
+ * 原始道具数据
+ */
+const [storedGiftItems, setStoredGiftItems] = useLocalStorageState<GiftItem[]>(
+  'r2beat_shipping_gift_raw_items_v1',
   { defaultValue: [] },
 )
 
+/**
+ * 上次同步数据时间
+ */
 const [lastSyncAt, setLastSyncAt] = useLocalStorageState<number | null>(
   'r2beat_shipping_last_sync_at',
   { defaultValue: null },
@@ -106,18 +112,30 @@ const tableRef = ref<InstanceType<typeof ElTable>>()
 
 const canFetch = computed(() => props.accounts.length > 0)
 
+/**
+ * 道具分组
+ */
+const groupedRows = computed(() => {
+  const items = storedGiftItems.value ?? []
+  if (!items.length) return []
+  const grouped = processGiftData(items)
+  grouped.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'))
+  return grouped
+})
+
+/**
+ * 表格数据，根据关键字做二次筛选
+ */
 const displayData = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
-  const rows = storedGroups.value ?? []
+  const rows = groupedRows.value
   if (!kw) return rows
   return rows.filter((row) => rowMatches(row, kw))
 })
 
-const groupCount = computed(() => (storedGroups.value ?? []).length)
+const groupCount = computed(() => groupedRows.value.length)
 
-const totalItemCount = computed(() =>
-  (storedGroups.value ?? []).reduce((n, g) => n + g.list.length, 0),
-)
+const totalItemCount = computed(() => groupedRows.value.reduce((n, g) => n + g.list.length, 0))
 
 /** 每分钟刷新相对时间文案 */
 const relativeTimeTick = ref(0)
@@ -180,7 +198,7 @@ function onSelectionChange(rows: GiftGroupedData[]) {
 }
 
 /**
- * 获取已启用账户道具
+ * 获取已启用账户道具（仅持久化原始 items；分组与筛选由计算属性完成）
  */
 async function fetchAndStoreGifts() {
   const result = await ipcEmitter.invoke('get-gift-list', ipcArg(props.accounts))
@@ -189,9 +207,7 @@ async function fetchAndStoreGifts() {
     return false
   }
   const raw = result.items ?? []
-  const grouped = processGiftData(raw)
-  grouped.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'))
-  setStoredGroups(grouped)
+  setStoredGiftItems(raw)
   return true
 }
 
