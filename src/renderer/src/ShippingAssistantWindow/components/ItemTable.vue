@@ -68,15 +68,15 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column align="center" :label="`道具种类(${groupCount})`">
+          <el-table-column align="center" width="100" :label="`道具种类(${groupCount})`">
             <template #default="{ row }">
               <el-image :src="giftItemImageUrl(row)" fit="contain" lazy class="gift-item-thumb">
               </el-image>
             </template>
           </el-table-column>
           <el-table-column prop="name" label="道具名称" show-overflow-tooltip />
-          <el-table-column prop="total" label="总计" />
-          <el-table-column :label="`总物品数量(${totalItemCount})`">
+          <el-table-column prop="total" align="center" width="100" label="总计" />
+          <el-table-column align="center" width="100" :label="`总物品数量(${totalItemCount})`">
             <template #default="{ row }">{{ row.list.length }}</template>
           </el-table-column>
         </el-table>
@@ -362,7 +362,8 @@ watch(keyword, () => {
   background: var(--el-bg-color);
 }
 
-.item-table-expand :deep(.item-table-expand__grid .el-table__row.el-table__row--striped .el-table__cell) {
+.item-table-expand
+  :deep(.item-table-expand__grid .el-table__row.el-table__row--striped .el-table__cell) {
   background: var(--el-fill-color-lighter) !important;
 }
 
