@@ -6,14 +6,14 @@
     "src/preload/**/*",
     "src/types.ts",
     "src/config.ts",
-    "src/ipc/**/*",
+    "src/ipc/**/*"
   ],
   "compilerOptions": {
     "composite": true,
     "types": ["electron-vite/node"],
     "paths": {
       "@types": ["./src/types.ts"],
-      "@config": ["./src/config.ts"],
-    },
-  },
+      "@config": ["./src/config.ts"]
+    }
+  }
 }

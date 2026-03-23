@@ -5,19 +5,43 @@
         <div class="item-table-toolbar">
           <div class="item-table-toolbar-sync">
             <el-button type="primary" :disabled="!canFetch" @click="syncData"> 数据同步 </el-button>
-            <span class="item-table-last-sync">{{ lastSyncDisplay }}</span>
+            <span class="item-table-last-sync">
+              {{ lastSyncDisplay }}
+              <span v-if="shouldSuggestSync" class="item-table-sync-suggest-text"
+                >，建议同步（启用账号有变更）</span
+              >
+            </span>
+
+            <el-button :disabled="displayData.length === 0" @click="exportGroupedSummaryTxt">
+              导出
+            </el-button>
           </div>
-          <el-autocomplete
-            v-model="keyword"
-            class="item-table-filter"
-            clearable
-            :trigger-on-focus="true"
-            :fetch-suggestions="querySearchItemName"
-            placeholder="按道具名称筛选"
-            @select="onKeywordSelect"
-          />
-          <div>
-            <span v-if="!canFetch" class="item-table-hint">暂无已启用且已登录的账号</span>
+          <div class="item-table-filters">
+            <el-autocomplete
+              v-model="keyword"
+              class="item-table-filter"
+              clearable
+              :trigger-on-focus="true"
+              :fetch-suggestions="querySearchItemName"
+              placeholder="按道具名称筛选"
+              @select="onKeywordSelect"
+            />
+            <el-select
+              v-model="selectedKeywordGroups"
+              class="item-table-filter-select"
+              multiple
+              collapse-tags
+              collapse-tags-tooltip
+              clearable
+              placeholder="按分类筛选"
+            >
+              <el-option
+                v-for="group in keywordGroupOptions"
+                :key="group.value"
+                :label="group.label"
+                :value="group.value"
+              />
+            </el-select>
           </div>
         </div>
         <el-table
@@ -29,6 +53,7 @@
           class="item-table"
           empty-text="暂无数据，请点击「数据同步」拉取"
           row-key="code"
+          :default-sort="{ prop: 'latestCreatedAt', order: 'descending' }"
           @sort-change="onSortChange"
           @selection-change="onSelectionChange"
         >
@@ -53,13 +78,7 @@
             width="170"
             sortable="custom"
           />
-          <el-table-column
-            prop="total"
-            align="center"
-            width="100"
-            label="总计"
-            sortable="custom"
-          />
+          <el-table-column prop="total" align="center" width="100" label="总计" sortable="custom" />
           <el-table-column
             prop="itemCount"
             align="center"
@@ -115,6 +134,14 @@ const [lastSyncAt, setLastSyncAt] = useLocalStorageState<number | null>(
   { defaultValue: null },
 )
 
+/**
+ * 上次同步时参与同步的账号列表（username）
+ */
+const [lastSyncedAccountUsernames, setLastSyncedAccountUsernames] = useLocalStorageState<string[]>(
+  'r2beat_shipping_last_synced_account_usernames_v1',
+  { defaultValue: [] },
+)
+
 type GroupedRow = GiftGroupedData & {
   latestCreatedAt: string
   latestCreatedAtTs: number
@@ -126,6 +153,7 @@ type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | null
 
 const loading = ref(false)
 const keyword = ref('')
+const selectedKeywordGroups = ref<string[]>([])
 const selectedRows = ref<GroupedRow[]>([])
 const tableRef = ref<InstanceType<typeof ElTable>>()
 const canFetch = computed(() => props.accounts.length > 0)
@@ -169,7 +197,8 @@ const groupedRows = computed<GroupedRow[]>(() => {
     }
   })
 
-  grouped.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'))
+  // 默认按获得时间降序（与 sortState / default-sort 一致）
+  grouped.sort((a, b) => b.latestCreatedAtTs - a.latestCreatedAtTs)
   return grouped
 })
 
@@ -179,7 +208,13 @@ const groupedRows = computed<GroupedRow[]>(() => {
 const displayData = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   const rows = groupedRows.value
-  const filtered = !kw ? rows : rows.filter((row) => rowMatches(row, kw))
+  const filteredByText = !kw ? rows : rows.filter((row) => rowMatches(row, kw))
+
+  const pickedKeywords = selectedGroupKeywords.value
+  const filtered =
+    pickedKeywords.length === 0
+      ? filteredByText
+      : filteredByText.filter((row) => rowMatchesAnyKeyword(row, pickedKeywords))
 
   if (!sortState.value.order || !sortState.value.prop) return filtered
   const sorted = [...filtered]
@@ -195,9 +230,12 @@ const displayData = computed(() => {
     )
   } else if (sortState.value.prop === 'total') {
     sorted.sort((a, b) =>
-      sortState.value.order === 'ascending' ? a._countValue - b._countValue : b._countValue - a._countValue,
+      sortState.value.order === 'ascending'
+        ? a._countValue - b._countValue
+        : b._countValue - a._countValue,
     )
   }
+
   return sorted
 })
 
@@ -212,9 +250,55 @@ const itemNameOptions = computed<NameOption[]>(() => {
   return Array.from(set).map((name) => ({ value: name }))
 })
 
-const groupCount = computed(() => groupedRows.value.length)
+const keywordGroupOptions = [
+  {
+    label: '刷分套',
+    value: 'shuafen',
+    keywords: [
+      'mini游戏机',
+      '冠军之王',
+      'lua简约玩伴装',
+      '精灵sara',
+      '精灵kuma',
+      '智慧头型',
+      '冠军之王',
+      'ac达人',
+      'pd之王',
+    ],
+  },
+  {
+    label: '模式',
+    value: 'moshi',
+    keywords: ['突发模式', '镜子模式', '随机模式'],
+  },
+  {
+    label: '日用品',
+    value: 'riyongpin',
+    keywords: [
+      '昵称卡',
+      '名片卡',
+      '彩笔',
+      '玩伴舞蹈',
+      '玩伴恰恰舞',
+      '玩伴动作',
+      '登场特效',
+      '聊天框',
+    ],
+  },
+]
 
-const totalItemCount = computed(() => groupedRows.value.reduce((n, g) => n + g.list.length, 0))
+const selectedGroupKeywords = computed(() => {
+  const picked = new Set(selectedKeywordGroups.value)
+  return keywordGroupOptions
+    .filter((group) => picked.has(group.value))
+    .flatMap((group) => group.keywords)
+})
+
+const groupCount = computed(() => displayData.value.length)
+
+const totalItemCount = computed(() =>
+  displayData.value.reduce((n, g) => n + g.list.length, 0),
+)
 
 /** 每分钟刷新相对时间文案 */
 const relativeTimeTick = ref(0)
@@ -241,6 +325,14 @@ const lastSyncDisplay = computed(() => {
   return `上次同步：${Utils.formatRelativePastZh(t)}`
 })
 
+const shouldSuggestSync = computed(() => {
+  const enabled = props.accounts.map((account) => account.username).filter(Boolean)
+  if (enabled.length === 0) return false
+  const lastSynced = new Set((lastSyncedAccountUsernames.value ?? []).filter(Boolean))
+  if (lastSynced.size === 0) return false
+  return enabled.some((username) => !lastSynced.has(username))
+})
+
 function rowMatches(row: GiftGroupedData, kw: string): boolean {
   if (
     row.name.toLowerCase().includes(kw) ||
@@ -263,6 +355,15 @@ function rowMatches(row: GiftGroupedData, kw: string): boolean {
       .toLowerCase()
     return text.includes(kw)
   })
+}
+
+function rowMatchesAnyKeyword(row: GiftGroupedData, keywords: string[]): boolean {
+  const lowers = keywords.map((k) => k.trim().toLowerCase()).filter(Boolean)
+  if (!lowers.length) return true
+  const allNames = [row.name, ...row.list.map((i) => i.item_name)].map((t) =>
+    String(t ?? '').toLowerCase(),
+  )
+  return lowers.some((kw) => allNames.some((name) => name.includes(kw)))
 }
 
 /**
@@ -292,8 +393,44 @@ function onKeywordSelect(item: Record<string, unknown>) {
   keyword.value = String(item.value ?? '')
 }
 
+function formatExportFileName() {
+  const d = new Date()
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `gift-group-summary_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.txt`
+}
+
+/**
+ * 前端导出道具种类汇总：
+ * 【道具名称】  总数+单位
+ */
+function exportGroupedSummaryTxt() {
+  const rows = displayData.value
+  if (!rows.length) {
+    toastError('暂无可导出的道具种类')
+    return
+  }
+
+  const content = '\uFEFF' + rows.map((row) => `【${row.name}】  ${row.total}\r\n\r\n`).join('')
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = formatExportFileName()
+  a.rel = 'noopener'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+  toastSuccess('已导出道具种类统计')
+}
+
 function onSortChange(payload: { prop: string; order: SortOrder }) {
-  if (payload.prop !== 'latestCreatedAt' && payload.prop !== 'itemCount' && payload.prop !== 'total') {
+  if (
+    payload.prop !== 'latestCreatedAt' &&
+    payload.prop !== 'itemCount' &&
+    payload.prop !== 'total'
+  ) {
     sortState.value = { prop: null, order: null }
     return
   }
@@ -328,6 +465,9 @@ async function syncData() {
     const ok = await fetchAndStoreGifts()
     if (ok) {
       setLastSyncAt(Date.now())
+      setLastSyncedAccountUsernames(
+        props.accounts.map((account) => account.username).filter(Boolean),
+      )
       toastSuccess('数据同步完成')
     }
   } catch (e) {
@@ -339,6 +479,10 @@ async function syncData() {
 }
 
 watch(keyword, () => {
+  tableRef.value?.clearSelection()
+})
+
+watch(selectedKeywordGroups, () => {
   tableRef.value?.clearSelection()
 })
 </script>
@@ -356,6 +500,7 @@ watch(keyword, () => {
   height: 100%;
 
   .item-table-toolbar {
+    display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
@@ -363,22 +508,40 @@ watch(keyword, () => {
 }
 
 .item-table-toolbar-sync {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .item-table-last-sync {
+  margin-right: auto;
   font-size: 12px;
   line-height: 1.3;
   color: var(--color-text-tertiary, #909399);
   white-space: nowrap;
 }
 
+.item-table-sync-suggest-text {
+  color: var(--el-color-warning, #e6a23c);
+}
+
 .item-table-filter {
-  width: min(360px, 100%);
-  flex: 1;
-  min-width: 200px;
+  flex: 1 1 0;
+  min-width: 160px;
+}
+
+.item-table-filters {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+.item-table-filter-select {
+  flex: 1 1 0;
+  min-width: 160px;
 }
 
 .item-table-hint {
