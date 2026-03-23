@@ -2048,8 +2048,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
     // 计算居中坐标 (公式：父坐标 - 超出长度的一半)
     // x = mainBounds.x + (mainBounds.width - newWidth) / 2
-    const x = Math.floor(mainBounds!.x + (mainBounds!.width - newWidth) / 2)
-    const y = Math.floor(mainBounds!.y + (mainBounds!.height - newHeight) / 2)
+    const x = Math.max(0, Math.floor(mainBounds!.x + (mainBounds!.width - newWidth) / 2))
+    const y = Math.max(0, Math.floor(mainBounds!.y + (mainBounds!.height - newHeight) / 2))
 
     const window = new BrowserWindow({
       width: newWidth,
