@@ -7,11 +7,14 @@
             <el-button type="primary" :disabled="!canFetch" @click="syncData"> 数据同步 </el-button>
             <span class="item-table-last-sync">{{ lastSyncDisplay }}</span>
           </div>
-          <el-input
+          <el-autocomplete
             v-model="keyword"
             class="item-table-filter"
             clearable
+            :trigger-on-focus="true"
+            :fetch-suggestions="querySearchItemName"
             placeholder="按道具名称筛选"
+            @select="onKeywordSelect"
           />
           <div>
             <span v-if="!canFetch" class="item-table-hint">暂无已启用且已登录的账号</span>
@@ -198,6 +201,17 @@ const displayData = computed(() => {
   return sorted
 })
 
+type NameOption = { value: string }
+
+const itemNameOptions = computed<NameOption[]>(() => {
+  const set = new Set<string>()
+  for (const row of displayData.value) {
+    const name = (row.name ?? '').trim()
+    if (name) set.add(name)
+  }
+  return Array.from(set).map((name) => ({ value: name }))
+})
+
 const groupCount = computed(() => groupedRows.value.length)
 
 const totalItemCount = computed(() => groupedRows.value.reduce((n, g) => n + g.list.length, 0))
@@ -262,6 +276,20 @@ function giftItemImageUrl(item: GiftGroupedData) {
 
 function onSelectionChange(rows: GroupedRow[]) {
   selectedRows.value = rows
+}
+
+function querySearchItemName(queryString: string, cb: (results: NameOption[]) => void) {
+  const q = queryString.trim().toLowerCase()
+  const source = itemNameOptions.value
+  if (!q) {
+    cb(source)
+    return
+  }
+  cb(source.filter((item) => item.value.toLowerCase().includes(q)))
+}
+
+function onKeywordSelect(item: Record<string, unknown>) {
+  keyword.value = String(item.value ?? '')
 }
 
 function onSortChange(payload: { prop: string; order: SortOrder }) {

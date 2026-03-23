@@ -18,6 +18,7 @@ declare module 'vue' {
     CustomSelect: typeof import('./src/components/CustomSelect.vue')['default']
     CustomTitleBar: typeof import('./src/components/CustomTitleBar.vue')['default']
     Dropdown: typeof import('./src/components/Dropdown.vue')['default']
+    ElAutocomplete: typeof import('element-plus/es')['ElAutocomplete']
     ElAutoResizer: typeof import('element-plus/es')['ElAutoResizer']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElImage: typeof import('element-plus/es')['ElImage']
