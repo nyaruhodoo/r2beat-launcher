@@ -206,6 +206,26 @@ watch(
     }
   },
 )
+
+function scrollToLast() {
+  const lastIndex = logsList.value.length - 1
+  if (lastIndex >= 0) {
+    tableRef.value?.scrollToRow(lastIndex)
+  }
+}
+
+// 组件初次渲染时如果本地已存在日志，tableRef 往往在 v-if(height/width) 条件后才会就绪。
+// 监听 tableRef 的变化，确保首次也能滚到底部。
+watch(
+  tableRef,
+  () => {
+    if (!autoScroll.value) return
+    nextTick(() => {
+      scrollToLast()
+    })
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>
