@@ -69,7 +69,13 @@
               </el-image>
             </template>
           </el-table-column>
-          <el-table-column prop="name" label="道具名称" align="center" show-overflow-tooltip />
+          <el-table-column
+            prop="name"
+            label="道具名称"
+            align="center"
+            show-overflow-tooltip
+            sortable="custom"
+          />
           <el-table-column
             prop="latestCreatedAt"
             label="获得时间"
@@ -100,7 +106,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { GiftGroupedData, GiftItem, WebUserInfo } from '@types'
 import { processGiftData } from '../gift-process'
 import { ipcEmitter, ipcArg } from '@renderer/ipc'
@@ -149,7 +155,7 @@ type GroupedRow = GiftGroupedData & {
 }
 
 type SortOrder = 'ascending' | 'descending' | null
-type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | null
+type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | 'name' | null
 
 const loading = ref(false)
 const keyword = ref('')
@@ -202,6 +208,102 @@ const groupedRows = computed<GroupedRow[]>(() => {
   return grouped
 })
 
+/** 道具名称首字符的 Unicode 码点（用于「编码先后」排序） */
+function firstCharCodePoint(name: string): number {
+  const t = (name ?? '').trim()
+  if (!t.length) return -1
+  return t.codePointAt(0) ?? -1
+}
+
+function compareByFirstCodePointAsc(a: GroupedRow, b: GroupedRow): number {
+  const ca = firstCharCodePoint(a.name)
+  const cb = firstCharCodePoint(b.name)
+  if (ca !== cb) return ca - cb
+  return (a.name || '').localeCompare(b.name || '', 'zh-CN')
+}
+
+function sortByFirstCodePoint(rows: GroupedRow[], order: 'ascending' | 'descending'): GroupedRow[] {
+  const sorted = [...rows]
+  sorted.sort((a, b) =>
+    order === 'ascending' ? compareByFirstCodePointAsc(a, b) : compareByFirstCodePointAsc(b, a),
+  )
+  return sorted
+}
+
+/** 编辑距离（短名称相似度补充） */
+function levenshtein(a: string, b: string): number {
+  const m = a.length
+  const n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+  const row = new Uint16Array(n + 1)
+  for (let j = 0; j <= n; j++) row[j] = j
+  for (let i = 1; i <= m; i++) {
+    let prev = row[0]
+    row[0] = i
+    for (let j = 1; j <= n; j++) {
+      const tmp = row[j]
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + cost)
+      prev = tmp
+    }
+  }
+  return row[n]
+}
+
+function nameSimilarityScore(a: string, b: string): number {
+  const na = (a ?? '').trim()
+  const nb = (b ?? '').trim()
+  if (!na && !nb) return 1
+  if (!na || !nb) return 0
+  if (na === nb) return 1
+
+  const maxLen = Math.max(na.length, nb.length)
+  let lcp = 0
+  for (let i = 0; i < Math.min(na.length, nb.length); i++) {
+    if (na[i] !== nb[i]) break
+    lcp++
+  }
+  let score = lcp / maxLen
+  if (na.includes(nb) || nb.includes(na)) {
+    score = Math.max(score, 0.88)
+  }
+  if (maxLen <= 36) {
+    const dist = levenshtein(na, nb)
+    const levScore = 1 - dist / maxLen
+    score = Math.max(score, levScore)
+  }
+  return score
+}
+
+/** 贪心链式：相邻行名称尽量相似 */
+function sortRowsByNameSimilarityChain(rows: GroupedRow[]): GroupedRow[] {
+  if (rows.length <= 1) return rows
+  const remaining = [...rows]
+  remaining.sort((x, y) => (x.name || '').localeCompare(y.name || '', 'zh-CN'))
+  const out: GroupedRow[] = [remaining.shift()!]
+  while (remaining.length) {
+    const lastName = out[out.length - 1].name || ''
+    let bestIdx = 0
+    let bestScore = -1
+    for (let i = 0; i < remaining.length; i++) {
+      const s = nameSimilarityScore(lastName, remaining[i].name || '')
+      if (s > bestScore) {
+        bestScore = s
+        bestIdx = i
+      } else if (s === bestScore) {
+        const tie = (remaining[i].name || '').localeCompare(
+          remaining[bestIdx].name || '',
+          'zh-CN',
+        )
+        if (tie < 0) bestIdx = i
+      }
+    }
+    out.push(remaining.splice(bestIdx, 1)[0])
+  }
+  return out
+}
+
 /**
  * 表格数据，根据关键字做二次筛选
  */
@@ -216,7 +318,18 @@ const displayData = computed(() => {
       ? filteredByText
       : filteredByText.filter((row) => rowMatchesAnyKeyword(row, pickedKeywords))
 
-  if (!sortState.value.order || !sortState.value.prop) return filtered
+  const ss = sortState.value
+  if (ss.prop === 'name') {
+    if (ss.order === 'ascending') {
+      return sortByFirstCodePoint(filtered, 'ascending')
+    }
+    if (ss.order === 'descending') {
+      return sortByFirstCodePoint(filtered, 'descending')
+    }
+    return sortRowsByNameSimilarityChain(filtered)
+  }
+
+  if (!ss.order || !ss.prop) return filtered
   const sorted = [...filtered]
   if (sortState.value.prop === 'latestCreatedAt') {
     sorted.sort((a, b) =>
@@ -426,17 +539,34 @@ function exportGroupedSummaryTxt() {
 }
 
 function onSortChange(payload: { prop: string; order: SortOrder }) {
+  const { prop, order } = payload
+
+  if (prop === 'name') {
+    sortState.value = { prop: 'name', order }
+    return
+  }
+
+  if (!prop) {
+    sortState.value = { prop: 'latestCreatedAt', order: 'descending' }
+    nextTick(() => {
+      const table = tableRef.value as { sort?: (p: string, o: string) => void } | undefined
+      table?.sort?.('latestCreatedAt', 'descending')
+    })
+    return
+  }
+
   if (
-    payload.prop !== 'latestCreatedAt' &&
-    payload.prop !== 'itemCount' &&
-    payload.prop !== 'total'
+    prop !== 'latestCreatedAt' &&
+    prop !== 'itemCount' &&
+    prop !== 'total'
   ) {
     sortState.value = { prop: null, order: null }
     return
   }
+
   sortState.value = {
-    prop: payload.prop,
-    order: payload.order,
+    prop: prop as Exclude<SortProp, 'name' | null>,
+    order,
   }
 }
 
