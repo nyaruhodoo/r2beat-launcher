@@ -28,44 +28,10 @@
           row-key="code"
           @selection-change="onSelectionChange"
         >
-          <el-table-column type="selection" width="48" :reserve-selection="false" />
+          <el-table-column type="selection" align="center" width="50" :reserve-selection="false" />
           <el-table-column type="expand">
             <template #default="{ row }">
-              <div class="item-table-expand">
-                <div class="item-table-expand__inner">
-                  <el-table
-                    class="item-table-expand__grid"
-                    :data="row.list"
-                    size="small"
-                    stripe
-                    :max-height="320"
-                  >
-                    <el-table-column
-                      prop="item_name"
-                      label="物品全名"
-                      align="center"
-                      header-align="center"
-                      min-width="200"
-                      show-overflow-tooltip
-                    />
-                    <el-table-column
-                      prop="user_id"
-                      label="所属账号"
-                      align="center"
-                      header-align="center"
-                      width="108"
-                      show-overflow-tooltip
-                    />
-                    <el-table-column
-                      prop="created_at"
-                      label="获得时间"
-                      align="center"
-                      header-align="center"
-                      width="172"
-                    />
-                  </el-table>
-                </div>
-              </div>
+              <ExpandedGiftTable :items="row.list" :accounts="props.accounts" />
             </template>
           </el-table-column>
           <el-table-column align="center" width="100" :label="`道具种类(${groupCount})`">
@@ -100,6 +66,7 @@ import { useLocalStorageState } from 'vue-hooks-plus'
 import type { ElTable } from 'element-plus'
 import { Utils } from '../utils'
 import MainLogPanel from './MainLogPanel.vue'
+import ExpandedGiftTable from './ExpandedGiftTable.vue'
 
 const props = defineProps<{
   accounts: WebUserInfo[]
@@ -319,52 +286,6 @@ watch(keyword, () => {
 .item-table {
   flex: 1;
   min-height: 0;
-}
-
-.item-table-expand {
-  padding: 10px 14px 14px 40px;
-  background: var(--el-fill-color-lighter);
-}
-
-.item-table-expand__inner {
-  border-radius: 8px;
-  border: 1px solid var(--el-border-color-lighter);
-  overflow: hidden;
-  background: var(--el-bg-color);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-.item-table-expand :deep(.item-table-expand__grid) {
-  --el-table-border-color: var(--el-border-color-extra-light);
-}
-
-.item-table-expand :deep(.item-table-expand__grid .el-table__inner-wrapper::before) {
-  display: none;
-}
-
-.item-table-expand :deep(.item-table-expand__grid .el-table__header-wrapper th.el-table__cell) {
-  background: var(--el-fill-color-light) !important;
-  color: var(--el-text-color-secondary);
-  font-weight: 600;
-  font-size: 12px;
-}
-
-.item-table-expand :deep(.item-table-expand__grid .el-table__body .el-table__cell) {
-  padding: 8px 12px;
-  font-size: 13px;
-}
-
-.item-table-expand :deep(.item-table-expand__grid .el-table__cell .cell) {
-  text-align: center;
-}
-
-.item-table-expand :deep(.item-table-expand__grid .el-table__row) {
-  background: var(--el-bg-color);
-}
-
-.item-table-expand
-  :deep(.item-table-expand__grid .el-table__row.el-table__row--striped .el-table__cell) {
-  background: var(--el-fill-color-lighter) !important;
 }
 
 .gift-item-thumb {
