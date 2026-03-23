@@ -135,7 +135,8 @@ function columnsFor(w: number) {
 
 <style scoped>
 .expanded-gift-table {
-  padding: 10px 14px 14px 40px;
+  padding: 10px 40px;
+  padding-left: 100px;
   background: var(--el-fill-color-lighter);
 }
 

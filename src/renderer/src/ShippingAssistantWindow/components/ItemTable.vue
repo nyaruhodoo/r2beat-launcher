@@ -26,6 +26,7 @@
           class="item-table"
           empty-text="暂无数据，请点击「数据同步」拉取"
           row-key="code"
+          @sort-change="onSortChange"
           @selection-change="onSelectionChange"
         >
           <el-table-column type="selection" align="center" width="50" :reserve-selection="false" />
@@ -40,10 +41,30 @@
               </el-image>
             </template>
           </el-table-column>
-          <el-table-column prop="name" label="道具名称" show-overflow-tooltip />
-          <el-table-column prop="total" align="center" width="100" label="总计" />
-          <el-table-column align="center" width="100" :label="`总物品数量(${totalItemCount})`">
-            <template #default="{ row }">{{ row.list.length }}</template>
+          <el-table-column prop="name" label="道具名称" align="center" show-overflow-tooltip />
+          <el-table-column
+            prop="latestCreatedAt"
+            label="获得时间"
+            align="center"
+            header-align="center"
+            width="170"
+            sortable="custom"
+          />
+          <el-table-column
+            prop="total"
+            align="center"
+            width="100"
+            label="总计"
+            sortable="custom"
+          />
+          <el-table-column
+            prop="itemCount"
+            align="center"
+            width="120"
+            :label="`总物品数量(${totalItemCount})`"
+            sortable="custom"
+          >
+            <template #default="{ row }">{{ row.itemCount }}</template>
           </el-table-column>
         </el-table>
       </div>
@@ -91,16 +112,34 @@ const [lastSyncAt, setLastSyncAt] = useLocalStorageState<number | null>(
   { defaultValue: null },
 )
 
+type GroupedRow = GiftGroupedData & {
+  latestCreatedAt: string
+  latestCreatedAtTs: number
+  itemCount: number
+}
+
+type SortOrder = 'ascending' | 'descending' | null
+type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | null
+
 const loading = ref(false)
 const keyword = ref('')
-const selectedRows = ref<GiftGroupedData[]>([])
+const selectedRows = ref<GroupedRow[]>([])
 const tableRef = ref<InstanceType<typeof ElTable>>()
 const canFetch = computed(() => props.accounts.length > 0)
+const sortState = ref<{ prop: SortProp; order: SortOrder }>({
+  prop: 'latestCreatedAt',
+  order: 'descending',
+})
 
 /**
  * 道具分组：只保留 user_id 仍属于当前启用账号（与 username 一致）的道具
  */
-const groupedRows = computed(() => {
+function parseCreatedAtToTs(text: string): number {
+  const ts = Date.parse(text)
+  return Number.isNaN(ts) ? 0 : ts
+}
+
+const groupedRows = computed<GroupedRow[]>(() => {
   const items = storedGiftItems.value ?? []
   if (!items.length) return []
 
@@ -109,7 +148,24 @@ const groupedRows = computed(() => {
 
   if (!filtered.length) return []
 
-  const grouped = processGiftData(filtered)
+  const grouped = processGiftData(filtered).map((g) => {
+    let latestText = ''
+    let latestTs = 0
+    for (const item of g.list) {
+      const ts = parseCreatedAtToTs(item.created_at)
+      if (ts >= latestTs) {
+        latestTs = ts
+        latestText = item.created_at
+      }
+    }
+    return {
+      ...g,
+      latestCreatedAt: latestText,
+      latestCreatedAtTs: latestTs,
+      itemCount: g.list.length,
+    }
+  })
+
   grouped.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'))
   return grouped
 })
@@ -120,8 +176,26 @@ const groupedRows = computed(() => {
 const displayData = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   const rows = groupedRows.value
-  if (!kw) return rows
-  return rows.filter((row) => rowMatches(row, kw))
+  const filtered = !kw ? rows : rows.filter((row) => rowMatches(row, kw))
+
+  if (!sortState.value.order || !sortState.value.prop) return filtered
+  const sorted = [...filtered]
+  if (sortState.value.prop === 'latestCreatedAt') {
+    sorted.sort((a, b) =>
+      sortState.value.order === 'ascending'
+        ? a.latestCreatedAtTs - b.latestCreatedAtTs
+        : b.latestCreatedAtTs - a.latestCreatedAtTs,
+    )
+  } else if (sortState.value.prop === 'itemCount') {
+    sorted.sort((a, b) =>
+      sortState.value.order === 'ascending' ? a.itemCount - b.itemCount : b.itemCount - a.itemCount,
+    )
+  } else if (sortState.value.prop === 'total') {
+    sorted.sort((a, b) =>
+      sortState.value.order === 'ascending' ? a._countValue - b._countValue : b._countValue - a._countValue,
+    )
+  }
+  return sorted
 })
 
 const groupCount = computed(() => groupedRows.value.length)
@@ -186,8 +260,19 @@ function giftItemImageUrl(item: GiftGroupedData) {
   return `https://r2beat-web-cdn.xiyouxi.com/images/sub/gift/item/${code}.png`
 }
 
-function onSelectionChange(rows: GiftGroupedData[]) {
+function onSelectionChange(rows: GroupedRow[]) {
   selectedRows.value = rows
+}
+
+function onSortChange(payload: { prop: string; order: SortOrder }) {
+  if (payload.prop !== 'latestCreatedAt' && payload.prop !== 'itemCount' && payload.prop !== 'total') {
+    sortState.value = { prop: null, order: null }
+    return
+  }
+  sortState.value = {
+    prop: payload.prop,
+    order: payload.order,
+  }
 }
 
 /**
