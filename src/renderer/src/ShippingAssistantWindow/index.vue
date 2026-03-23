@@ -140,6 +140,9 @@ applyTheme('qingchunlv')
 <style scoped>
 .container {
   height: 100%;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
 }
 .main-content {
   height: 100%;
@@ -154,5 +157,19 @@ applyTheme('qingchunlv')
       height: 100%;
     }
   }
+}
+
+/* base.css 在 body 上全局禁用 user-select，这里只对本组件放开 */
+.container :deep(*) {
+  user-select: text !important;
+}
+
+/* 更精确地作用到输入框，确保右键复制/剪切等行为可用 */
+.container :deep(input),
+.container :deep(textarea),
+.container :deep(.el-input__inner) {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -webkit-touch-callout: default;
 }
 </style>
