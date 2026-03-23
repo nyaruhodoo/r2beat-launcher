@@ -2051,7 +2051,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     const x = Math.floor(mainBounds!.x + (mainBounds!.width - newWidth) / 2)
     const y = Math.floor(mainBounds!.y + (mainBounds!.height - newHeight) / 2)
 
-    const detailWindow = new BrowserWindow({
+    const window = new BrowserWindow({
       width: newWidth,
       height: newHeight,
       minWidth: newWidth,
@@ -2072,7 +2072,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     })
 
     // 拦截所有的 <a> 标签跳转，强制使用系统默认浏览器打开
-    detailWindow.webContents.setWindowOpenHandler((details) => {
+    window.webContents.setWindowOpenHandler((details) => {
       shell.openExternal(details.url)
       return { action: 'deny' }
     })
@@ -2082,14 +2082,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       ? `${isDevUrl}?windowType=shippingAssistant`
       : `file://${join(__dirname, '../renderer/index.html')}?windowType=shippingAssistant`
 
-    detailWindow.loadURL(url).catch((error) => {
+    window.loadURL(url).catch((error) => {
       console.error('[Main] 打开发货助手窗口失败:', error)
-      detailWindow.close()
+      window.close()
     })
 
-    detailWindow.webContents.once('did-finish-load', () => {
-      detailWindow.show()
-    })
+    window.on('ready-to-show', window.show)
   })
 
   /**
