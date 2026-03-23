@@ -1,13 +1,13 @@
 import type { GiftGroupedData, GiftItem } from '../../../types'
 
 /**
- * 抽奖物品：按 item_code 分组并汇总数量（与导出 TXT 逻辑一致）
+ * 抽奖物品：按 item_code 分组并汇总数量
  */
 export function processGiftData(items: GiftItem[]): GiftGroupedData[] {
   const groups: Record<string, GiftGroupedData> = {}
 
   items.forEach((item) => {
-    const code = item.item_code
+    const code = item.item_name.includes('（永久）') ? item.item_id : item.item_code
     const match = item.item_name.match(/^(.+?)[（(](\d+)(.+?)[）)]$/)
 
     const currentCount = match ? parseInt(match[2], 10) : 1

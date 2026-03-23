@@ -1,3 +1,5 @@
+import { GiftGroupedData } from '@types'
+
 export class Utils {
   /**
    * 计算相对时间
@@ -19,5 +21,42 @@ export class Utils {
       hour: '2-digit',
       minute: '2-digit',
     })
+  }
+
+  /**
+   * 生成导出txt文件名
+   */
+  static formatExportFileName(fileName: string) {
+    const date = new Date()
+
+    // 补零工具
+    const pad = (num: number) => num.toString().padStart(2, '0')
+
+    // 格式化时间：YYYY-MM-DD HH:mm:ss（24小时制）
+    const year = date.getFullYear()
+    const month = pad(date.getMonth() + 1)
+    const day = pad(date.getDate())
+    const hours = pad(date.getHours())
+    const minutes = pad(date.getMinutes())
+    const seconds = pad(date.getSeconds())
+
+    const dateStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+
+    return `${fileName}_${dateStr}.txt`
+  }
+
+  /**
+   * 获取喜游戏道具图片
+   */
+  static createItemImgUrl(row: GiftGroupedData) {
+    return `https://r2beat-web-cdn.xiyouxi.com/images/sub/gift/item/${row.code}.png`
+  }
+
+  /**
+   * 文本时间转时间戳
+   */
+  static parseCreatedAtToTs(text: string) {
+    const ts = Date.parse(text)
+    return Number.isNaN(ts) ? 0 : ts
   }
 }

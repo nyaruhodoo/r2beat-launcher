@@ -8,10 +8,10 @@
 
     <main class="main-content">
       <el-tabs v-model="tabsActiveName">
-        <el-tab-pane label="发货工具" name="shipping">
+        <el-tab-pane label="发货工具" name="fahuo">
           <ItemTable :accounts="enabledAccounts" :verify-login-before-sync="checkLoginStatus" />
         </el-tab-pane>
-        <el-tab-pane label="抽奖工具" name="lottery">抽奖</el-tab-pane>
+        <el-tab-pane label="抽奖工具" name="choujiang">抽奖</el-tab-pane>
       </el-tabs>
     </main>
 
@@ -40,8 +40,12 @@ import ItemTable from './components/ItemTable.vue'
 
 const { error: toastError } = useToast()
 
-const tabsActiveName = ref('shipping')
+const tabsActiveName = ref('fahuo')
 const showLoginModal = ref(false)
+
+/**
+ * 存储所有登陆过的账号
+ */
 const [savedAccounts, setSavedAccounts] = useLocalStorageState<WebUserInfo[]>(
   'r2beat_saved_accounts_lottery',
   {
@@ -49,9 +53,11 @@ const [savedAccounts, setSavedAccounts] = useLocalStorageState<WebUserInfo[]>(
   },
 )
 
-/** 未禁用的账号*/
+/**
+ * 过滤出已启用账号
+ */
 const enabledAccounts = computed<WebUserInfo[]>(() =>
-  (savedAccounts.value ?? []).filter((a) => a.disable !== true),
+  (savedAccounts.value ?? []).filter((a) => !a.disable),
 )
 
 /**
@@ -96,7 +102,7 @@ const handleUpdateAccountDisable = (payload: { username: string; disable: boolea
 }
 
 /**
- * 数据同步前：先 check-web-login 校验 token；仅在校验失败时再 refresh-web-users 并写回本地账号
+ * 登录态检查并写回本地账号
  */
 const checkLoginStatus = async (): Promise<boolean> => {
   const list = enabledAccounts.value
@@ -140,9 +146,6 @@ applyTheme('qingchunlv')
 <style scoped>
 .container {
   height: 100%;
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -moz-user-select: text !important;
 }
 .main-content {
   height: 100%;
@@ -157,19 +160,5 @@ applyTheme('qingchunlv')
       height: 100%;
     }
   }
-}
-
-/* base.css 在 body 上全局禁用 user-select，这里只对本组件放开 */
-.container :deep(*) {
-  user-select: text !important;
-}
-
-/* 更精确地作用到输入框，确保右键复制/剪切等行为可用 */
-.container :deep(input),
-.container :deep(textarea),
-.container :deep(.el-input__inner) {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  -webkit-touch-callout: default;
 }
 </style>

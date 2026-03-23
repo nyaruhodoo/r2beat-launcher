@@ -55,7 +55,7 @@
           row-key="code"
           :default-sort="{ prop: 'latestCreatedAt', order: 'descending' }"
           @sort-change="onSortChange"
-          @selection-change="onSelectionChange"
+          @selection-change="selectedRows = $event"
         >
           <el-table-column type="selection" align="center" width="50" :reserve-selection="false" />
           <el-table-column type="expand">
@@ -63,9 +63,14 @@
               <ExpandedGiftTable :items="row.list" :accounts="props.accounts" />
             </template>
           </el-table-column>
-          <el-table-column align="center" width="100" :label="`道具种类(${groupCount})`">
+          <el-table-column align="center" width="100">
             <template #default="{ row }">
-              <el-image :src="giftItemImageUrl(row)" fit="contain" lazy class="gift-item-thumb">
+              <el-image
+                :src="Utils.createItemImgUrl(row)"
+                fit="contain"
+                lazy
+                class="gift-item-thumb"
+              >
               </el-image>
             </template>
           </el-table-column>
@@ -88,11 +93,11 @@
           <el-table-column
             prop="itemCount"
             align="center"
-            width="120"
-            :label="`总数量(${totalItemCount})`"
+            width="100"
+            :label="`总数量`"
             sortable="custom"
           >
-            <template #default="{ row }">{{ row.itemCount }}</template>
+            <template #default="{ row }">{{ row.list.length }}</template>
           </el-table-column>
         </el-table>
       </div>
@@ -153,7 +158,6 @@ const [lastSyncedAccountUsernames, setLastSyncedAccountUsernames] = useLocalStor
 type GroupedRow = GiftGroupedData & {
   latestCreatedAt: string
   latestCreatedAtTs: number
-  itemCount: number
 }
 
 type SortOrder = 'ascending' | 'descending' | null
@@ -162,7 +166,9 @@ type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | 'name' | null
 const loading = ref(false)
 const keyword = ref('')
 const debouncedKeyword = ref('')
+// 当前选中的道具组
 const selectedKeywordGroups = ref<string[]>([])
+// 当前选中道具
 const selectedRows = ref<GroupedRow[]>([])
 const tableRef = ref<InstanceType<typeof ElTable>>()
 const canFetch = computed(() => props.accounts.length > 0)
@@ -173,41 +179,38 @@ const sortState = ref<{ prop: SortProp; order: SortOrder }>({
 let keywordDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
 /**
- * 道具分组：只保留 user_id 仍属于当前启用账号（与 username 一致）的道具
+ *  对所有道具进行一次同类型合并
  */
-function parseCreatedAtToTs(text: string): number {
-  const ts = Date.parse(text)
-  return Number.isNaN(ts) ? 0 : ts
-}
-
 const groupedRows = computed<GroupedRow[]>(() => {
   const items = storedGiftItems.value ?? []
   if (!items.length) return []
 
+  // 需要检查当前账户是否已启用
   const enabledIds = new Set(props.accounts.map((a) => a.username))
   const filtered = items.filter((item) => enabledIds.has(item.user_id))
 
   if (!filtered.length) return []
 
+  // 额外添加最新一次道具的获取时间，方便排序
   const grouped = processGiftData(filtered).map((g) => {
     let latestText = ''
     let latestTs = 0
     for (const item of g.list) {
-      const ts = parseCreatedAtToTs(item.created_at)
+      const ts = Utils.parseCreatedAtToTs(item.created_at)
       if (ts >= latestTs) {
         latestTs = ts
         latestText = item.created_at
       }
     }
+
     return {
       ...g,
       latestCreatedAt: latestText,
       latestCreatedAtTs: latestTs,
-      itemCount: g.list.length,
     }
   })
 
-  // 默认按获得时间降序（与 sortState / default-sort 一致）
+  // 默认根据获取时间进行一次排序
   grouped.sort((a, b) => b.latestCreatedAtTs - a.latestCreatedAtTs)
   return grouped
 })
@@ -393,7 +396,9 @@ const displayData = computed(() => {
     )
   } else if (sortState.value.prop === 'itemCount') {
     sorted.sort((a, b) =>
-      sortState.value.order === 'ascending' ? a.itemCount - b.itemCount : b.itemCount - a.itemCount,
+      sortState.value.order === 'ascending'
+        ? a.list.length - b.list.length
+        : b.list.length - a.list.length,
     )
   } else if (sortState.value.prop === 'total') {
     sorted.sort((a, b) =>
@@ -428,10 +433,6 @@ const selectedGroupKeywords = computed(() => {
     .filter((group) => picked.has(group.value))
     .flatMap((group) => group.keywords)
 })
-
-const groupCount = computed(() => displayData.value.length)
-
-const totalItemCount = computed(() => displayData.value.reduce((n, g) => n + g.list.length, 0))
 
 /** 每分钟刷新相对时间文案 */
 const relativeTimeTick = ref(0)
@@ -510,18 +511,8 @@ function rowMatchesAnyKeyword(row: GiftGroupedData, keywords: string[]): boolean
 }
 
 /**
- * 获取道具图片
+ * 生成符合关键字的搜索数据
  */
-function giftItemImageUrl(item: GiftGroupedData) {
-  const code = String(item.code ?? '').trim()
-  if (!code) return ''
-  return `https://r2beat-web-cdn.xiyouxi.com/images/sub/gift/item/${code}.png`
-}
-
-function onSelectionChange(rows: GroupedRow[]) {
-  selectedRows.value = rows
-}
-
 function querySearchItemName(queryString: string, cb: (results: NameOption[]) => void) {
   const q = queryString.trim().toLowerCase()
   const source = itemNameOptions.value
@@ -532,18 +523,15 @@ function querySearchItemName(queryString: string, cb: (results: NameOption[]) =>
   cb(source.filter((item) => textMatchesKeyword(item.value, q)))
 }
 
-function onKeywordSelect(item: Record<string, unknown>) {
-  keyword.value = String(item.value ?? '')
-}
-
-function formatExportFileName() {
-  const d = new Date()
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `gift-group-summary_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.txt`
+/**
+ * 点击下拉框时补全搜索文本
+ */
+function onKeywordSelect(item: Record<string, string>) {
+  keyword.value = item.value
 }
 
 /**
- * 前端导出道具种类汇总：
+ * 导出道具种类汇总：
  * 【道具名称】  总数+单位
  */
 function exportGroupedSummaryTxt() {
@@ -559,15 +547,17 @@ function exportGroupedSummaryTxt() {
 
   const a = document.createElement('a')
   a.href = url
-  a.download = formatExportFileName()
+  a.download = Utils.formatExportFileName('道具列表')
   a.rel = 'noopener'
   document.body.appendChild(a)
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
-  toastSuccess('已导出道具种类统计')
 }
 
+/**
+ * 自定义排序功能
+ */
 function onSortChange(payload: { prop: string; order: SortOrder }) {
   const { prop, order } = payload
 
@@ -597,7 +587,7 @@ function onSortChange(payload: { prop: string; order: SortOrder }) {
 }
 
 /**
- * 获取已启用账户道具（仅持久化原始 items；分组与筛选由计算属性完成）
+ * 获取已启用账户道具
  */
 async function fetchAndStoreGifts() {
   const result = await ipcEmitter.invoke('get-gift-list', ipcArg(props.accounts))
@@ -610,6 +600,9 @@ async function fetchAndStoreGifts() {
   return true
 }
 
+/**
+ * 获取数据
+ */
 async function syncData() {
   if (!canFetch.value || loading.value) return
 
@@ -634,6 +627,9 @@ async function syncData() {
   }
 }
 
+/**
+ * 给输入框做个简易防抖
+ */
 watch(keyword, () => {
   if (keywordDebounceTimer) clearTimeout(keywordDebounceTimer)
   keywordDebounceTimer = setTimeout(() => {
@@ -726,22 +722,10 @@ watch(selectedKeywordGroups, () => {
 }
 
 .gift-item-thumb {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
   border-radius: 6px;
   background: var(--color-bg-card, var(--el-fill-color));
-}
-
-.gift-item-thumb--fail {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  font-size: 12px;
-  color: var(--color-text-tertiary, var(--el-text-color-placeholder));
-  background: var(--color-bg-card, var(--el-fill-color));
-  border-radius: 6px;
 }
 
 .log-wrap {

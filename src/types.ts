@@ -19,7 +19,9 @@ export interface GiftItem {
   character_name: string
   created_at: string
   idx: number
+  // 同道具是一样的
   item_code: string
+  // 不同天数的不一样
   item_id: string
   item_name: string
   message: string | null
