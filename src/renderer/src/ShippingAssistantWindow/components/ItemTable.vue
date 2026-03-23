@@ -23,7 +23,7 @@
               clearable
               :trigger-on-focus="true"
               :fetch-suggestions="querySearchItemName"
-              placeholder="按道具名称筛选"
+              placeholder="按道具名称筛选（支持拼音全拼/首字母）"
               @select="onKeywordSelect"
             />
             <el-select
@@ -114,6 +114,7 @@ import { useToast } from '@renderer/composables/useToast'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import type { ElTable } from 'element-plus'
 import { Utils } from '../utils'
+import { pinyin } from 'pinyin-pro'
 import MainLogPanel from './MainLogPanel.vue'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
 import { keywordGroupOptions } from '../config'
@@ -160,6 +161,7 @@ type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | 'name' | null
 
 const loading = ref(false)
 const keyword = ref('')
+const debouncedKeyword = ref('')
 const selectedKeywordGroups = ref<string[]>([])
 const selectedRows = ref<GroupedRow[]>([])
 const tableRef = ref<InstanceType<typeof ElTable>>()
@@ -168,6 +170,7 @@ const sortState = ref<{ prop: SortProp; order: SortOrder }>({
   prop: 'latestCreatedAt',
   order: 'descending',
 })
+let keywordDebounceTimer: ReturnType<typeof setTimeout> | null = null
 
 /**
  * 道具分组：只保留 user_id 仍属于当前启用账号（与 username 一致）的道具
@@ -302,19 +305,72 @@ function sortRowsByNameSimilarityChain(rows: GroupedRow[]): GroupedRow[] {
   return out
 }
 
+/** 仅拉丁字母与数字时，才用拼音匹配（避免对中文关键字重复计算）；允许中间空格 */
+function looksLikeLatinPinyinQuery(kw: string): boolean {
+  return /^[a-z0-9\s]+$/i.test(kw.trim()) && /^[a-z0-9]+$/i.test(kw.replace(/\s+/g, ''))
+}
+
+const pinyinSearchCache = new Map<string, { full: string; first: string }>()
+
+function getPinyinSearchKeys(text: string): { full: string; first: string } {
+  const raw = String(text ?? '')
+  const hit = pinyinSearchCache.get(raw)
+  if (hit) return hit
+  let full = ''
+  let first = ''
+  try {
+    full = pinyin(raw, {
+      toneType: 'none',
+      type: 'string',
+      separator: '',
+    })
+      .replace(/\s+/g, '')
+      .toLowerCase()
+    first = pinyin(raw, {
+      pattern: 'first',
+      toneType: 'none',
+      type: 'string',
+      separator: '',
+    })
+      .replace(/\s+/g, '')
+      .toLowerCase()
+  } catch {
+    /* ignore */
+  }
+  const v = { full, first }
+  if (pinyinSearchCache.size > 2000) {
+    pinyinSearchCache.clear()
+  }
+  pinyinSearchCache.set(raw, v)
+  return v
+}
+
 /**
- * 表格数据，根据关键字做二次筛选
+ * 文本是否匹配关键字：原文包含，或（拉丁关键字时）全拼 / 首字母包含
+ */
+function textMatchesKeyword(text: string, kwLower: string): boolean {
+  if (!kwLower) return true
+  const t = String(text ?? '').toLowerCase()
+  if (t.includes(kwLower)) return true
+  if (!looksLikeLatinPinyinQuery(kwLower)) return false
+  const q = kwLower.replace(/\s+/g, '')
+  const { full, first } = getPinyinSearchKeys(text)
+  if (full.includes(q)) return true
+  if (first.includes(q)) return true
+  return false
+}
+
+/**
+ * 表格数据：先分类筛选，再关键字（含拼音）筛选
  */
 const displayData = computed(() => {
-  const kw = keyword.value.trim().toLowerCase()
-  const rows = groupedRows.value
-  const filteredByText = !kw ? rows : rows.filter((row) => rowMatches(row, kw))
-
+  const kw = debouncedKeyword.value.trim().toLowerCase()
   const pickedKeywords = selectedGroupKeywords.value
-  const filtered =
-    pickedKeywords.length === 0
-      ? filteredByText
-      : filteredByText.filter((row) => rowMatchesAnyKeyword(row, pickedKeywords))
+  let rows = groupedRows.value
+  if (pickedKeywords.length > 0) {
+    rows = rows.filter((row) => rowMatchesAnyKeyword(row, pickedKeywords))
+  }
+  const filtered = !kw ? rows : rows.filter((row) => rowMatches(row, kw))
 
   const ss = sortState.value
   if (ss.prop === 'name') {
@@ -353,8 +409,13 @@ const displayData = computed(() => {
 type NameOption = { value: string }
 
 const itemNameOptions = computed<NameOption[]>(() => {
+  const pickedKeywords = selectedGroupKeywords.value
+  let rows = groupedRows.value
+  if (pickedKeywords.length > 0) {
+    rows = rows.filter((row) => rowMatchesAnyKeyword(row, pickedKeywords))
+  }
   const set = new Set<string>()
-  for (const row of displayData.value) {
+  for (const row of rows) {
     const name = (row.name ?? '').trim()
     if (name) set.add(name)
   }
@@ -377,12 +438,17 @@ const relativeTimeTick = ref(0)
 let relativeTimeTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
+  debouncedKeyword.value = keyword.value
   relativeTimeTimer = setInterval(() => {
     relativeTimeTick.value++
   }, 60_000)
 })
 
 onUnmounted(() => {
+  if (keywordDebounceTimer) {
+    clearTimeout(keywordDebounceTimer)
+    keywordDebounceTimer = null
+  }
   if (relativeTimeTimer) {
     clearInterval(relativeTimeTimer)
     relativeTimeTimer = null
@@ -406,16 +472,21 @@ const shouldSuggestSync = computed(() => {
 })
 
 function rowMatches(row: GiftGroupedData, kw: string): boolean {
+  const k = kw.trim().toLowerCase()
+  if (!k) return true
+
   if (
-    row.name.toLowerCase().includes(kw) ||
-    row.code.toLowerCase().includes(kw) ||
-    row.total.toLowerCase().includes(kw)
+    textMatchesKeyword(row.name, k) ||
+    row.code.toLowerCase().includes(k) ||
+    row.total.toLowerCase().includes(k)
   ) {
     return true
   }
   return row.list.some((item) => {
+    if (textMatchesKeyword(String(item.item_name ?? ''), k)) {
+      return true
+    }
     const text = [
-      item.item_name,
       item.item_code,
       item.character_name,
       item.created_at,
@@ -425,7 +496,7 @@ function rowMatches(row: GiftGroupedData, kw: string): boolean {
       .filter(Boolean)
       .join(' ')
       .toLowerCase()
-    return text.includes(kw)
+    return text.includes(k)
   })
 }
 
@@ -458,7 +529,7 @@ function querySearchItemName(queryString: string, cb: (results: NameOption[]) =>
     cb(source)
     return
   }
-  cb(source.filter((item) => item.value.toLowerCase().includes(q)))
+  cb(source.filter((item) => textMatchesKeyword(item.value, q)))
 }
 
 function onKeywordSelect(item: Record<string, unknown>) {
@@ -564,6 +635,11 @@ async function syncData() {
 }
 
 watch(keyword, () => {
+  if (keywordDebounceTimer) clearTimeout(keywordDebounceTimer)
+  keywordDebounceTimer = setTimeout(() => {
+    debouncedKeyword.value = keyword.value
+    keywordDebounceTimer = null
+  }, 1000)
   tableRef.value?.clearSelection()
 })
 
