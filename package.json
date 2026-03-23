@@ -28,6 +28,7 @@
     "element-plus": "^2.13.6",
     "frida": "^17.6.0",
     "lzma-native": "^8.0.6",
+    "pinyin-pro": "^3.28.0",
     "vue": "^3.5.25",
     "vue-hooks-plus": "^2.4.1"
   },

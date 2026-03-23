@@ -116,6 +116,7 @@ import type { ElTable } from 'element-plus'
 import { Utils } from '../utils'
 import MainLogPanel from './MainLogPanel.vue'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
+import { keywordGroupOptions } from '../config'
 
 const props = defineProps<{
   accounts: WebUserInfo[]
@@ -292,10 +293,7 @@ function sortRowsByNameSimilarityChain(rows: GroupedRow[]): GroupedRow[] {
         bestScore = s
         bestIdx = i
       } else if (s === bestScore) {
-        const tie = (remaining[i].name || '').localeCompare(
-          remaining[bestIdx].name || '',
-          'zh-CN',
-        )
+        const tie = (remaining[i].name || '').localeCompare(remaining[bestIdx].name || '', 'zh-CN')
         if (tie < 0) bestIdx = i
       }
     }
@@ -363,43 +361,6 @@ const itemNameOptions = computed<NameOption[]>(() => {
   return Array.from(set).map((name) => ({ value: name }))
 })
 
-const keywordGroupOptions = [
-  {
-    label: '刷分套',
-    value: 'shuafen',
-    keywords: [
-      'mini游戏机',
-      '冠军之王',
-      'lua简约玩伴装',
-      '精灵sara',
-      '精灵kuma',
-      '智慧头型',
-      '冠军之王',
-      'ac达人',
-      'pd之王',
-    ],
-  },
-  {
-    label: '模式',
-    value: 'moshi',
-    keywords: ['突发模式', '镜子模式', '随机模式'],
-  },
-  {
-    label: '日用品',
-    value: 'riyongpin',
-    keywords: [
-      '昵称卡',
-      '名片卡',
-      '彩笔',
-      '玩伴舞蹈',
-      '玩伴恰恰舞',
-      '玩伴动作',
-      '登场特效',
-      '聊天框',
-    ],
-  },
-]
-
 const selectedGroupKeywords = computed(() => {
   const picked = new Set(selectedKeywordGroups.value)
   return keywordGroupOptions
@@ -409,9 +370,7 @@ const selectedGroupKeywords = computed(() => {
 
 const groupCount = computed(() => displayData.value.length)
 
-const totalItemCount = computed(() =>
-  displayData.value.reduce((n, g) => n + g.list.length, 0),
-)
+const totalItemCount = computed(() => displayData.value.reduce((n, g) => n + g.list.length, 0))
 
 /** 每分钟刷新相对时间文案 */
 const relativeTimeTick = ref(0)
@@ -555,11 +514,7 @@ function onSortChange(payload: { prop: string; order: SortOrder }) {
     return
   }
 
-  if (
-    prop !== 'latestCreatedAt' &&
-    prop !== 'itemCount' &&
-    prop !== 'total'
-  ) {
+  if (prop !== 'latestCreatedAt' && prop !== 'itemCount' && prop !== 'total') {
     sortState.value = { prop: null, order: null }
     return
   }
