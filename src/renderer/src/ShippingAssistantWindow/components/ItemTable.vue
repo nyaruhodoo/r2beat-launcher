@@ -89,7 +89,7 @@
             prop="itemCount"
             align="center"
             width="120"
-            :label="`总物品数量(${totalItemCount})`"
+            :label="`总数量(${totalItemCount})`"
             sortable="custom"
           >
             <template #default="{ row }">{{ row.itemCount }}</template>
