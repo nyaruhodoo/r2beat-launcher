@@ -1,12 +1,13 @@
 import type { GiftGroupedData, GiftItem } from '../../../types'
 
 /**
- * 抽奖物品：按 item_code 分组并汇总数量
+ * 抽奖物品归并处理
  */
 export function processGiftData(items: GiftItem[]): GiftGroupedData[] {
   const groups: Record<string, GiftGroupedData> = {}
 
   items.forEach((item) => {
+    // FIX: 对于永久性物品单独使用item_id，不和天数类型统一计数
     const code = item.item_name.includes('（永久）') ? item.item_id : item.item_code
     const match = item.item_name.match(/^(.+?)[（(](\d+)(.+?)[）)]$/)
 
@@ -22,6 +23,7 @@ export function processGiftData(items: GiftItem[]): GiftGroupedData[] {
         list: [],
         total: '',
         code,
+        imgCode: item.item_code,
       }
     }
 

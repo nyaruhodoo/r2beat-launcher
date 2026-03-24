@@ -4,7 +4,9 @@ export class Utils {
   /**
    * 计算相对时间
    */
-  static formatRelativePastZh(ts: number) {
+  static formatRelativePastZh(ts: number | undefined | null) {
+    if (ts == null) return '—'
+
     const now = Date.now()
     const diffSec = Math.floor((now - ts) / 1000)
     if (diffSec < 60) return '刚刚'
@@ -49,7 +51,7 @@ export class Utils {
    * 获取喜游戏道具图片
    */
   static createItemImgUrl(row: GiftGroupedData) {
-    return `https://r2beat-web-cdn.xiyouxi.com/images/sub/gift/item/${row.code}.png`
+    return `https://r2beat-web-cdn.xiyouxi.com/images/sub/gift/item/${row.imgCode}.png`
   }
 
   /**
@@ -58,5 +60,31 @@ export class Utils {
   static parseCreatedAtToTs(text: string) {
     const ts = Date.parse(text)
     return Number.isNaN(ts) ? 0 : ts
+  }
+
+  /**
+   * 检查字符是否是纯英文数字
+   */
+  static looksLikeLatinPinyinQuery(kw: string) {
+    return /^[a-z0-9\s]+$/i.test(kw.trim()) && /^[a-z0-9]+$/i.test(kw.replace(/\s+/g, ''))
+  }
+
+  /**
+   * 获取字符串码点
+   */
+  static firstCharCodePoint(name: string) {
+    const t = (name ?? '').trim()
+    if (!t.length) return -1
+    return t.codePointAt(0) ?? -1
+  }
+
+  /**
+   * 用于码点排序
+   */
+  static compareByFirstCodePointAsc(a: string, b: string) {
+    const ca = this.firstCharCodePoint(a)
+    const cb = this.firstCharCodePoint(b)
+    if (ca !== cb) return ca - cb
+    return (a || '').localeCompare(b || '', 'zh-CN')
   }
 }

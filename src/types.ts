@@ -44,7 +44,9 @@ export interface GiftItemTableRow extends GiftItem {
 export interface GiftGroupedData {
   name: string
   total: string
+  // 当作道具类型使用即可，天数的算一类，永久的是一类
   code: string
+  imgCode: string
   _countValue: number
   _unit: string
   list: GiftItem[]

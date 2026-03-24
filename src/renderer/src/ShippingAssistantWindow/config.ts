@@ -1,4 +1,8 @@
-export const keywordGroupOptions = [
+export const keywordGroupOptions: {
+  label: string
+  value: string
+  keywords: string[]
+}[] = [
   {
     label: '刷分套',
     value: 'shuafen',
@@ -13,11 +17,6 @@ export const keywordGroupOptions = [
       'ac达人',
       'pd之王',
     ],
-  },
-  {
-    label: '模式',
-    value: 'moshi',
-    keywords: ['突发模式', '镜子模式', '随机模式'],
   },
   {
     label: '日用品',
@@ -58,5 +57,25 @@ export const keywordGroupOptions = [
       '好奇心少',
       '温和小猫',
     ],
+  },
+  {
+    label: '音速石',
+    value: 'yinsushi',
+    keywords: ['音速石'],
+  },
+  {
+    label: '模式',
+    value: 'moshi',
+    keywords: ['突发模式', '镜子模式', '随机模式'],
+  },
+  {
+    label: '铃铛',
+    value: 'lingdang',
+    keywords: ['金铃铛'],
+  },
+  {
+    label: '永久',
+    value: 'yongjiu',
+    keywords: ['（永久）'],
   },
 ]

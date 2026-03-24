@@ -23,7 +23,8 @@
               clearable
               :trigger-on-focus="true"
               :fetch-suggestions="querySearchItemName"
-              placeholder="按道具名称筛选（支持拼音全拼/首字母）"
+              placeholder="按道具名称筛选（支持拼音）"
+              autocorrect="off"
               @select="onKeywordSelect"
             />
             <el-select
@@ -51,9 +52,9 @@
           stripe
           border
           class="item-table"
-          empty-text="暂无数据，请点击「数据同步」拉取"
+          empty-text="暂无数据"
           row-key="code"
-          :default-sort="{ prop: 'latestCreatedAt', order: 'descending' }"
+          :default-sort="defaultSort"
           @sort-change="onSortChange"
           @selection-change="selectedRows = $event"
         >
@@ -63,7 +64,7 @@
               <ExpandedGiftTable :items="row.list" :accounts="props.accounts" />
             </template>
           </el-table-column>
-          <el-table-column align="center" width="100">
+          <el-table-column align="center" width="100" :label="`总计(${displayData.length})`">
             <template #default="{ row }">
               <el-image
                 :src="Utils.createItemImgUrl(row)"
@@ -76,7 +77,7 @@
           </el-table-column>
           <el-table-column
             prop="name"
-            label="道具名称"
+            label="名称"
             align="center"
             show-overflow-tooltip
             sortable="custom"
@@ -94,7 +95,7 @@
             prop="itemCount"
             align="center"
             width="100"
-            :label="`总数量`"
+            :label="`总数`"
             sortable="custom"
           >
             <template #default="{ row }">{{ row.list.length }}</template>
@@ -111,12 +112,12 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import type { GiftGroupedData, GiftItem, WebUserInfo } from '@types'
 import { processGiftData } from '../gift-process'
 import { ipcEmitter, ipcArg } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'
-import { useLocalStorageState } from 'vue-hooks-plus'
+import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
 import type { ElTable } from 'element-plus'
 import { Utils } from '../utils'
 import { pinyin } from 'pinyin-pro'
@@ -166,17 +167,25 @@ type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | 'name' | null
 const loading = ref(false)
 const keyword = ref('')
 const debouncedKeyword = ref('')
-// 当前选中的道具组
+// 当前选中的道具分类组
 const selectedKeywordGroups = ref<string[]>([])
 // 当前选中道具
 const selectedRows = ref<GroupedRow[]>([])
 const tableRef = ref<InstanceType<typeof ElTable>>()
 const canFetch = computed(() => props.accounts.length > 0)
-const sortState = ref<{ prop: SortProp; order: SortOrder }>({
+const defaultSort = {
   prop: 'latestCreatedAt',
   order: 'descending',
-})
-let keywordDebounceTimer: ReturnType<typeof setTimeout> | null = null
+} as const
+const sortState = ref<{ prop: SortProp; order: SortOrder }>(defaultSort)
+
+/**
+ * 动态计算上次数据同步时间
+ */
+const lastSyncDisplay = ref(`上次同步：${Utils.formatRelativePastZh(lastSyncAt.value)}`)
+useInterval(() => {
+  lastSyncDisplay.value = `上次同步：${Utils.formatRelativePastZh(lastSyncAt.value)}`
+}, 60_000)
 
 /**
  *  对所有道具进行一次同类型合并
@@ -210,111 +219,28 @@ const groupedRows = computed<GroupedRow[]>(() => {
     }
   })
 
-  // 默认根据获取时间进行一次排序
-  grouped.sort((a, b) => b.latestCreatedAtTs - a.latestCreatedAtTs)
   return grouped
 })
 
-/** 道具名称首字符的 Unicode 码点（用于「编码先后」排序） */
-function firstCharCodePoint(name: string): number {
-  const t = (name ?? '').trim()
-  if (!t.length) return -1
-  return t.codePointAt(0) ?? -1
-}
-
-function compareByFirstCodePointAsc(a: GroupedRow, b: GroupedRow): number {
-  const ca = firstCharCodePoint(a.name)
-  const cb = firstCharCodePoint(b.name)
-  if (ca !== cb) return ca - cb
-  return (a.name || '').localeCompare(b.name || '', 'zh-CN')
-}
-
-function sortByFirstCodePoint(rows: GroupedRow[], order: 'ascending' | 'descending'): GroupedRow[] {
+/**
+ * 根据道具名称码点排序
+ */
+function sortByFirstCodePoint(rows: GroupedRow[], order: SortOrder): GroupedRow[] {
   const sorted = [...rows]
   sorted.sort((a, b) =>
-    order === 'ascending' ? compareByFirstCodePointAsc(a, b) : compareByFirstCodePointAsc(b, a),
+    order === 'ascending'
+      ? Utils.compareByFirstCodePointAsc(a.name, b.name)
+      : Utils.compareByFirstCodePointAsc(b.name, a.name),
   )
   return sorted
 }
 
-/** 编辑距离（短名称相似度补充） */
-function levenshtein(a: string, b: string): number {
-  const m = a.length
-  const n = b.length
-  if (m === 0) return n
-  if (n === 0) return m
-  const row = new Uint16Array(n + 1)
-  for (let j = 0; j <= n; j++) row[j] = j
-  for (let i = 1; i <= m; i++) {
-    let prev = row[0]
-    row[0] = i
-    for (let j = 1; j <= n; j++) {
-      const tmp = row[j]
-      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1
-      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, prev + cost)
-      prev = tmp
-    }
-  }
-  return row[n]
-}
-
-function nameSimilarityScore(a: string, b: string): number {
-  const na = (a ?? '').trim()
-  const nb = (b ?? '').trim()
-  if (!na && !nb) return 1
-  if (!na || !nb) return 0
-  if (na === nb) return 1
-
-  const maxLen = Math.max(na.length, nb.length)
-  let lcp = 0
-  for (let i = 0; i < Math.min(na.length, nb.length); i++) {
-    if (na[i] !== nb[i]) break
-    lcp++
-  }
-  let score = lcp / maxLen
-  if (na.includes(nb) || nb.includes(na)) {
-    score = Math.max(score, 0.88)
-  }
-  if (maxLen <= 36) {
-    const dist = levenshtein(na, nb)
-    const levScore = 1 - dist / maxLen
-    score = Math.max(score, levScore)
-  }
-  return score
-}
-
-/** 贪心链式：相邻行名称尽量相似 */
-function sortRowsByNameSimilarityChain(rows: GroupedRow[]): GroupedRow[] {
-  if (rows.length <= 1) return rows
-  const remaining = [...rows]
-  remaining.sort((x, y) => (x.name || '').localeCompare(y.name || '', 'zh-CN'))
-  const out: GroupedRow[] = [remaining.shift()!]
-  while (remaining.length) {
-    const lastName = out[out.length - 1].name || ''
-    let bestIdx = 0
-    let bestScore = -1
-    for (let i = 0; i < remaining.length; i++) {
-      const s = nameSimilarityScore(lastName, remaining[i].name || '')
-      if (s > bestScore) {
-        bestScore = s
-        bestIdx = i
-      } else if (s === bestScore) {
-        const tie = (remaining[i].name || '').localeCompare(remaining[bestIdx].name || '', 'zh-CN')
-        if (tie < 0) bestIdx = i
-      }
-    }
-    out.push(remaining.splice(bestIdx, 1)[0])
-  }
-  return out
-}
-
-/** 仅拉丁字母与数字时，才用拼音匹配（避免对中文关键字重复计算）；允许中间空格 */
-function looksLikeLatinPinyinQuery(kw: string): boolean {
-  return /^[a-z0-9\s]+$/i.test(kw.trim()) && /^[a-z0-9]+$/i.test(kw.replace(/\s+/g, ''))
-}
-
+// 缓存拼音组合
 const pinyinSearchCache = new Map<string, { full: string; first: string }>()
 
+/**
+ * 辅助函数: 获取拼音组合
+ */
 function getPinyinSearchKeys(text: string): { full: string; first: string } {
   const raw = String(text ?? '')
   const hit = pinyinSearchCache.get(raw)
@@ -349,44 +275,66 @@ function getPinyinSearchKeys(text: string): { full: string; first: string } {
 }
 
 /**
+ * 辅助函数:
  * 文本是否匹配关键字：原文包含，或（拉丁关键字时）全拼 / 首字母包含
  */
 function textMatchesKeyword(text: string, kwLower: string): boolean {
-  if (!kwLower) return true
-  const t = String(text ?? '').toLowerCase()
+  const t = text.toLowerCase()
+  // 1. 文本如果直接符合则直接返回
   if (t.includes(kwLower)) return true
-  if (!looksLikeLatinPinyinQuery(kwLower)) return false
+  // 2. 检查是否是英文数字输入，其他乱七八糟的直接过滤
+  if (!Utils.looksLikeLatinPinyinQuery(kwLower)) return false
   const q = kwLower.replace(/\s+/g, '')
   const { full, first } = getPinyinSearchKeys(text)
-  if (full.includes(q)) return true
-  if (first.includes(q)) return true
+
+  if (full.includes(q) || first.includes(q)) return true
+
   return false
 }
 
 /**
- * 表格数据：先分类筛选，再关键字（含拼音）筛选
+ * 表格数据
  */
 const displayData = computed(() => {
   const kw = debouncedKeyword.value.trim().toLowerCase()
-  const pickedKeywords = selectedGroupKeywords.value
   let rows = groupedRows.value
-  if (pickedKeywords.length > 0) {
-    rows = rows.filter((row) => rowMatchesAnyKeyword(row, pickedKeywords))
-  }
-  const filtered = !kw ? rows : rows.filter((row) => rowMatches(row, kw))
 
+  // 获取当前选择的所有分类内容
+  const selectedGroupKeywords = (() => {
+    const picked = new Set(selectedKeywordGroups.value)
+    return keywordGroupOptions
+      .filter((group) => picked.has(group.value))
+      .flatMap((group) => group.keywords)
+  })()
+
+  /**
+   * 1. 先根据主分类筛选一次道具
+   */
+  if (selectedGroupKeywords.length > 0) {
+    const lowers = selectedGroupKeywords.map((k) => k.trim().toLowerCase())
+
+    rows = rows.filter((row) => {
+      const itemName = row.name.toLowerCase()
+
+      return lowers.some((kw) => itemName.includes(kw))
+    })
+  }
+
+  /**
+   * 2. 再根据输入内容过滤一次
+   */
+  const filtered = !kw ? rows : rows.filter((row) => textMatchesKeyword(row.name, kw))
+
+  /**
+   * 最终根据自定义排序返回结果
+   */
   const ss = sortState.value
   if (ss.prop === 'name') {
-    if (ss.order === 'ascending') {
-      return sortByFirstCodePoint(filtered, 'ascending')
-    }
-    if (ss.order === 'descending') {
-      return sortByFirstCodePoint(filtered, 'descending')
-    }
-    return sortRowsByNameSimilarityChain(filtered)
+    if (ss.order) return sortByFirstCodePoint(filtered, ss.order)
   }
-
   if (!ss.order || !ss.prop) return filtered
+
+  // 除了名称复杂，其他的都是简单的根据值排序
   const sorted = [...filtered]
   if (sortState.value.prop === 'latestCreatedAt') {
     sorted.sort((a, b) =>
@@ -413,57 +361,9 @@ const displayData = computed(() => {
 
 type NameOption = { value: string }
 
-const itemNameOptions = computed<NameOption[]>(() => {
-  const pickedKeywords = selectedGroupKeywords.value
-  let rows = groupedRows.value
-  if (pickedKeywords.length > 0) {
-    rows = rows.filter((row) => rowMatchesAnyKeyword(row, pickedKeywords))
-  }
-  const set = new Set<string>()
-  for (const row of rows) {
-    const name = (row.name ?? '').trim()
-    if (name) set.add(name)
-  }
-  return Array.from(set).map((name) => ({ value: name }))
-})
-
-const selectedGroupKeywords = computed(() => {
-  const picked = new Set(selectedKeywordGroups.value)
-  return keywordGroupOptions
-    .filter((group) => picked.has(group.value))
-    .flatMap((group) => group.keywords)
-})
-
-/** 每分钟刷新相对时间文案 */
-const relativeTimeTick = ref(0)
-let relativeTimeTimer: ReturnType<typeof setInterval> | null = null
-
-onMounted(() => {
-  debouncedKeyword.value = keyword.value
-  relativeTimeTimer = setInterval(() => {
-    relativeTimeTick.value++
-  }, 60_000)
-})
-
-onUnmounted(() => {
-  if (keywordDebounceTimer) {
-    clearTimeout(keywordDebounceTimer)
-    keywordDebounceTimer = null
-  }
-  if (relativeTimeTimer) {
-    clearInterval(relativeTimeTimer)
-    relativeTimeTimer = null
-  }
-})
-
-const lastSyncDisplay = computed(() => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  relativeTimeTick.value
-  const t = lastSyncAt.value
-  if (t == null || !Number.isFinite(t)) return '上次同步：—'
-  return `上次同步：${Utils.formatRelativePastZh(t)}`
-})
-
+/**
+ * 判断是否有新添加的账户未参与数据同步
+ */
 const shouldSuggestSync = computed(() => {
   const enabled = props.accounts.map((account) => account.username).filter(Boolean)
   if (enabled.length === 0) return false
@@ -472,55 +372,27 @@ const shouldSuggestSync = computed(() => {
   return enabled.some((username) => !lastSynced.has(username))
 })
 
-function rowMatches(row: GiftGroupedData, kw: string): boolean {
-  const k = kw.trim().toLowerCase()
-  if (!k) return true
-
-  if (
-    textMatchesKeyword(row.name, k) ||
-    row.code.toLowerCase().includes(k) ||
-    row.total.toLowerCase().includes(k)
-  ) {
-    return true
-  }
-  return row.list.some((item) => {
-    if (textMatchesKeyword(String(item.item_name ?? ''), k)) {
-      return true
-    }
-    const text = [
-      item.item_code,
-      item.character_name,
-      item.created_at,
-      item.server_name,
-      item.user_id,
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-    return text.includes(k)
-  })
-}
-
-function rowMatchesAnyKeyword(row: GiftGroupedData, keywords: string[]): boolean {
-  const lowers = keywords.map((k) => k.trim().toLowerCase()).filter(Boolean)
-  if (!lowers.length) return true
-  const allNames = [row.name, ...row.list.map((i) => i.item_name)].map((t) =>
-    String(t ?? '').toLowerCase(),
-  )
-  return lowers.some((kw) => allNames.some((name) => name.includes(kw)))
-}
-
 /**
- * 生成符合关键字的搜索数据
+ * 生成当前table数据列表对应的名称keys便于下拉框使用
  */
 function querySearchItemName(queryString: string, cb: (results: NameOption[]) => void) {
   const q = queryString.trim().toLowerCase()
-  const source = itemNameOptions.value
-  if (!q) {
-    cb(source)
-    return
-  }
-  cb(source.filter((item) => textMatchesKeyword(item.value, q)))
+
+  /**
+   * 根据当前表单数据得出所有道具名称
+   */
+  const source = (() => {
+    let rows = displayData.value
+    const set = new Set<string>()
+    for (const row of rows) {
+      // 下拉框中永久的和天数的算同一类，避免内容过多
+      const name = row.name.trim().replaceAll('（永久）', '')
+      set.add(name)
+    }
+    return Array.from(set).map((name) => ({ value: name }))
+  })()
+
+  cb(q ? source.filter((item) => textMatchesKeyword(item.value, q)) : source)
 }
 
 /**
@@ -556,34 +428,22 @@ function exportGroupedSummaryTxt() {
 }
 
 /**
- * 自定义排序功能
+ * 自定义排序功能(无具体排序逻辑)
  */
-function onSortChange(payload: { prop: string; order: SortOrder }) {
+function onSortChange(payload: { prop: SortProp; order: SortOrder }) {
+  /**
+   * 每一个筛选都有3个参数
+   * 当取消某一个排序时会保留最后一次筛选的类型值为null
+   */
   const { prop, order } = payload
 
-  if (prop === 'name') {
-    sortState.value = { prop: 'name', order }
+  // 强制回退按照最新获得时间排序
+  if (!order || !prop) {
+    sortState.value = defaultSort
     return
   }
 
-  if (!prop) {
-    sortState.value = { prop: 'latestCreatedAt', order: 'descending' }
-    nextTick(() => {
-      const table = tableRef.value as { sort?: (p: string, o: string) => void } | undefined
-      table?.sort?.('latestCreatedAt', 'descending')
-    })
-    return
-  }
-
-  if (prop !== 'latestCreatedAt' && prop !== 'itemCount' && prop !== 'total') {
-    sortState.value = { prop: null, order: null }
-    return
-  }
-
-  sortState.value = {
-    prop: prop as Exclude<SortProp, 'name' | null>,
-    order,
-  }
+  sortState.value = payload
 }
 
 /**
@@ -627,6 +487,8 @@ async function syncData() {
   }
 }
 
+let keywordDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
 /**
  * 给输入框做个简易防抖
  */
@@ -635,8 +497,14 @@ watch(keyword, () => {
   keywordDebounceTimer = setTimeout(() => {
     debouncedKeyword.value = keyword.value
     keywordDebounceTimer = null
-  }, 1000)
+  }, 600)
   tableRef.value?.clearSelection()
+})
+onUnmounted(() => {
+  if (keywordDebounceTimer) {
+    clearTimeout(keywordDebounceTimer)
+    keywordDebounceTimer = null
+  }
 })
 
 watch(selectedKeywordGroups, () => {
