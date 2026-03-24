@@ -32,7 +32,12 @@
         <el-tab-pane label="发货工具" name="fahuo">
           <ItemTable :accounts="enabledAccounts" :verify-login-before-sync="checkLoginStatus" />
         </el-tab-pane>
-        <el-tab-pane label="抽奖工具" name="choujiang">抽奖</el-tab-pane>
+        <el-tab-pane label="抽奖工具" name="choujiang">
+          <Lottery />
+        </el-tab-pane>
+        <el-tab-pane label="关于作者" name="zuozhe">
+          <Author />
+        </el-tab-pane>
       </el-tabs>
     </main>
 
@@ -62,6 +67,8 @@ import { DropdownItem } from '@renderer/components/Dropdown.vue'
 import mangheImg from '@renderer/assets/imgs/manghe.png'
 import zuanshiImg from '@renderer/assets/imgs/zuanshi.png'
 import wangzhanImg from '@renderer/assets/imgs/wangzhan.png'
+import Lottery from './components/Lottery.vue'
+import Author from './components/Author.vue'
 
 const { error: toastError } = useToast()
 
