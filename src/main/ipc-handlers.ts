@@ -219,6 +219,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       show: false,
       x,
       y,
+      fullscreenable: false, // 禁用全屏
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false,
@@ -2065,6 +2066,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       titleBarStyle: 'hidden',
       modal: false,
       show: false,
+      fullscreenable: false, // 禁用全屏
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false,
