@@ -65,7 +65,7 @@
               <ExpandedGiftTable :items="row.list" :accounts="props.accounts" />
             </template>
           </el-table-column>
-          <el-table-column align="center" width="100" :label="`总计(${displayData.length})`">
+          <el-table-column align="center" width="100" :label="`总类(${displayData.length})`">
             <template #default="{ row }">
               <el-image
                 :src="Utils.createItemImgUrl(row)"
@@ -78,7 +78,7 @@
           </el-table-column>
           <el-table-column
             prop="name"
-            label="名称"
+            label="道具名称"
             align="center"
             show-overflow-tooltip
             sortable="custom"
