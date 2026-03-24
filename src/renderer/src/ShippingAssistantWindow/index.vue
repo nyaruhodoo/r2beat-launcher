@@ -3,6 +3,27 @@
     <CustomTitleBar type="detail" title="发货助手">
       <template #nav>
         <UserInfoCom :user-info-list="savedAccounts ?? []" @login-click="showLoginModal = true" />
+
+        <!-- 抽奖中心和充值中心下拉框 -->
+        <Dropdown :items="giftRechargeItems">
+          <template #trigger="{ isOpen }">
+            <button class="nav-btn">
+              <img :src="mangheImg" />
+              <span class="nav-text">充值</span>
+              <div class="dropdown-icon" :class="{ rotated: isOpen }">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M3 4.5L6 7.5L9 4.5"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </button>
+          </template>
+        </Dropdown>
       </template>
     </CustomTitleBar>
 
@@ -37,11 +58,37 @@ import { WebUserInfo } from '@types'
 import { ipcEmitter, ipcArg } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'
 import ItemTable from './components/ItemTable.vue'
+import { DropdownItem } from '@renderer/components/Dropdown.vue'
+import mangheImg from '@renderer/assets/imgs/manghe.png'
+import zuanshiImg from '@renderer/assets/imgs/zuanshi.png'
+import wangzhanImg from '@renderer/assets/imgs/wangzhan.png'
 
 const { error: toastError } = useToast()
 
 const tabsActiveName = ref('fahuo')
 const showLoginModal = ref(false)
+
+const giftRechargeItems: DropdownItem[] = [
+  {
+    label: '抽奖中心',
+    icon: mangheImg,
+    href: 'https://r2beat.xiyouxi.com/gift/draw',
+    target: '_blank',
+  },
+  {
+    label: '充值中心',
+    icon: zuanshiImg,
+    onClick: () => {
+      ipcEmitter.send('open-recharge-center', '')
+    },
+  },
+  {
+    label: '游戏官网',
+    icon: wangzhanImg,
+    href: 'https://r2beat.xiyouxi.com/',
+    target: '_blank',
+  },
+]
 
 /**
  * 存储所有登陆过的账号

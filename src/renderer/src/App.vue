@@ -124,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import CustomTitleBar from './components/CustomTitleBar.vue'
 import Announcement from './components/Announcement.vue'
@@ -167,7 +167,7 @@ const showAlbumModal = ref(false)
 
 // ========== 下拉框菜单项 ==========
 // 抽奖中心和充值中心下拉菜单
-const giftRechargeItems = computed<DropdownItem[]>(() => [
+const giftRechargeItems: DropdownItem[] = [
   {
     label: '抽奖中心',
     icon: mangheImg,
@@ -194,10 +194,10 @@ const giftRechargeItems = computed<DropdownItem[]>(() => [
       ipcEmitter.send('open-shipping-assistant')
     },
   },
-])
+]
 
 // 补丁和设置下拉菜单
-const patchSettingsItems = computed<DropdownItem[]>(() => [
+const patchSettingsItems: DropdownItem[] = [
   {
     label: '设置',
     icon: shezhiImg,
@@ -255,7 +255,7 @@ const patchSettingsItems = computed<DropdownItem[]>(() => [
       success('重置GG完成')
     },
   },
-])
+]
 
 /**
  * 一些基础配置
