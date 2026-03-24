@@ -95,8 +95,8 @@ function createTray(window: BrowserWindow) {
 
 function createWindow() {
   const window = new BrowserWindow({
-    width: 1152, // 1280 * 0.9
-    height: 648, // 720 * 0.9
+    width: 1280 * 0.9,
+    height: 720 * 0.9,
     minWidth: 1024,
     minHeight: 768,
     show: false, // 初始不显示，等待 ready-to-show
