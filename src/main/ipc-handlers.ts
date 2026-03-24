@@ -111,14 +111,16 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * @param _event IPC 事件对象
    * @param username 可选，当前登录的用户名
    */
-  ipc.on('open-recharge-center', (_event, username) => {
+  ipc.on('open-recharge-center', (event, username) => {
+    const senderWindow = BrowserWindow.fromWebContents(event.sender)
+
     const rechargeWindow = new BrowserWindow({
       width: 900,
       height: 590,
       minWidth: 900,
       minHeight: 590,
       autoHideMenuBar: true,
-      parent: mainWindow,
+      parent: senderWindow!,
       modal: false,
       show: false,
       webPreferences: {
