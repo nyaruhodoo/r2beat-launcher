@@ -25,6 +25,7 @@
               :fetch-suggestions="querySearchItemName"
               placeholder="按道具名称筛选（支持拼音）"
               autocorrect="off"
+              :debounce="510"
               @select="onKeywordSelect"
             />
             <el-select
@@ -497,7 +498,7 @@ watch(keyword, () => {
   keywordDebounceTimer = setTimeout(() => {
     debouncedKeyword.value = keyword.value
     keywordDebounceTimer = null
-  }, 600)
+  }, 500)
   tableRef.value?.clearSelection()
 })
 onUnmounted(() => {
