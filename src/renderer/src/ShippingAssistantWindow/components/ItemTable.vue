@@ -353,7 +353,7 @@ const displayData = computed(() => {
 
       return (
         lowers.some((kw) => itemName.includes(kw)) &&
-        blackListLowers.some((kw) => !itemName.includes(kw))
+        (blackListLowers.length ? blackListLowers.some((kw) => !itemName.includes(kw)) : true)
       )
     })
   }
