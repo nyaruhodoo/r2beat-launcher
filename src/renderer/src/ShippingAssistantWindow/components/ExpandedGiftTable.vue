@@ -27,7 +27,7 @@
 
 <script lang="ts" setup>
 import { computed, h } from 'vue'
-import type { GiftItem, WebUserInfo } from '@types'
+import type { GiftItem, WebUserInfo } from '@globalTypes'
 import { Utils } from '../utils'
 
 const props = defineProps<{

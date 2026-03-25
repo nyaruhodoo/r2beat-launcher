@@ -1,4 +1,4 @@
-import { GiftGroupedData } from '@types'
+import { GiftGroupedData } from '@globalTypes'
 
 export class Utils {
   /**

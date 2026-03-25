@@ -272,7 +272,7 @@ export interface PatchUpdateFile {
   // 压缩后文件大小
   compressedSize: number
   // 可选：校验值
-  checksum?: string
+  checksum: number
   // 补丁下载地址
   downloadUrl: string
 }

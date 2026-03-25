@@ -32,6 +32,9 @@ importers:
       pinyin-pro:
         specifier: ^3.28.0
         version: 3.28.0
+      tsv:
+        specifier: ^0.2.0
+        version: 0.2.0
       vue:
         specifier: ^3.5.25
         version: 3.5.27(typescript@5.9.3)
@@ -57,6 +60,9 @@ importers:
       '@types/node':
         specifier: ^22.19.1
         version: 22.19.7
+      '@types/tsv':
+        specifier: ^0.2.4
+        version: 0.2.4
       '@vitejs/plugin-vue':
         specifier: ^6.0.2
         version: 6.0.3(vite@7.3.1(@types/node@22.19.7)(jiti@2.6.1))(vue@3.5.27(typescript@5.9.3))
@@ -1094,6 +1100,9 @@ packages:
 
   '@types/tough-cookie@4.0.5':
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
+
+  '@types/tsv@0.2.4':
+    resolution: {integrity: sha512-yP+y/Nz8dwvHD3UR3XprGp2Up0pA6fuq4f3kCoIPhYH4dzADBXnuM0BIYDkCok6b678zQhAWXS4vLcD5HGbjCg==}
 
   '@types/verror@1.10.11':
     resolution: {integrity: sha512-RlDm9K7+o5stv0Co8i8ZRGxDbrTxhJtgjqjFyVh/tXQyl/rYtTKlnTvZ88oSTeYREWurwx20Js4kTuKCsFkUtg==}
@@ -2917,6 +2926,9 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
+  tsv@0.2.0:
+    resolution: {integrity: sha512-GG6xbOP85giXXom0dS6z9uyDsxktznjpa1AuDlPrIXDqDnbhjr9Vk6Us8iz6U1nENL4CPS2jZDvIjEdaZsmc4Q==}
+
   tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
 
@@ -4022,6 +4034,8 @@ snapshots:
       '@types/node': 22.19.7
 
   '@types/tough-cookie@4.0.5': {}
+
+  '@types/tsv@0.2.4': {}
 
   '@types/verror@1.10.11':
     optional: true
@@ -6130,6 +6144,8 @@ snapshots:
   ts-api-utils@2.4.0(typescript@5.9.3):
     dependencies:
       typescript: 5.9.3
+
+  tsv@0.2.0: {}
 
   tunnel-agent@0.6.0:
     dependencies:

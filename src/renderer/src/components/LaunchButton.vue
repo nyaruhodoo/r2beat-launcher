@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import type { GameSettings, UserInfo } from '@types'
+import type { GameSettings, UserInfo } from '@globalTypes'
 import { ref, onMounted, computed } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
 import { useToast } from '../composables/useToast'

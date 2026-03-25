@@ -147,7 +147,7 @@ import Modal from './Modal.vue'
 import Checkbox from './Checkbox.vue'
 import { useToast } from '@renderer/composables/useToast'
 import { confirm } from '@renderer/composables/useConfirm'
-import type { UserInfo } from '@types'
+import type { UserInfo } from '@globalTypes'
 import useEventListener from 'vue-hooks-plus/lib/useEventListener'
 import { ipcEmitter } from '@renderer/ipc'
 

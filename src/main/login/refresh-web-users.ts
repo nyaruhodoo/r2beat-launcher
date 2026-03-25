@@ -1,4 +1,4 @@
-import type { WebUserInfo } from '@types'
+import type { WebUserInfo } from '@globalTypes'
 import { webLogin } from './web-login'
 import { logInfo } from '../log'
 

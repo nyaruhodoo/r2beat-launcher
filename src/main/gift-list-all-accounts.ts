@@ -1,4 +1,4 @@
-import type { GiftItem, WebUserInfo } from '@types'
+import type { GiftItem, WebUserInfo } from '@globalTypes'
 import { fetchAllGifts } from './export-lottery-items-txt'
 import { logInfo, logSuccess } from './log'
 

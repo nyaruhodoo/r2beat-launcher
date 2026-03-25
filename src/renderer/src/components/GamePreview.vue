@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import type { GameSettings } from '@types'
+import type { GameSettings } from '@globalTypes'
 import { ipcEmitter } from '@renderer/ipc'
 
 const props = defineProps<{
