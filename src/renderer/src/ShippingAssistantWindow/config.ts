@@ -2,6 +2,8 @@ export const keywordGroupOptions: {
   label: string
   value: string
   keywords: string[]
+  // 部分道具名称比较特殊，额外处理
+  blacklist: string[]
 }[] = [
   {
     label: '刷分套',
@@ -17,6 +19,7 @@ export const keywordGroupOptions: {
       'ac达人',
       'pd之王',
     ],
+    blacklist: [],
   },
   {
     label: '日用品',
@@ -57,25 +60,42 @@ export const keywordGroupOptions: {
       '好奇心少',
       '温和小猫',
     ],
+    blacklist: [],
   },
   {
     label: '音速石',
     value: 'yinsushi',
     keywords: ['音速石'],
+    blacklist: [],
   },
   {
     label: '模式',
     value: 'moshi',
     keywords: ['突发模式', '镜子模式', '随机模式'],
+    blacklist: [],
   },
   {
     label: '铃铛',
     value: 'lingdang',
     keywords: ['金铃铛'],
+    blacklist: [],
   },
   {
     label: '永久',
     value: 'yongjiu',
     keywords: ['（永久）'],
+    blacklist: [],
+  },
+  {
+    label: '女',
+    value: 'nv',
+    keywords: ['女', 'girl'],
+    blacklist: ['红桃女王背景框'],
+  },
+  {
+    label: '男',
+    value: 'nan',
+    keywords: ['男', 'boy'],
+    blacklist: [],
   },
 ]

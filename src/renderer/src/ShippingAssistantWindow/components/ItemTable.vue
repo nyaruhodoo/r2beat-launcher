@@ -1,6 +1,6 @@
 <template>
   <el-splitter>
-    <el-splitter-panel size="60%">
+    <el-splitter-panel size="65%">
       <div class="item-table-wrap">
         <div class="item-table-toolbar">
           <div class="item-table-toolbar-sync">
@@ -104,7 +104,7 @@
         </el-table>
       </div>
     </el-splitter-panel>
-    <el-splitter-panel size="40%" :resizable="false">
+    <el-splitter-panel size="35%" :resizable="false">
       <div class="log-wrap">
         <MainLogPanel />
       </div>
@@ -125,6 +125,14 @@ import { pinyin } from 'pinyin-pro'
 import MainLogPanel from './MainLogPanel.vue'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
 import { keywordGroupOptions } from '../config'
+
+type GroupedRow = GiftGroupedData & {
+  latestCreatedAt: string
+  latestCreatedAtTs: number
+}
+
+type SortOrder = 'ascending' | 'descending' | null
+type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | 'name' | null
 
 const props = defineProps<{
   accounts: WebUserInfo[]
@@ -156,14 +164,6 @@ const [lastSyncedAccountUsernames, setLastSyncedAccountUsernames] = useLocalStor
   'r2beat_shipping_last_synced_account_usernames_v1',
   { defaultValue: [] },
 )
-
-type GroupedRow = GiftGroupedData & {
-  latestCreatedAt: string
-  latestCreatedAtTs: number
-}
-
-type SortOrder = 'ascending' | 'descending' | null
-type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | 'name' | null
 
 const loading = ref(false)
 const keyword = ref('')
@@ -299,13 +299,20 @@ function textMatchesKeyword(text: string, kwLower: string): boolean {
 const displayData = computed(() => {
   const kw = debouncedKeyword.value.trim().toLowerCase()
   let rows = groupedRows.value
+  const picked = new Set(selectedKeywordGroups.value)
 
   // 获取当前选择的所有分类内容
   const selectedGroupKeywords = (() => {
-    const picked = new Set(selectedKeywordGroups.value)
     return keywordGroupOptions
       .filter((group) => picked.has(group.value))
       .flatMap((group) => group.keywords)
+  })()
+
+  // 获取当前选择的所有分类内容(特例名单)
+  const selectedGroupBlackListKeywords = (() => {
+    return keywordGroupOptions
+      .filter((group) => picked.has(group.value))
+      .flatMap((group) => group.blacklist)
   })()
 
   /**
@@ -313,11 +320,15 @@ const displayData = computed(() => {
    */
   if (selectedGroupKeywords.length > 0) {
     const lowers = selectedGroupKeywords.map((k) => k.trim().toLowerCase())
+    const blackListLowers = selectedGroupBlackListKeywords.map((k) => k.trim().toLowerCase())
 
     rows = rows.filter((row) => {
       const itemName = row.name.toLowerCase()
 
-      return lowers.some((kw) => itemName.includes(kw))
+      return (
+        lowers.some((kw) => itemName.includes(kw)) &&
+        blackListLowers.some((kw) => !itemName.includes(kw))
+      )
     })
   }
 
