@@ -1313,8 +1313,8 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
             .filter((line) => line && !line.startsWith('#') && !line.startsWith(';'))
 
           for (const line of lines) {
-            const parts = line.split(/\s+/)
-            if (parts.length < 4) {
+            const parts = line.split('\t')
+            if (parts.length < 5) {
               continue
             }
 
