@@ -100,7 +100,7 @@
           <el-table-column
             prop="itemCount"
             align="center"
-            width="100"
+            width="130"
             :label="`总数`"
             sortable="custom"
           >
