@@ -44,13 +44,6 @@
                 :value="group.value"
               />
             </el-select>
-            <el-switch
-              v-model="switchModel"
-              size="large"
-              inline-prompt
-              active-text="紧凑"
-              inactive-text="普通"
-            />
           </div>
         </div>
         <el-table
@@ -118,7 +111,20 @@
     </el-splitter-panel>
     <el-splitter-panel size="35%" :resizable="false">
       <div class="log-wrap">
-        <MainLogPanel />
+        <el-splitter layout="vertical">
+          <el-splitter-panel>
+            <el-switch
+              v-model="switchModel"
+              size="large"
+              inline-prompt
+              active-text="紧凑"
+              inactive-text="普通"
+            />
+          </el-splitter-panel>
+          <el-splitter-panel :resizable="false">
+            <MainLogPanel />
+          </el-splitter-panel>
+        </el-splitter>
       </div>
     </el-splitter-panel>
   </el-splitter>
@@ -639,9 +645,7 @@ watch(selectedKeywordGroups, () => {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
   overflow: hidden;
-  background: var(--el-fill-color-blank);
 }
 </style>
