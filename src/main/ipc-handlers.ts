@@ -4,7 +4,13 @@ import { homedir } from 'os'
 import { createReadStream, createWriteStream } from 'fs'
 import { readFile, writeFile, readdir, mkdir, unlink, stat, copyFile, rm } from 'fs/promises'
 import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
-import { AnnouncementData, R2BeatNoticeData, ProcessPriority, AppConfig, PatchInfo } from '@types'
+import {
+  AnnouncementData,
+  R2BeatNoticeData,
+  ProcessPriority,
+  AppConfig,
+  PatchInfo,
+} from '@globalTypes'
 import { sendTcpLoginRequest } from './login/tcp-login'
 import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
 import lzma from 'lzma-native'
@@ -21,6 +27,9 @@ import { refreshWebUsersConcurrent } from './login/refresh-web-users'
 import { fetchGiftItemsForEnabledAccounts } from './gift-list-all-accounts'
 import { http } from './http'
 import { logError, logInfo, logSuccess } from './log'
+import { Parser } from 'tsv'
+
+const tsxParser = new Parser('\t', { header: false })
 
 // 该文件只处理业务逻辑
 export const ipcHandlers = (mainWindow?: BrowserWindow) => {
@@ -1290,6 +1299,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
           throw new Error(errorMsg)
         }
       }
+
       // 解析所有 lst 文件，计算补丁详情与总大小
       let patches: {
         version: string
@@ -1298,7 +1308,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         targetFileName: string
         originalSize: number
         compressedSize: number
-        checksum?: string
+        checksum: number
         downloadUrl: string
       }[] = []
 
@@ -1307,45 +1317,28 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
       for (const { version, filePath } of localFiles) {
         try {
           const content = await readFile(filePath, 'utf-8')
-          const lines = content
-            .split(/\r?\n/)
-            .map((line) => line.trim())
-            .filter((line) => line && !line.startsWith('#') && !line.startsWith(';'))
-
-          for (const line of lines) {
-            const parts = line.split('\t')
-            if (parts.length < 5) {
-              continue
-            }
-
-            const patchFileName = parts[0]
-            let targetFileName = parts[1]
-
-            // 如果 targetFileName 是 VLauncher_New.exe，修改为 VLauncher.exe
-            if (targetFileName === 'VLauncher_New.exe') {
-              targetFileName = 'VLauncher.exe'
-            }
-
-            const originalSize = Number(parts[2]) || 0
-            const compressedSize = Number(parts[3]) || 0
-            const checksum = parts[4]
-
-            const downloadUrl = `http://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${patchFileName}`
-
-            patches.push({
-              version,
-              filePath,
-              patchFileName,
-              targetFileName,
-              originalSize,
-              compressedSize,
-              checksum,
-              downloadUrl,
+          const parserRow: [string, string, number, number, number][] = tsxParser
+            .parse(content)
+            .filter((i) => {
+              return i.length === 5
             })
 
-            // 按原始大小统计总下载体积
-            totalSize += originalSize
-          }
+          const parserRowList = parserRow.map((i) => {
+            totalSize += i[2]
+
+            return {
+              version,
+              filePath,
+              patchFileName: i[0],
+              targetFileName: i[1] === 'VLauncher_New.exe' ? 'VLauncher.exe' : i[1],
+              originalSize: i[2],
+              compressedSize: i[3],
+              checksum: i[4],
+              downloadUrl: `http://r2beat-cdn.xiyouxi.com/live/vpatch/${version}/${i[0]}`,
+            }
+          })
+
+          patches.push(...parserRowList)
         } catch (error) {
           const errorMsg = `解析补丁列表失败: ${filePath} - ${error instanceof Error ? error.message : String(error)}`
           console.error('[Main]', errorMsg)
