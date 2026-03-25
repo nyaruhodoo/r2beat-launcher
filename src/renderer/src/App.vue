@@ -124,6 +124,7 @@
 </template>
 
 <script setup lang="ts">
+import type { DropdownItem } from './components/Dropdown.vue'
 import { ref, watch, onMounted } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import CustomTitleBar from './components/CustomTitleBar.vue'
@@ -138,7 +139,6 @@ import GamePreview from './components/GamePreview.vue'
 import PakModal from './components/PakModal.vue'
 import AlbumModal from './components/AlbumModal.vue'
 import Dropdown from './components/Dropdown.vue'
-import type { DropdownItem } from './components/Dropdown.vue'
 import { GameSettings, UserInfo } from '../../types'
 import mangheImg from '@renderer/assets/imgs/manghe.png'
 import zuanshiImg from '@renderer/assets/imgs/zuanshi.png'

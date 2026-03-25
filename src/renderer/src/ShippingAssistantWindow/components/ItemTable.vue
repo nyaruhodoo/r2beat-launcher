@@ -44,6 +44,13 @@
                 :value="group.value"
               />
             </el-select>
+            <el-switch
+              v-model="switchModel"
+              size="large"
+              inline-prompt
+              active-text="紧凑"
+              inactive-text="普通"
+            />
           </div>
         </div>
         <el-table
@@ -65,7 +72,12 @@
               <ExpandedGiftTable :items="row.list" :accounts="props.accounts" />
             </template>
           </el-table-column>
-          <el-table-column align="center" width="100" :label="`总类(${displayData.length})`">
+          <el-table-column
+            v-if="!isCompact"
+            align="center"
+            width="100"
+            :label="`总类(${displayData.length})`"
+          >
             <template #default="{ row }">
               <el-image
                 :src="Utils.createItemImgUrl(row)"
@@ -78,7 +90,7 @@
           </el-table-column>
           <el-table-column
             prop="name"
-            label="道具名称"
+            :label="`道具名称${!isCompact ? '' : `(${displayData.length})`}`"
             align="center"
             show-overflow-tooltip
             sortable="custom"
@@ -125,7 +137,6 @@ import { pinyin } from 'pinyin-pro'
 import MainLogPanel from './MainLogPanel.vue'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
 import { keywordGroupOptions } from '../config'
-
 type GroupedRow = GiftGroupedData & {
   latestCreatedAt: string
   latestCreatedAtTs: number
@@ -164,6 +175,21 @@ const [lastSyncedAccountUsernames, setLastSyncedAccountUsernames] = useLocalStor
   'r2beat_shipping_last_synced_account_usernames_v1',
   { defaultValue: [] },
 )
+
+/**
+ * 预览模式(是否紧凑)
+ */
+const [isCompact, setIsCompact] = useLocalStorageState<boolean>('is-compact', {
+  defaultValue: false,
+})
+const switchModel = computed({
+  get() {
+    return isCompact.value
+  },
+  set(newVal) {
+    setIsCompact(newVal)
+  },
+})
 
 const loading = ref(false)
 const keyword = ref('')
@@ -563,22 +589,22 @@ watch(selectedKeywordGroups, () => {
   color: var(--el-color-warning, #e6a23c);
 }
 
-.item-table-filter {
-  flex: 1 1 0;
-  min-width: 160px;
-}
-
 .item-table-filters {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: nowrap;
-}
 
-.item-table-filter-select {
-  flex: 1 1 0;
-  min-width: 160px;
+  .item-table-filter {
+    flex: 1 1 0;
+    min-width: 160px;
+  }
+
+  .item-table-filter-select {
+    flex: 1 1 0;
+    min-width: 160px;
+  }
 }
 
 .item-table-hint {

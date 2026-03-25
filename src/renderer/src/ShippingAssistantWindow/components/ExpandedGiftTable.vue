@@ -87,6 +87,22 @@ function columnsFor(w: number) {
         ),
     },
     {
+      key: 'created_at',
+      dataKey: 'created_at',
+      title: '获得时间',
+      align: 'center' as const,
+      width: w / 3,
+      cellRenderer: ({ rowData }: { rowData: GiftItem }) =>
+        h(
+          'span',
+          {
+            title: rowData.created_at,
+            style: baseCellStyle,
+          },
+          rowData.created_at,
+        ),
+    },
+    {
       key: 'user_id',
       dataKey: 'user_id',
       title: '所属账号',
@@ -104,30 +120,14 @@ function columnsFor(w: number) {
         )
       },
     },
-    {
-      key: 'created_at',
-      dataKey: 'created_at',
-      title: '获得时间',
-      align: 'center' as const,
-      width: w / 3,
-      cellRenderer: ({ rowData }: { rowData: GiftItem }) =>
-        h(
-          'span',
-          {
-            title: rowData.created_at,
-            style: baseCellStyle,
-          },
-          rowData.created_at,
-        ),
-    },
   ]
 }
 </script>
 
 <style scoped>
 .expanded-gift-table {
-  padding: 10px 40px;
-  padding-left: 100px;
+  padding: 10px 100px;
+
   background: var(--el-fill-color-lighter);
 }
 
