@@ -13,7 +13,6 @@ import type {
   PatchUpdateInfo,
   ProcessPriority,
   PatchInfo,
-  AppConfig,
   PatchProgressPayload,
   PatchUpdateFile,
   PakFileInfo,
@@ -21,6 +20,7 @@ import type {
   UserInfo,
   WebUserInfo,
   GiftItemTableRow,
+  GameConfig,
 } from '@globalTypes'
 
 /**
@@ -78,7 +78,7 @@ export type IpcMainEvents =
       }) => IpcResult
       'read-config-ini': (gamePath: string) => IpcResult<{
         exists: boolean
-        data?: AppConfig
+        data?: GameConfig
       }>
       'write-config-ini': (
         gamePath: string,

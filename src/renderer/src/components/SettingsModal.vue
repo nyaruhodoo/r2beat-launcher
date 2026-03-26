@@ -5,9 +5,9 @@
     :title-icon-img="shezhiImg"
     confirm-text="保存设置"
     cancel-text="取消"
-    @close="handleClose"
+    @close="emit('close')"
     @confirm="handleSave"
-    @cancel="handleClose"
+    @cancel="emit('close')"
   >
     <div class="settings-section">
       <h3 class="section-title">游戏路径</h3>
@@ -135,7 +135,7 @@ import qrcode from '@renderer/assets/imgs/qrcode.jpg'
 import shezhiImg from '@renderer/assets/imgs/shezhi.png'
 import { useToast } from '@renderer/composables/useToast'
 import { ipcEmitter } from '@renderer/ipc'
-import type { AppConfig, GameSettings } from '@globalTypes'
+import type { GameConfig, GameSettings } from '@globalTypes'
 import { computed, ref, watch } from 'vue'
 import Checkbox from './Checkbox.vue'
 import CustomSelect from './CustomSelect.vue'
@@ -165,28 +165,30 @@ const settings = ref<GameSettings>({
 })
 
 // 保存 config.ini 转换后的 JSON 数据
-const configIniJson = ref<AppConfig>()
+const configIniJson = ref<GameConfig>()
 
-// 从 configIniJson 读取并双向绑定的计算属性
+/**
+ * 双向绑定分辨率
+ */
 const resolution = computed({
   get: () => {
-    if (!configIniJson.value?.VIDEO) return [1920, 1080] as const
-    const width = configIniJson.value.VIDEO.WIDTH || 1920
-    const height = configIniJson.value.VIDEO.HEIGHT || 1080
+    if (!configIniJson.value?.VIDEO) return ['1920', '1080']
+    const width = configIniJson.value.VIDEO.WIDTH || '1920'
+    const height = configIniJson.value.VIDEO.HEIGHT || '1080'
     return [width, height] as const
   },
-  set: (value: [number, number]) => {
+  set: (value: [string, string]) => {
     if (!configIniJson.value) return
     if (!configIniJson.value.VIDEO)
       configIniJson.value.VIDEO = {
-        WIDTH: 1920,
-        HEIGHT: 1080,
-        FULLSCREEN: 0,
-        OUTLINE: 0,
-        OUTLINING: 0,
+        WIDTH: '1920',
+        HEIGHT: '1080',
+        FULLSCREEN: '0',
+        OUTLINE: '2',
+        OUTLINING: '1',
       }
     if (!configIniJson.value.FONT)
-      configIniJson.value.FONT = { FILEPATH: '', WIDTH: 1920, HEIGHT: 1080 }
+      configIniJson.value.FONT = { FILEPATH: 'Fonts/simsun.ttf', WIDTH: '1920', HEIGHT: '1080' }
 
     configIniJson.value.VIDEO.WIDTH = value[0]
     configIniJson.value.VIDEO.HEIGHT = value[1]
@@ -195,100 +197,121 @@ const resolution = computed({
   },
 })
 
+/**
+ * 双向绑定全屏
+ */
 const fullscreen = computed({
   get: () => {
     if (!configIniJson.value?.VIDEO) return false
-    return configIniJson.value.VIDEO.FULLSCREEN === 1
+    return configIniJson.value.VIDEO.FULLSCREEN === '1'
   },
   set: (value: boolean) => {
     if (!configIniJson.value) return
     if (!configIniJson.value.VIDEO)
       configIniJson.value.VIDEO = {
-        WIDTH: 1920,
-        HEIGHT: 1080,
-        FULLSCREEN: 0,
-        OUTLINE: 0,
-        OUTLINING: 0,
+        WIDTH: '1920',
+        HEIGHT: '1080',
+        FULLSCREEN: '0',
+        OUTLINE: '2',
+        OUTLINING: '1',
       }
-    configIniJson.value.VIDEO.FULLSCREEN = value ? 1 : 0
+    configIniJson.value.VIDEO.FULLSCREEN = value ? '1' : '0'
   },
 })
 
+/**
+ * 双向绑定描边
+ */
 const graphicsQuality = computed({
   get: () => {
     if (!configIniJson.value?.VIDEO) return true
-    return configIniJson.value.VIDEO.OUTLINING === 1
+    return configIniJson.value.VIDEO.OUTLINING === '1'
   },
   set: (value: boolean) => {
     if (!configIniJson.value) return
     if (!configIniJson.value.VIDEO)
       configIniJson.value.VIDEO = {
-        WIDTH: 1920,
-        HEIGHT: 1080,
-        FULLSCREEN: 0,
-        OUTLINE: 2,
-        OUTLINING: 1,
+        WIDTH: '1920',
+        HEIGHT: '1080',
+        FULLSCREEN: '0',
+        OUTLINE: '2',
+        OUTLINING: '1',
       }
-    configIniJson.value.VIDEO.OUTLINING = value ? 1 : 0
+    configIniJson.value.VIDEO.OUTLINING = value ? '1' : '0'
   },
 })
 
+/**
+ * 双向绑定禁用画面抖动
+ */
 const jitterShake = computed({
   get: () => {
     if (!configIniJson.value?.JITTER) return false
-    return configIniJson.value.JITTER.ONOFF === 1
+    return configIniJson.value.JITTER.ONOFF === '1'
   },
   set: (value: boolean) => {
     if (!configIniJson.value) return
     if (!configIniJson.value.JITTER) {
-      configIniJson.value.JITTER = { ONOFF: 0 }
+      configIniJson.value.JITTER = { ONOFF: '0' }
     }
-    configIniJson.value.JITTER.ONOFF = value ? 1 : 0
+    configIniJson.value.JITTER.ONOFF = value ? '1' : '0'
   },
 })
 
+/**
+ * 双向绑定特效音乐
+ */
 const audioEffects = computed({
   get: () => {
     if (!configIniJson.value?.SOUND) return true
-    return configIniJson.value.SOUND.EFFECT === 1
+    return configIniJson.value.SOUND.EFFECT === '1'
   },
   set: (value: boolean) => {
     if (!configIniJson.value) return
     if (!configIniJson.value.SOUND)
       configIniJson.value.SOUND = {
-        BG: 1,
-        EFFECT: 1,
-        BGVOL: 100,
-        EFFECTVOL: 100,
+        BG: '1',
+        EFFECT: '1',
+        BGVOL: '16384',
+        EFFECTVOL: '16384',
       }
-    configIniJson.value.SOUND.EFFECT = value ? 1 : 0
+    configIniJson.value.SOUND.EFFECT = value ? '1' : ' 0'
   },
 })
 
+/**
+ * 双向绑定背景音乐
+ */
 const backgroundMusic = computed({
   get: () => {
     if (!configIniJson.value?.SOUND) return true
-    return configIniJson.value.SOUND.BG === 1
+    return configIniJson.value.SOUND.BG === '1'
   },
   set: (value: boolean) => {
     if (!configIniJson.value) return
     if (!configIniJson.value.SOUND)
       configIniJson.value.SOUND = {
-        BG: 1,
-        EFFECT: 1,
-        BGVOL: 100,
-        EFFECTVOL: 100,
+        BG: '1',
+        EFFECT: '1',
+        BGVOL: '16384',
+        EFFECTVOL: '16384',
       }
-    configIniJson.value.SOUND.BG = value ? 1 : 0
+    configIniJson.value.SOUND.BG = value ? '1' : '0'
   },
 })
 
+/**
+ * 分辨率配置
+ */
 const resolutionOptions = [
-  { value: [1920, 1080], label: '1920 × 1080' },
-  { value: [1024, 768], label: '1024 × 768' },
-  { value: [800, 600], label: '800 × 600' },
+  { value: ['1920', '1080'], label: '1920 × 1080' },
+  { value: ['1024', '768'], label: '1024 × 768' },
+  { value: ['800', '600'], label: '800 × 600' },
 ]
 
+/**
+ * 进程优先级配置
+ */
 const processPriorityOptions = [
   { value: 'realtime', label: '实时' },
   { value: 'high', label: '高' },
@@ -297,10 +320,6 @@ const processPriorityOptions = [
   { value: 'belownormal', label: '低于正常' },
   { value: 'low', label: '低' },
 ]
-
-const handleClose = () => {
-  emit('close')
-}
 
 const handleSave = async () => {
   // 保存游戏设置
@@ -326,7 +345,7 @@ const handleSave = async () => {
     }
   }
 
-  handleClose()
+  emit('close')
 }
 
 const handleBrowse = async () => {

@@ -145,7 +145,7 @@ const loadLocalVersion = async () => {
   try {
     const result = await ipcEmitter.invoke('read-patch-info', path)
     if (result?.success && result.data) {
-      currentVersion.value = result.data.patch.version.toString().padStart(5, '0')
+      currentVersion.value = result.data.patch?.version?.toString().padStart(5, '0') ?? '00030'
       // currentVersion.value = '00033'
 
       updateStatus()

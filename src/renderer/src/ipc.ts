@@ -24,8 +24,7 @@ export function ipcArg<T>(value: T): T {
 
   // 优先使用 structuredClone（能保留 Uint8Array 等二进制类型）
   try {
-    // eslint-disable-next-line @globalTypescript-eslint/no-explicit-any
-    const sc = (globalThis as any).structuredClone as undefined | ((v: unknown) => unknown)
+    const sc = globalThis.structuredClone as undefined | ((v: unknown) => unknown)
     if (typeof sc === 'function') {
       return sc(raw) as T
     }

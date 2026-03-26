@@ -3,13 +3,12 @@ import { join, relative, dirname, basename } from 'path'
 import { homedir } from 'os'
 import { createReadStream, createWriteStream } from 'fs'
 import { readFile, writeFile, readdir, mkdir, unlink, stat, copyFile, rm } from 'fs/promises'
-import { parseIniToJson, stringifyJsonToIni } from './ini-json-converter'
 import {
   AnnouncementData,
   R2BeatNoticeData,
   ProcessPriority,
-  AppConfig,
   PatchInfo,
+  GameConfig,
 } from '@globalTypes'
 import { sendTcpLoginRequest } from './login/tcp-login'
 import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
@@ -27,6 +26,7 @@ import { refreshWebUsersConcurrent } from './login/refresh-web-users'
 import { fetchGiftItemsForEnabledAccounts } from './gift-list-all-accounts'
 import { http } from './http'
 import { logError, logInfo, logSuccess } from './log'
+import { stringify, parse } from 'ini'
 import { Parser } from 'tsv'
 
 const tsxParser = new Parser('\t', { header: false })
@@ -337,36 +337,19 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
     const url = 'https://r2beat-cdn.xiyouxi.com/live/vpatch/patchVersionInfo.txt'
     try {
       const { data: text } = await http.get<string>(url, { responseType: 'text' })
-      const lines = text.split(/\r?\n/).map((line) => line.trim())
-
-      const userOpenIndex = lines.findIndex((line) => line.toLowerCase() === '[useropen]')
-      if (userOpenIndex === -1) {
-        throw new Error('未找到 [useropen] 段落')
+      const parsePatchVersionInfo = parse(text) as {
+        useropen?: Record<string, boolean>
+        masteropen?: Record<string, boolean>
+        versionend?: Record<string, boolean>
       }
 
-      // 查找 useropen 段结束位置（masteropen 或 versionend）
-      let endIndex = lines.length
-      for (let i = userOpenIndex + 1; i < lines.length; i++) {
-        const line = lines[i].toLowerCase()
-        if (line.startsWith('[masteropen]') || line.startsWith('[versionend]')) {
-          endIndex = i
-          break
-        }
+      const useropen = Object.keys(parsePatchVersionInfo.useropen ?? {})
+
+      if (useropen.length === 0) {
+        throw new Error('未找到 [useropen]')
       }
 
-      const userOpenLines = lines
-        .slice(userOpenIndex + 1, endIndex)
-        .filter((line) => line && !line.startsWith('['))
-
-      if (userOpenLines.length === 0) {
-        throw new Error('[useropen] 段中没有有效版本行')
-      }
-
-      const latest = userOpenLines[userOpenLines.length - 1]
-
-      console.log(`[Main] 当前最新版本号 ${latest}`)
-
-      return { success: true, version: latest }
+      return { success: true, version: useropen[useropen.length - 1] }
     } catch (error) {
       console.error('[Main] 获取远程版本异常:', error)
       return { success: false, error: '获取远程版本时发生异常' }
@@ -886,24 +869,20 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
   ipc.handle('read-config-ini', async (_, gamePath) => {
     try {
       if (!gamePath || gamePath.trim() === '') {
-        return { success: false, exists: false, error: '游戏路径未设置' }
+        throw new Error('游戏路径未设置')
       }
 
       const configIniPath = join(gamePath, 'config.ini')
       const iniExists = await Utils.exists(configIniPath)
 
       if (!iniExists) {
-        return { success: true, exists: false }
+        throw new Error('未在指定路径中找到配置文件')
       }
 
       // 读取文件内容
       const fileContent = await readFile(configIniPath, 'utf-8')
 
-      // 使用 ini-json-converter 转换为 JSON
-      const jsonData = parseIniToJson(fileContent)
-
-      // parseIniToJson 返回的是宽泛对象，这里按契约约束为 AppConfig（由渲染层按字段读取）
-      return { success: true, exists: true, data: jsonData as AppConfig }
+      return { success: true, exists: true, data: parse(fileContent) as GameConfig }
     } catch (error) {
       console.error('[Main] 读取 config.ini 失败:', error)
       return {
@@ -931,11 +910,14 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       const configIniPath = join(gamePath, 'config.ini')
 
-      // 使用 ini-json-converter 转换为 INI 字符串
-      const iniContent = stringifyJsonToIni(configJson)
-
-      // 写入文件（异步）
-      await writeFile(configIniPath, iniContent, 'utf-8')
+      // 写入文件
+      await writeFile(
+        configIniPath,
+        stringify(configJson, {
+          whitespace: true,
+        }),
+        'utf-8',
+      )
 
       console.log('[Main] config.ini 保存成功:', configIniPath)
       return { success: true }
@@ -966,9 +948,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
       // 读取文件内容
       const fileContent = await readFile(patchIniPath, 'utf-8')
-      const patchInfo = parseIniToJson(fileContent)
+      const patchInfo = parse(fileContent) as PatchInfo
 
-      return { success: true, data: patchInfo as PatchInfo }
+      return { success: true, data: patchInfo }
     } catch (error) {
       console.error('[Main] 读取 Patch.ini 失败:', error)
       return {
@@ -1827,15 +1809,12 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         const patchIniPath = join(gamePath, 'PatchInfo', 'Patch.ini')
         if (await Utils.exists(patchIniPath)) {
           const iniContent = await readFile(patchIniPath, 'utf-8')
-          const json = parseIniToJson(iniContent)
+          const patchInfo = parse(iniContent) as PatchInfo
           const versionNum = Number(latestVersion)
           if (!Number.isNaN(versionNum)) {
-            // @ts-expect-error  忽略错误
-            if (!json.patch) json.patch = {}
-            // @ts-expect-error  忽略错误
-            json.patch.version = latestVersion
-            const newIni = stringifyJsonToIni(json)
-            await writeFile(patchIniPath, newIni, 'utf-8')
+            if (!patchInfo.patch) patchInfo.patch = {}
+            patchInfo.patch.version = latestVersion
+            await writeFile(patchIniPath, stringify(patchInfo), 'utf-8')
           }
         }
       } catch (error) {

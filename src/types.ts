@@ -80,181 +80,184 @@ export interface GameSettings {
 }
 
 /**
- * 应用配置完整类型
+ * 觉醒应用配置完整类型
  */
-export interface AppConfig {
-  FONT: {
-    FILEPATH: string // 字体文件路径
-    WIDTH: number // 字体渲染宽度
-    HEIGHT: number // 字体渲染高度
+export interface GameConfig {
+  FONT?: {
+    FILEPATH?: string
+    WIDTH?: string
+    HEIGHT?: string
   }
-  USER: {
-    PORT: number // 端口号
+  USER?: {
+    PORT?: string
   }
-  VIDEO: {
-    WIDTH: number // 视频宽度
-    HEIGHT: number // 视频高度
-    FULLSCREEN: number // 全屏模式 0=关闭 1=开启
-    OUTLINE: number // 轮廓大小
-    OUTLINING: number // 轮廓效果 0=关闭 1=开启
+  VIDEO?: {
+    WIDTH?: string
+    HEIGHT?: string
+    FULLSCREEN?: string
+    OUTLINE?: string
+    OUTLINING?: string
   }
-  MACRO: {
-    F1: string // F1宏指令
-    F2: string // F2宏指令
-    F3: string // F3宏指令
-    F4: string // F4宏指令
+  MACRO?: {
+    F1?: string
+    F2?: string
+    F3?: string
+    F4?: string
   }
-  QUICKJOIN: {
-    JOIN: number // 快速加入 0=关闭 1=开启
-    INVITE: number // 邀请 0=关闭 1=开启
+  QUICKJOIN?: {
+    JOIN?: string
+    INVITE?: string
   }
-  SOUND: {
-    BG: number // 背景音乐开关 0=关闭 1=开启
-    EFFECT: number // 音效开关 0=关闭 1=开启
-    BGVOL: number // 背景音乐音量
-    EFFECTVOL: number // 音效音量
+  SOUND?: {
+    BG?: string
+    EFFECT?: string
+    BGVOL?: string
+    EFFECTVOL?: string
   }
-  EFFECT: {
-    BARRIER: number // 屏障特效 0=关闭 1=开启
-    CHARACTER: number // 角色特效 0=关闭 1=开启
-    CLUBCHARACTER: number // 俱乐部角色特效 0=关闭 1=开启
-    CLUBBG: number // 俱乐部背景特效 0=关闭 1=开启
+  EFFECT?: {
+    BARRIER?: string
+    CHARACTER?: string
+    CLUBCHARACTER?: string
+    CLUBBG?: string
   }
-  TOURNAMENT: {
-    STAR: number // 星星特效 0=关闭 1=开启
-    MOON: number // 月亮特效 0=关闭 1=开启
-    SUN: number // 太阳特效 0=关闭 1=开启
-    IMAGE: number // 图片特效 0=关闭 1=开启
+  TOURNAMENT?: {
+    STAR?: string
+    MOON?: string
+    SUN?: string
+    IMAGE?: string
   }
-  SCREENSHOT: {
-    GAME: number // 游戏截图 0=关闭 1=开启
-    ROOM: number // 房间截图 0=关闭 1=开启
+  SCREENSHOT?: {
+    GAME?: string
+    ROOM?: string
   }
-  MOUSE: {
-    SPEED: number // 鼠标速度
+  MOUSE?: {
+    SPEED?: string
   }
-  EXE: {
-    FILE: string // 执行文件名称
-    PARAM: string // 启动参数
-    USER_BEGIN: number // 用户起始ID
-    USER_END: number // 用户结束ID
+  EXE?: {
+    FILE?: string
+    PARAM?: string
+    USER_BEGIN?: string
+    USER_END?: string
   }
-  CONTROL: {
-    KEYBOARD: number // 旧键盘控制 0=关闭 1=开启
-    KEYBOARDNEW: number // 新键盘控制 0=关闭 1=开启
+  CONTROL?: {
+    KEYBOARD?: string
+    KEYBOARDNEW?: string
   }
-  RYTHMESTONE: {
-    POS: number // 节奏石位置（拼写变体）
+  RYTHMESTONE?: {
+    POS?: string
   }
-  JUDGMENT: {
-    ONOFF: number // 判定显示 0=关闭 1=开启
+  JUDGMENT?: {
+    ONOFF?: string
   }
-  RANKING: {
-    ONOFF: number // 排名显示 0=关闭 1=开启
+  RANKING?: {
+    ONOFF?: string
   }
-  HARDKEY: {
-    KEY0: number
-    KEY1: number
-    KEY2: number
-    KEY3: number
-    KEY4: number
-    KEY5: number
+  HARDKEY?: {
+    KEY0?: string
+    KEY1?: string
+    KEY2?: string
+    KEY3?: string
+    KEY4?: string
+    KEY5?: string
   }
-  EASYKEY: {
-    KEY0: number
-    KEY1: number
-    KEY2: number
-    KEY3: number
+  EASYKEY?: {
+    KEY0?: string
+    KEY1?: string
+    KEY2?: string
+    KEY3?: string
   }
-  RNOTECOMBO: {
-    EASY: number // 简单难度连击显示 0=关闭 1=开启
-    NORMAL: number // 普通难度连击显示 0=关闭 1=开启
-    HARD: number // 困难难度连击显示 0=关闭 1=开启
+  RNOTECOMBO?: {
+    EASY?: string
+    NORMAL?: string
+    HARD?: string
   }
-  SETCHATTING: {
-    CUR: number // 当前聊天
-    FIR: number // 好友聊天
-    WIS: number // 世界聊天
-    SYS: number // 系统聊天
-    WISSET: number // 世界聊天设置
-    MOVE: number // 聊天框移动
+  SETCHATTING?: {
+    CUR?: string
+    FIR?: string
+    WIS?: string
+    SYS?: string
+    WISSET?: string
+    MOVE?: string
   }
-  SIGN: {
-    ONOFF: number // 签名显示 0=关闭 1=开启
+  SIGN?: {
+    ONOFF?: string
   }
-  BLICK: {
-    FRAME_BEFORE: string // 判定前帧数（原始值为字符串类型）
-    FRAME_AFTER: number // 判定后帧数
-    GREAT: number // GREAT判定帧数
-    COOL: number // COOL判定帧数
+  BLICK?: {
+    FRAME_BEFORE?: string
+    FRAME_AFTER?: string
+    GREAT?: string
+    COOL?: string
   }
-  EVENT: {
-    ID_1005: number
-    ID_1006: number
-    NOTICE_102: number
-    NOTICE_103: number
-    NOTICE_104: number
-    NOTICE_108: number
-    NOTICE_110: number
-    ENABLE_RAFFLE: number // 抽奖开启 0=关闭 1=开启
-    eventPassItem: number // 活动道具通行证 0=关闭 1=开启
+  EVENT?: {
+    ID_1005?: string
+    ID_1006?: string
+    NOTICE_102?: string
+    NOTICE_103?: string
+    NOTICE_104?: string
+    NOTICE_108?: string
+    NOTICE_110?: string
+    ENABLE_RAFFLE?: string
+    eventPassItem?: string
   }
-  CONTROLKEY: {
-    KEYUP: number // 上键
-    KEYDOWN: number // 下键
-    KEYLEFT: number // 左键
-    KEYRIGHT: number // 右键
-    KEYSHIFT: number // Shift键
-    KEYCTRL: number // Ctrl键
+  CONTROLKEY?: {
+    KEYUP?: string
+    KEYDOWN?: string
+    KEYLEFT?: string
+    KEYRIGHT?: string
+    KEYSHIFT?: string
+    KEYCTRL?: string
   }
-  RHYTHMSTONE: {
-    POS: number // 节奏石位置（正确拼写版本）
+  RHYTHMSTONE?: {
+    POS?: string
   }
-  RANKLEVEL: {
-    ONOFF: number // 等级排名显示 0=关闭 1=开启
+  RANKLEVEL?: {
+    ONOFF?: string
   }
-  JITTER: {
-    ONOFF: number // 抖动效果 0=关闭 1=开启
+  JITTER?: {
+    ONOFF?: string
   }
-  GARDEN: {
-    GARDENSOIL: number // 花园土壤 0=关闭 1=开启
-    GARDENSHOP: number // 花园商店 0=关闭 1=开启
+  GARDEN?: {
+    GARDENSOIL?: string
+    GARDENSHOP?: string
   }
-  SHOP: {
-    ISUSEDDIAMONDTOKEN: number // 钻石代币使用 0=关闭 1=开启
+  SHOP?: {
+    ISUSEDDIAMONDTOKEN?: string
   }
 }
 
+/**
+ * 觉醒版本配置补丁文件
+ */
 export interface PatchInfo {
-  patch: {
+  patch?: {
     // 补丁目标文件名
-    filename: string
+    filename?: string
     // 补丁文件路径（空字符串表示默认路径）
-    path: string
+    path?: string
     // 补丁版本号
-    version: number
+    version?: string
     // 语言编码（如 kr 表示韩语）
-    langcode: string
+    langcode?: string
     // 补丁下载基础 URL
-    patchurl: string
+    patchurl?: string
     // 启动器横幅图片 URL
-    bannerurl: string
+    bannerurl?: string
     // 登录页面 URL
-    loginurl: string
+    loginurl?: string
     // 预处理命令/参数（空字符串表示无）
-    prerocess: string // 注：疑似拼写错误，可能应为 preprocess
+    prerocess?: string // 注：疑似拼写错误，可能应为 preprocess
     // 前置参数
-    paramfront: string
+    paramfront?: string
     // 后置参数
-    paramback: string
+    paramback?: string
     // 新参数
-    newparam: string
+    newparam?: string
     // 是否显示参数（0 表示不显示）
-    showparam: number
+    showparam?: string
     // 时间戳/校验值
-    tick: number
+    tick?: string
     // 客户端恢复/完整包下载 URL
-    Recovery: string
+    Recovery?: string
   }
 }
 
