@@ -16,8 +16,12 @@
     </a>
 
     <div>
-      <p>闲的手痒顺手做的，除了和觉醒官方接口打交道外没有任何联网行为</p>
-      <p>这也代表着该工具是永远免费的，无任何利益相关（主动打钱的除外）</p>
+      <p>
+        全套代码
+        <a href="https://github.com/nyaruhodoo/r2beat-launcher" target="_blank">GitHub开源</a>
+        ，无需担心账号被盗
+      </p>
+      <p>该工具是永远免费的(作者手痒写的)，无任何利益相关（主动打钱的除外）</p>
       <p>有什么好的建议可以向我提（做不做看心情）（你可以在贴吧找到我）</p>
 
       <div class="qrcode">
@@ -75,6 +79,10 @@ import qrcode from '@renderer/assets/imgs/qrcode.jpg'
       width: 300px;
       border-radius: 20px;
     }
+  }
+
+  a {
+    text-decoration: underline;
   }
 }
 </style>

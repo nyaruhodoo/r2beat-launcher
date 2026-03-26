@@ -215,4 +215,7 @@ applyTheme('qingchunlv')
     }
   }
 }
+:global(#app) {
+  transition: none !important;
+}
 </style>
