@@ -51,7 +51,8 @@
           v-loading="loading"
           :data="displayData"
           stripe
-          border
+          :border="true"
+          :resizable="false"
           class="item-table"
           empty-text="暂无数据"
           row-key="code"
@@ -59,13 +60,19 @@
           @sort-change="onSortChange"
           @selection-change="selectedRows = $event"
         >
-          <el-table-column type="selection" align="center" width="50" :reserve-selection="false" />
-          <el-table-column type="expand">
+          <el-table-column
+            type="selection"
+            align="center"
+            width="50"
+            :reserve-selection="false"
+            :resizable="false"
+          />
+          <el-table-column type="expand" :resizable="false">
             <template #default="{ row }">
               <ExpandedGiftTable :items="row.list" :accounts="props.accounts" />
             </template>
           </el-table-column>
-          <el-table-column align="center" width="100">
+          <el-table-column align="center" width="100" :resizable="false">
             <template #default="{ row }">
               <el-image
                 v-show="!isCompact"
@@ -83,6 +90,7 @@
             align="center"
             show-overflow-tooltip
             sortable="custom"
+            :resizable="false"
           />
           <el-table-column
             prop="latestCreatedAt"
@@ -91,14 +99,23 @@
             header-align="center"
             width="170"
             sortable="custom"
+            :resizable="false"
           />
-          <el-table-column prop="total" align="center" width="100" label="总计" sortable="custom" />
+          <el-table-column
+            prop="total"
+            align="center"
+            width="100"
+            label="总计"
+            sortable="custom"
+            :resizable="false"
+          />
           <el-table-column
             prop="itemCount"
             align="center"
             width="130"
-            :label="`总数`"
+            :label="`总数(${displayDataAllCount})`"
             sortable="custom"
+            :resizable="false"
           >
             <template #default="{ row }">{{ row.list.length }}</template>
           </el-table-column>
@@ -139,6 +156,7 @@ import { pinyin } from 'pinyin-pro'
 import MainLogPanel from './MainLogPanel.vue'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
 import { keywordGroupOptions } from '../config'
+
 type GroupedRow = GiftGroupedData & {
   latestCreatedAt: string
   latestCreatedAtTs: number
@@ -399,7 +417,13 @@ const displayData = computed(() => {
   return sorted
 })
 
-type NameOption = { value: string }
+const displayDataAllCount = computed(() => {
+  return displayData.value.reduce((total, group) => {
+    // 累加当前分组下所有礼物的数量
+    const groupTotal = group.list.length
+    return total + groupTotal
+  }, 0)
+})
 
 /**
  * 判断是否有新添加的账户未参与数据同步
@@ -415,7 +439,7 @@ const shouldSuggestSync = computed(() => {
 /**
  * 生成当前table数据列表对应的名称keys便于下拉框使用
  */
-function querySearchItemName(queryString: string, cb: (results: NameOption[]) => void) {
+function querySearchItemName(queryString: string, cb: (results: { value: string }[]) => void) {
   const q = queryString.trim().toLowerCase()
 
   /**
