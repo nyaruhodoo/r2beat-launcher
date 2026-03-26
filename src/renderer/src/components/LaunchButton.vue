@@ -337,16 +337,6 @@ useInterval(() => {
   }
 }
 
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: var(--shadow-lg);
-  }
-  50% {
-    box-shadow: 0 8px 40px rgba(255, 182, 193, 0.8);
-  }
-}
-
 @keyframes spin {
   from {
     transform: rotate(0deg);

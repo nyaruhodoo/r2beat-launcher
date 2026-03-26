@@ -17,7 +17,8 @@
     </div>
 
     <div class="version-patch-info">
-      <div v-if="showProgressBar || isApplyPatch" class="patch-progress">
+      <!-- 更新进度条 -->
+      <div v-if="showProgressBar" class="patch-progress">
         <div class="progress-header">
           <div class="progress-title">
             <span class="status-icon">⏳</span>
@@ -34,6 +35,7 @@
         </div>
       </div>
 
+      <!-- 更新提示 -->
       <div
         v-else
         class="version-status"
@@ -89,16 +91,14 @@ const hasUpdateError = ref(false)
 const isApplyPatch = ref(false)
 
 const showProgressBar = computed(() => {
-  return patchProgressPercent.value !== null && patchProgressPercent.value < 100
+  return (
+    (patchProgressPercent.value !== null && patchProgressPercent.value < 100) || isApplyPatch.value
+  )
 })
 
 const patchProgressTitle = computed(() => {
   const percent = patchProgressPercent.value ?? 0
   const stage = patchProgressStage.value
-
-  if (isApplyPatch.value) {
-    return '正在应用补丁'
-  }
 
   if (!stage || percent <= 0) {
     return '准备更新补丁'
@@ -114,6 +114,10 @@ const patchProgressTitle = computed(() => {
 
   if (stage === 'skip') {
     return '文件已存在，跳过处理'
+  }
+
+  if (isApplyPatch.value) {
+    return '正在应用补丁'
   }
 
   return '正在处理'
@@ -146,7 +150,6 @@ const loadLocalVersion = async () => {
     const result = await ipcEmitter.invoke('read-patch-info', path)
     if (result?.success && result.data) {
       currentVersion.value = result.data.patch?.version?.toString().padStart(5, '0') ?? '00030'
-      // currentVersion.value = '00033'
 
       updateStatus()
     } else {
@@ -277,6 +280,7 @@ const handleUpdate = async () => {
   patchProgressPercent.value = 0
   patchProgressStage.value = 'download'
   patchProgressFileName.value = ''
+  isApplyPatch.value = true
 
   try {
     const res = await ipcEmitter.invoke(
@@ -293,8 +297,6 @@ const handleUpdate = async () => {
     if (!gamePath || !latest) {
       throw new Error('游戏路径或远程版本为空，无法应用补丁')
     }
-
-    isApplyPatch.value = true
 
     const applyRes = await ipcEmitter.invoke('apply-patch-files', gamePath, latest)
     if (!applyRes?.success) {
@@ -424,6 +426,7 @@ useInterval(() => {
 
   .status-icon {
     font-size: 24px;
+    transform: translateY(-2px);
   }
 
   .status-text {

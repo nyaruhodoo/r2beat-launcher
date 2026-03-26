@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'MyEmoji';
+  src: url('../font/NotoColorEmoji-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
 *,
 *::before,
 *::after {
@@ -17,7 +24,7 @@ body {
   overflow: hidden;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif,
-    'Apple Color Emoji', 'Segoe UI Emoji';
+    'MyEmoji';
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

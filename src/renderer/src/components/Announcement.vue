@@ -173,6 +173,7 @@ useInterval(() => {
     .announcement-icon {
       font-size: 24px;
       animation: pulse 2s ease-in-out infinite;
+      scale: -1 1;
     }
 
     .announcement-title {
