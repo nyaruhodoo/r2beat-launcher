@@ -65,14 +65,10 @@
               <ExpandedGiftTable :items="row.list" :accounts="props.accounts" />
             </template>
           </el-table-column>
-          <el-table-column
-            v-if="!isCompact"
-            align="center"
-            width="100"
-            :label="`总类(${displayData.length})`"
-          >
+          <el-table-column align="center" width="100">
             <template #default="{ row }">
               <el-image
+                v-show="!isCompact"
                 :src="Utils.createItemImgUrl(row)"
                 fit="contain"
                 lazy
@@ -83,7 +79,7 @@
           </el-table-column>
           <el-table-column
             prop="name"
-            :label="`道具名称${!isCompact ? '' : `(${displayData.length})`}`"
+            :label="`道具名称(${displayData.length})`"
             align="center"
             show-overflow-tooltip
             sortable="custom"
