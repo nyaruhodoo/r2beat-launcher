@@ -59,6 +59,8 @@ export const keywordGroupOptions: {
       '魔法奇迹',
       '好奇心少',
       '温和小猫',
+      '喇叭',
+      '暗夜贵族（',
     ],
     blacklist: [],
   },
