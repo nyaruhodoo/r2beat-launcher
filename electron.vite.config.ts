@@ -8,6 +8,11 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
   main: {
+    resolve: {
+      alias: {
+        '@src': resolve('src'),
+      },
+    },
     build: {
       reportCompressedSize: false,
       // 部分用户反应无法运行，看上去是lzma库的问题，暂时关闭bytecode功能
@@ -23,7 +28,7 @@ export default defineConfig({
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),
-        '@config': resolve('src/config.ts'),
+        '@src': resolve('src'),
       },
     },
     plugins: [

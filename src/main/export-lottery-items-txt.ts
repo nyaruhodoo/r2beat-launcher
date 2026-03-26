@@ -1,6 +1,6 @@
 import { dialog } from 'electron'
 import { writeFile } from 'fs/promises'
-import type { GiftItem } from '@globalTypes'
+import type { GiftItem } from '@src/types'
 import { http } from './http'
 
 interface GroupedData {

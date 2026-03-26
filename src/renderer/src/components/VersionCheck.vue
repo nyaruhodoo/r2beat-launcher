@@ -59,8 +59,8 @@
 
 <script setup lang="ts">
 import { useToast } from '@renderer/composables/useToast'
-import { checkRemoteVersionTime } from '@config'
-import type { GameSettings, PatchProgressPayload, PatchUpdateInfo } from '@globalTypes'
+import { checkRemoteVersionTime } from '@src/config'
+import type { GameSettings, PatchProgressPayload, PatchUpdateInfo } from '@src/types'
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import useInterval from 'vue-hooks-plus/lib/useInterval'
 import { ipcEmitter, ipcListener } from '@renderer/ipc'

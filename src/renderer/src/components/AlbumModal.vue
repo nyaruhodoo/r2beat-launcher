@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import Modal from './Modal.vue'
-import type { ScreenshotFileInfo } from '@globalTypes'
+import type { ScreenshotFileInfo } from '@src/types'
 import { useToast } from '@renderer/composables/useToast'
 import { confirm } from '@renderer/composables/useConfirm'
 import xiangceImg from '@renderer/assets/imgs/xiangce.png'

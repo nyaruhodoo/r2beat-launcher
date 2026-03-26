@@ -8,7 +8,7 @@
 </template>
 
 <script setup lang="ts">
-import { minWindowHeight, minWindowWidth } from '@config'
+import { minWindowHeight, minWindowWidth } from '@src/config'
 import { onUnmounted } from 'vue'
 
 /**

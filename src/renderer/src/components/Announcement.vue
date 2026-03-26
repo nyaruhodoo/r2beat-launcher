@@ -36,8 +36,8 @@
 </template>
 
 <script setup lang="ts">
-import { checkAnnouncementsTime } from '@config'
-import type { AnnouncementData } from '@globalTypes'
+import { checkAnnouncementsTime } from '@src/config'
+import type { AnnouncementData } from '@src/types'
 import { ref } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
 import { ipcArg, ipcEmitter } from '@renderer/ipc'

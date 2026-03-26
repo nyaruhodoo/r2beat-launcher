@@ -9,7 +9,7 @@ import {
   ProcessPriority,
   PatchInfo,
   GameConfig,
-} from '@globalTypes'
+} from '@src/types'
 import { sendTcpLoginRequest } from './login/tcp-login'
 import { spawnPromise, spawnDetached, spawnGameProcess } from './spawn'
 import lzma from 'lzma-native'

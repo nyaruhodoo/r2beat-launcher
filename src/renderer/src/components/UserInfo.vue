@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import type { UserInfo } from '@globalTypes'
+import type { UserInfo } from '@src/types'
 
 defineProps<{
   userInfo?: UserInfo

@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 import CustomTitleBar from './components/CustomTitleBar.vue'
-import type { AnnouncementData } from '@globalTypes'
+import type { AnnouncementData } from '@src/types'
 import { ipcEmitter, ipcListener } from '@renderer/ipc'
 
 const detail = ref<AnnouncementData | null>(null)

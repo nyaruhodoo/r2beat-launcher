@@ -21,7 +21,7 @@ import type {
   WebUserInfo,
   GiftItemTableRow,
   GameConfig,
-} from '@globalTypes'
+} from '@src/types'
 
 /**
  * 通用 IPC 返回类型：

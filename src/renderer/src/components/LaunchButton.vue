@@ -32,13 +32,13 @@
 </template>
 
 <script setup lang="ts">
-import type { GameSettings, UserInfo } from '@globalTypes'
+import type { GameSettings, UserInfo } from '@src/types'
 import { ref, onMounted, computed } from 'vue'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
 import { useToast } from '../composables/useToast'
 import Checkbox from './Checkbox.vue'
 import ServerStatusDialog from './ServerStatusDialog.vue'
-import { checkServerStatusTime, checkUnknownServerStatusTime } from '@config'
+import { checkServerStatusTime, checkUnknownServerStatusTime } from '@src/config'
 import { ipcEmitter } from '@renderer/ipc'
 
 interface Props {

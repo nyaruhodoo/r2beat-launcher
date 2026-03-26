@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { WebUserInfo } from '@globalTypes'
+import type { WebUserInfo } from '@src/types'
 
 const props = defineProps<{
   userInfoList?: WebUserInfo[]

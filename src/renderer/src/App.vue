@@ -152,7 +152,7 @@ import wangzhanImg from '@renderer/assets/imgs/wangzhan.png'
 import biaogeImg from '@renderer/assets/imgs/biaoge.png'
 import WindowResizer from './components/WindowResizer.vue'
 import { useToast } from './composables/useToast'
-import { checkUpdateIntervalTime } from '@config'
+import { checkUpdateIntervalTime } from '@src/config'
 import { confirm } from './composables/useConfirm'
 import { ipcEmitter } from '@renderer/ipc'
 

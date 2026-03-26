@@ -1,4 +1,4 @@
-import { UserInfo, WebUserInfo } from '@globalTypes'
+import { UserInfo, WebUserInfo } from '@src/types'
 import { http } from '../http'
 
 interface XiyouxiWebLoginJson {

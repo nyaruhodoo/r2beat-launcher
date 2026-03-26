@@ -145,7 +145,7 @@
 
 <script lang="ts" setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
-import type { GiftGroupedData, GiftItem, WebUserInfo } from '@globalTypes'
+import type { GiftGroupedData, GiftItem, WebUserInfo } from '@src/types'
 import { processGiftData } from '../gift-process'
 import { ipcEmitter, ipcArg } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'

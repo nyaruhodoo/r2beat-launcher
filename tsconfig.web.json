@@ -14,8 +14,7 @@
     "baseUrl": ".",
     "paths": {
       "@renderer/*": ["src/renderer/src/*"],
-      "@globalTypes": ["./src/types.ts"],
-      "@config": ["./src/config.ts"]
+      "@src/*": ["./src/*"]
     },
     "types": ["element-plus/global"]
   }
