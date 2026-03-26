@@ -8,7 +8,7 @@
         <Dropdown :items="giftRechargeItems">
           <template #trigger="{ isOpen }">
             <button class="nav-btn">
-              <img :src="mangheImg" />
+              <span>🎁</span>
               <span class="nav-text">充值</span>
               <div class="dropdown-icon" :class="{ rotated: isOpen }">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -64,8 +64,6 @@ import { ipcEmitter, ipcArg } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'
 import ItemTable from './components/ItemTable.vue'
 import { DropdownItem } from '@renderer/components/Dropdown.vue'
-import mangheImg from '@renderer/assets/imgs/manghe.png'
-import zuanshiImg from '@renderer/assets/imgs/zuanshi.png'
 import wangzhanImg from '@renderer/assets/imgs/wangzhan.png'
 import Lottery from './components/Lottery.vue'
 import Author from './components/Author.vue'
@@ -78,13 +76,13 @@ const showLoginModal = ref(false)
 const giftRechargeItems: DropdownItem[] = [
   {
     label: '抽奖中心',
-    icon: mangheImg,
+    icon: '🎁',
     href: 'https://r2beat.xiyouxi.com/gift/draw',
     target: '_blank',
   },
   {
     label: '充值中心',
-    icon: zuanshiImg,
+    icon: '💎',
     onClick: () => {
       ipcEmitter.send('open-recharge-center', '')
     },

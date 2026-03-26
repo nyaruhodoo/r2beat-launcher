@@ -14,7 +14,7 @@
           target="_blank"
         >
           <button class="nav-btn">
-            <img :src="aixinImg" />
+            <span>❤</span>
             <span class="nav-text">CPDD</span>
           </button>
         </a>
@@ -23,7 +23,7 @@
         <Dropdown :items="giftRechargeItems">
           <template #trigger="{ isOpen }">
             <button class="nav-btn">
-              <img :src="mangheImg" />
+              <span>🎁</span>
               <span class="nav-text">充值</span>
               <div class="dropdown-icon" :class="{ rotated: isOpen }">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -140,12 +140,8 @@ import PakModal from './components/PakModal.vue'
 import AlbumModal from './components/AlbumModal.vue'
 import Dropdown from './components/Dropdown.vue'
 import { GameSettings, UserInfo } from '../../types'
-import mangheImg from '@renderer/assets/imgs/manghe.png'
-import zuanshiImg from '@renderer/assets/imgs/zuanshi.png'
 import shezhiImg from '@renderer/assets/imgs/shezhi.png'
-import aixinImg from '@renderer/assets/imgs/aixin.png'
 import budingImg from '@renderer/assets/imgs/buding.png'
-import shanchuImg from '@renderer/assets/imgs/shanchu.png'
 import xiangceImg from '@renderer/assets/imgs/xiangce.png'
 import xiufuImg from '@renderer/assets/imgs/xiufu.png'
 import wangzhanImg from '@renderer/assets/imgs/wangzhan.png'
@@ -170,13 +166,13 @@ const showAlbumModal = ref(false)
 const giftRechargeItems: DropdownItem[] = [
   {
     label: '抽奖中心',
-    icon: mangheImg,
+    icon: '🎁',
     href: 'https://r2beat.xiyouxi.com/gift/draw',
     target: '_blank',
   },
   {
     label: '充值中心',
-    icon: zuanshiImg,
+    icon: '💎',
     onClick: () => {
       ipcEmitter.send('open-recharge-center', userInfo.value?.username)
     },
@@ -232,7 +228,7 @@ const patchSettingsItems: DropdownItem[] = [
   },
   {
     label: '重置GG',
-    icon: shanchuImg,
+    icon: '🚮',
     onClick: async () => {
       await confirm({
         message:
