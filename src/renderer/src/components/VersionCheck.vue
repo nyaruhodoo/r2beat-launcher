@@ -425,7 +425,7 @@ useInterval(() => {
   }
 
   .status-icon {
-    font-size: 24px;
+    font-size: 20px;
     transform: translateY(-2px);
   }
 
