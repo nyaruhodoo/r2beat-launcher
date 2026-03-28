@@ -1,6 +1,6 @@
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents } from '../../ipc/contracts'
-import { logError, logInfo, logSuccess } from './log'
+import { logError, logInfo, logSuccess } from '../log'
 import { GiftItem, WebUserInfo } from '@src/types'
 import { http } from '../http'
 

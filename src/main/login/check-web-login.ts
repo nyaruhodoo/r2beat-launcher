@@ -1,6 +1,6 @@
 import type { WebUserInfo } from '@src/types'
 import { http } from '../http'
-import { logInfo } from '../ipc-handlers/log'
+import { logInfo } from '../log'
 
 const GET_USER_COIN_URL = 'http://external-api.xiyouxi.com/api/gift/getUserCoin'
 
