@@ -10,9 +10,7 @@ import { access, readdir, rm, stat, unlink } from 'fs/promises'
 import { http } from './http'
 
 /** `runConcurrent` 在 `abortOnError: false` 时每一项的归纳结果 */
-export type RunConcurrentSettledItem<R> =
-  | { ok: true; value: R }
-  | { ok: false; error: unknown }
+export type RunConcurrentSettledItem<R> = { ok: true; value: R } | { ok: false; error: unknown }
 
 /** 未传 `maxConcurrency` 时 {@link Utils.runConcurrent} 使用的默认并行上限 */
 export const RUN_CONCURRENT_DEFAULT_MAX = 3
@@ -27,8 +25,11 @@ export type RunConcurrentOptions =
   | { maxConcurrency?: number; abortOnError: false }
 
 /** 由 options 上的 `abortOnError` 字面量推导返回值：仅 `false` 时为逐项 settled，否则为 `R[]`。 */
-export type RunConcurrentReturn<R, O extends RunConcurrentOptions> =
-  O extends { abortOnError: false } ? RunConcurrentSettledItem<R>[] : R[]
+export type RunConcurrentReturn<R, O extends RunConcurrentOptions> = O extends {
+  abortOnError: false
+}
+  ? RunConcurrentSettledItem<R>[]
+  : R[]
 
 /** GitHub `GET .../releases/latest` 响应（仅用到的字段） */
 interface GitHubLatestRelease {
@@ -40,7 +41,7 @@ interface GitHubLatestRelease {
 
 export class Utils {
   /**
-   * 受并发上限控制的顺序映射：对 `items` 中每个元素调用 `fn`，结果按下标与输入对齐。
+   * 并发执行器
    *
    * - `abortOnError` 省略或为 `true`：任一任务失败则不再领取新任务，并 **抛出** 该错误（已在执行的会继续跑完，与历史实现一致）。
    * - `abortOnError: false`：所有下标都会执行；失败项记在返回数组对应位置，不抛错。
@@ -49,11 +50,7 @@ export class Utils {
    *
    * 返回类型随 `options.abortOnError` 字面量由 {@link RunConcurrentReturn} 推导，无需函数重载。
    */
-  static async runConcurrent<
-    T,
-    R,
-    const O extends RunConcurrentOptions = { abortOnError?: true },
-  >(
+  static async runConcurrent<T, R, const O extends RunConcurrentOptions = { abortOnError?: true }>(
     items: readonly T[],
     fn: (item: T, index: number) => Promise<R>,
     options?: O,
