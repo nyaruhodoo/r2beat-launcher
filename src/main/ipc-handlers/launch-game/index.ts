@@ -1,12 +1,12 @@
 import { join } from 'path'
 import { writeFile } from 'fs/promises'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
-import type { IpcMainEvents } from '../../ipc/contracts'
+import type { IpcMainEvents } from '../../../ipc/contracts'
 import type { ProcessPriority } from '@src/types'
-import { spawnGameProcess, spawnDetached, spawnPromise } from '../spawn'
-import { patchPak } from '../patch-pak'
-import { hookDll } from '../hook-dll'
-import { Utils } from '../utils'
+import { spawnGameProcess, spawnDetached, spawnPromise } from '../../spawn'
+import { patchPak } from './patch-pak'
+import { hookDll } from './hook-dll'
+import { Utils } from '../../utils'
 
 /** 启动游戏、补丁 pak、进程优先级 */
 export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): void {

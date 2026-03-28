@@ -2,9 +2,9 @@ import { join } from 'path'
 import { readFile, writeFile } from 'fs/promises'
 import { stringify, parse } from 'ini'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
-import type { IpcMainEvents } from '../../ipc/contracts'
+import type { IpcMainEvents } from '../../../ipc/contracts'
 import type { GameConfig, PatchInfo } from '@src/types'
-import { Utils } from '../utils'
+import { Utils } from '../../utils'
 
 /** 游戏 config.ini 与 Patch.ini */
 export function registerGameConfigHandlers(ipc: IpcListener<IpcMainEvents>): void {

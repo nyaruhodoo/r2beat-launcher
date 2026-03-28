@@ -2,8 +2,8 @@ import { shell } from 'electron'
 import { join } from 'path'
 import { stat, unlink } from 'fs/promises'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
-import type { IpcMainEvents } from '../../ipc/contracts'
-import { Utils } from '../utils'
+import type { IpcMainEvents } from '../../../ipc/contracts'
+import { Utils } from '../../utils'
 
 /** 游戏截图目录、本地图库、打开与删除图片 */
 export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {

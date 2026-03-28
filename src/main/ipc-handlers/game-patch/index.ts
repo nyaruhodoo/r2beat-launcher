@@ -5,10 +5,10 @@ import { parse, stringify } from 'ini'
 import lzma from 'lzma-native'
 import { Parser } from 'tsv'
 import type { IpcListener, IpcEmitter } from '@electron-toolkit/typed-ipc/main'
-import type { IpcMainEvents, IpcRendererEvents } from '../../ipc/contracts'
+import type { IpcMainEvents, IpcRendererEvents } from '../../../ipc/contracts'
 import type { PatchInfo } from '@src/types'
-import { http } from '../http'
-import { Utils } from '../utils'
+import { http } from '../../http'
+import { Utils } from '../../utils'
 
 const tsxParser = new Parser('\t', { header: false })
 

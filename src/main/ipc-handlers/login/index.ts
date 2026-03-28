@@ -1,10 +1,10 @@
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
-import type { IpcMainEvents } from '../../ipc/contracts'
-import { sendTcpLoginRequest } from '../login/tcp-login'
-import { webLogin } from '../login/web-login'
-import { checkWebLoginForUsers } from '../login/check-web-login'
-import { refreshWebUsersConcurrent } from '../login/refresh-web-users'
-import { logError, logInfo, logSuccess } from '../log'
+import type { IpcMainEvents } from '../../../ipc/contracts'
+import { sendTcpLoginRequest } from './tcp-login'
+import { webLogin } from './web-login'
+import { checkWebLoginForUsers } from './check-web-login'
+import { refreshWebUsersConcurrent } from './refresh-web-users'
+import { logError, logInfo, logSuccess } from '../../log'
 
 /** TCP 与网页登录、登录态检查与刷新 */
 export function registerLoginHandlers(ipc: IpcListener<IpcMainEvents>): void {

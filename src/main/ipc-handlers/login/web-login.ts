@@ -1,5 +1,5 @@
 import { UserInfo, WebUserInfo } from '@src/types'
-import { http } from '../http'
+import { http } from '../../http'
 
 interface XiyouxiWebLoginJson {
   // 你妈的喜游戏...

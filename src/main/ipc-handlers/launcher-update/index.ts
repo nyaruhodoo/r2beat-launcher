@@ -2,8 +2,8 @@ import { app } from 'electron'
 import { join } from 'path'
 import { execFile } from 'child_process'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
-import type { IpcMainEvents } from '../../ipc/contracts'
-import { Utils } from '../utils'
+import type { IpcMainEvents } from '../../../ipc/contracts'
+import { Utils } from '../../utils'
 
 /** 启动器自身更新（GitHub）、游戏修复工具 */
 export function registerLauncherUpdateHandlers(ipc: IpcListener<IpcMainEvents>): void {

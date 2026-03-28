@@ -1,7 +1,7 @@
 import type { WebUserInfo } from '@src/types'
-import { http } from '../http'
-import { logInfo } from '../log'
-import { Utils } from '../utils'
+import { http } from '../../http'
+import { logInfo } from '../../log'
+import { Utils } from '../../utils'
 
 const GET_USER_COIN_URL = 'http://external-api.xiyouxi.com/api/gift/getUserCoin'
 

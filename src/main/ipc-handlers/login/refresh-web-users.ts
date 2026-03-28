@@ -1,7 +1,7 @@
 import type { WebUserInfo } from '@src/types'
 import { webLogin } from './web-login'
-import { logInfo } from '../log'
-import { Utils } from '../utils'
+import { logInfo } from '../../log'
+import { Utils } from '../../utils'
 
 /**
  * 并发为每个账号重新执行网页登录，得到新 token（必须全部成功，否则抛错并中止未领取任务）。

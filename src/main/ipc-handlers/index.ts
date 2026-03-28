@@ -12,7 +12,7 @@ import { registerLoginHandlers } from './login'
 import { registerLotteryHandlers } from './lottery'
 import { registerLauncherUpdateHandlers } from './launcher-update'
 
-// 该目录按需拆分 IPC：窗口/公告/游戏补丁/路径与相册/启动与配置/MOD/登录/抽奖/启动器更新
+// IPC 按领域分子目录；各目录 index 注册处理器，就近存放该领域专用实现（如 launch-game 下的 patch/hook、login 下的 TCP/Web 登录、lottery 下的 gift-list）。
 
 export const ipcHandlers = () => {
   const ipc = new IpcListener<IpcMainEvents>()

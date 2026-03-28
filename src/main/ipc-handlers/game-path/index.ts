@@ -3,8 +3,8 @@ import { join, dirname } from 'path'
 import { homedir } from 'os'
 import { stat, rm } from 'fs/promises'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
-import type { IpcMainEvents } from '../../ipc/contracts'
-import { Utils } from '../utils'
+import type { IpcMainEvents } from '../../../ipc/contracts'
+import { Utils } from '../../utils'
 
 /** 游戏安装路径、目录选择、GameGuard 重置 */
 export function registerGamePathHandlers(ipc: IpcListener<IpcMainEvents>): void {

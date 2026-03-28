@@ -1,9 +1,9 @@
 import { BrowserWindow, Notification, shell } from 'electron'
 import { join } from 'path'
 import type { IpcListener, IpcEmitter } from '@electron-toolkit/typed-ipc/main'
-import type { IpcMainEvents, IpcRendererEvents } from '../../ipc/contracts'
-import icon from '../../../build/game.ico?asset'
-import { Utils } from '../utils'
+import type { IpcMainEvents, IpcRendererEvents } from '../../../ipc/contracts'
+import icon from '../../../../build/game.ico?asset'
+import { Utils } from '../../utils'
 
 /**
  * 窗口控制、系统通知、充值中心、公告详情子窗口、发货助手子窗口

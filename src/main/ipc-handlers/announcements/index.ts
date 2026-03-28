@@ -1,7 +1,7 @@
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
-import type { IpcMainEvents } from '../../ipc/contracts'
+import type { IpcMainEvents } from '../../../ipc/contracts'
 import type { AnnouncementData, R2BeatNoticeData } from '@src/types'
-import { http } from '../http'
+import { http } from '../../http'
 
 /** 官方公告列表与详情 */
 export function registerAnnouncementHandlers(ipc: IpcListener<IpcMainEvents>): void {
