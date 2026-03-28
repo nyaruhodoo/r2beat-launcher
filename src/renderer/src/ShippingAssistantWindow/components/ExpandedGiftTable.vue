@@ -38,6 +38,8 @@ const props = defineProps<{
    * 不传：展示全部（如主表展开）。
    */
   visibleItemIdxSet?: Set<number>
+  /** 表格总高度（像素，含表头）。传入后固定此高度，行数变化时内部滚动；不传则按行数自动算（上限 MAX_HEIGHT） */
+  fixedHeight?: number
 }>()
 
 const displayItems = computed(() => {
@@ -66,6 +68,10 @@ const accountRemarkMap = computed(() => {
 })
 
 const tableHeight = computed(() => {
+  const fixed = props.fixedHeight
+  if (fixed) {
+    return Math.min(MAX_HEIGHT, fixed + HEADER_HEIGHT)
+  }
   const itemCount = displayItems.value.length
   if (!itemCount) return 0
   return Math.min(MAX_HEIGHT, itemCount * ROW_HEIGHT + HEADER_HEIGHT)
@@ -151,5 +157,6 @@ function columnsFor(w: number) {
 
 .expanded-gift-table__v2 {
   max-height: 320px;
+  min-height: 0;
 }
 </style>

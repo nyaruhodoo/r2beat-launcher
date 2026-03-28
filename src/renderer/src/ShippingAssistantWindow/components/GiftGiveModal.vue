@@ -39,6 +39,7 @@
               :items="row.list"
               :accounts="accounts"
               :visible-item-idx-set="giveVisibleItemIdxByCode[row.code]"
+              :fixed-height="20 * 6"
             />
           </template>
         </el-table-column>
