@@ -9,6 +9,27 @@ import { spawnPromise } from './spawn'
 import { access, readdir, rm, stat, unlink } from 'fs/promises'
 import { http } from './http'
 
+/** `runConcurrent` 在 `abortOnError: false` 时每一项的归纳结果 */
+export type RunConcurrentSettledItem<R> =
+  | { ok: true; value: R }
+  | { ok: false; error: unknown }
+
+/** 未传 `maxConcurrency` 时 {@link Utils.runConcurrent} 使用的默认并行上限 */
+export const RUN_CONCURRENT_DEFAULT_MAX = 3
+
+/**
+ * `runConcurrent` 的 options。
+ * `maxConcurrency` 省略时为 {@link RUN_CONCURRENT_DEFAULT_MAX}。
+ * `abortOnError` 请使用字面量 `true` / `false`（或省略），以便 TS 用 {@link RunConcurrentReturn} 推断返回类型。
+ */
+export type RunConcurrentOptions =
+  | { maxConcurrency?: number; abortOnError?: true }
+  | { maxConcurrency?: number; abortOnError: false }
+
+/** 由 options 上的 `abortOnError` 字面量推导返回值：仅 `false` 时为逐项 settled，否则为 `R[]`。 */
+export type RunConcurrentReturn<R, O extends RunConcurrentOptions> =
+  O extends { abortOnError: false } ? RunConcurrentSettledItem<R>[] : R[]
+
 /** GitHub `GET .../releases/latest` 响应（仅用到的字段） */
 interface GitHubLatestRelease {
   tag_name?: string
@@ -18,6 +39,93 @@ interface GitHubLatestRelease {
 }
 
 export class Utils {
+  /**
+   * 受并发上限控制的顺序映射：对 `items` 中每个元素调用 `fn`，结果按下标与输入对齐。
+   *
+   * - `abortOnError` 省略或为 `true`：任一任务失败则不再领取新任务，并 **抛出** 该错误（已在执行的会继续跑完，与历史实现一致）。
+   * - `abortOnError: false`：所有下标都会执行；失败项记在返回数组对应位置，不抛错。
+   * - `maxConcurrency` 省略或为 `undefined` 时使用 {@link RUN_CONCURRENT_DEFAULT_MAX}。
+   * - `options` 整体可省略，等价于 `{ maxConcurrency: 3 }` 且失败即中止。
+   *
+   * 返回类型随 `options.abortOnError` 字面量由 {@link RunConcurrentReturn} 推导，无需函数重载。
+   */
+  static async runConcurrent<
+    T,
+    R,
+    const O extends RunConcurrentOptions = { abortOnError?: true },
+  >(
+    items: readonly T[],
+    fn: (item: T, index: number) => Promise<R>,
+    options?: O,
+  ): Promise<RunConcurrentReturn<R, O>> {
+    const n = items.length
+    if (n === 0) {
+      return [] as RunConcurrentReturn<R, O>
+    }
+
+    const opts = options ?? ({} as O)
+    const maxConcurrency = Math.max(
+      1,
+      Math.floor(opts.maxConcurrency ?? RUN_CONCURRENT_DEFAULT_MAX),
+    )
+    const poolSize = Math.min(maxConcurrency, n)
+    const abortOnError = opts.abortOnError !== false
+
+    if (abortOnError) {
+      const results: R[] = new Array(n)
+      let cursor = 0
+      let aborted = false
+
+      const pickNext = (): number | undefined => {
+        if (aborted) return undefined
+        const i = cursor++
+        if (i >= n) return undefined
+        return i
+      }
+
+      const worker = async (): Promise<void> => {
+        while (!aborted) {
+          const i = pickNext()
+          if (i === undefined) return
+          try {
+            results[i] = await fn(items[i]!, i)
+          } catch (e) {
+            aborted = true
+            throw e
+          }
+        }
+      }
+
+      await Promise.all(Array.from({ length: poolSize }, () => worker()))
+      return results as RunConcurrentReturn<R, O>
+    }
+
+    const outcomes: RunConcurrentSettledItem<R>[] = new Array(n)
+    let cursor = 0
+
+    const pickNext = (): number | undefined => {
+      const i = cursor++
+      if (i >= n) return undefined
+      return i
+    }
+
+    const worker = async (): Promise<void> => {
+      while (true) {
+        const i = pickNext()
+        if (i === undefined) return
+        try {
+          const value = await fn(items[i]!, i)
+          outcomes[i] = { ok: true, value }
+        } catch (error) {
+          outcomes[i] = { ok: false, error }
+        }
+      }
+    }
+
+    await Promise.all(Array.from({ length: poolSize }, () => worker()))
+    return outcomes as RunConcurrentReturn<R, O>
+  }
+
   /**
    * 获取当前环境根目录
    */

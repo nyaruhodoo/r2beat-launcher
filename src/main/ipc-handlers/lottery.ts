@@ -3,6 +3,7 @@ import type { IpcMainEvents } from '../../ipc/contracts'
 import { logError, logInfo, logSuccess } from '../log'
 import { GiftItem, WebUserInfo } from '@src/types'
 import { http } from '../http'
+import { Utils } from '../utils'
 
 interface GiftListApiResponse {
   list: GiftItem[]
@@ -13,8 +14,6 @@ interface GiftListApiResponse {
   total: number
   result: number
 }
-
-const FETCH_GIFTS_PAGE_CONCURRENCY = 3
 
 async function requestGiftList(token: string, params: Record<string, unknown>) {
   const API_URL = 'http://external-api.xiyouxi.com/api/gift/getGiftList'
@@ -46,37 +45,16 @@ async function fetchAllGifts(token: string): Promise<GiftItem[]> {
   if (totalPages <= 1) return firstItems
 
   const extraPageCount = totalPages - 1
-  const perPage: GiftItem[][] = new Array(extraPageCount)
-  let cursor = 0
-  let aborted = false
+  const pageSlots = Array.from({ length: extraPageCount }, (_, slot) => slot)
 
-  const pickNext = (): number | undefined => {
-    if (aborted) return undefined
-    const i = cursor++
-    if (i >= extraPageCount) return undefined
-    return i
-  }
-
-  async function worker(): Promise<void> {
-    while (!aborted) {
-      const slot = pickNext()
-      if (slot === undefined) return
-      const pageNum = slot + 2
-      try {
-        const res = await requestGiftList(token, { page: pageNum, per_page: 100, status: 1 })
-        if (res.message) {
-          throw new Error(res.message)
-        }
-        perPage[slot] = res.list ?? []
-      } catch (e) {
-        aborted = true
-        throw e
-      }
+  const perPage = await Utils.runConcurrent(pageSlots, async (slot) => {
+    const pageNum = slot + 2
+    const res = await requestGiftList(token, { page: pageNum, per_page: 100, status: 1 })
+    if (res.message) {
+      throw new Error(res.message)
     }
-  }
-
-  const poolSize = Math.min(FETCH_GIFTS_PAGE_CONCURRENCY, extraPageCount)
-  await Promise.all(Array.from({ length: poolSize }, () => worker()))
+    return res.list ?? []
+  })
 
   return [...firstItems, ...perPage.flat()]
 }

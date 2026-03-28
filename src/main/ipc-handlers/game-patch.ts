@@ -238,8 +238,10 @@ export function registerGamePatchHandlers(
 
       emitProgress(0, 'download', 0, 0, undefined, '开始更新补丁')
 
-      const processSinglePatch = async (patchIndex: number) => {
-        const patch = patches[patchIndex]
+      const processSinglePatch = async (
+        patch: (typeof patches)[number],
+        patchIndex: number,
+      ) => {
         let downloadFraction = 0
         let decompressFraction = 0
         const targetFileName = patch.targetFileName
@@ -369,24 +371,7 @@ export function registerGamePatchHandlers(
         }
       }
 
-      const maxConcurrency = 3
-      let currentIndex = 0
-
-      const worker = async () => {
-        while (true) {
-          const index = currentIndex++
-          if (index >= totalFiles) break
-          await processSinglePatch(index)
-        }
-      }
-
-      const workers: Promise<void>[] = []
-      const workerCount = Math.min(maxConcurrency, totalFiles)
-      for (let i = 0; i < workerCount; i++) {
-        workers.push(worker())
-      }
-
-      await Promise.all(workers)
+      await Utils.runConcurrent(patches, processSinglePatch)
 
       emitProgress(totalFiles - 1, 'decompress', 1, 1, undefined, '所有补丁文件处理完成')
 
