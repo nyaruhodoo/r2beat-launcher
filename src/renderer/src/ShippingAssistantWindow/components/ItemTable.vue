@@ -45,6 +45,18 @@
               />
             </el-select>
           </div>
+          <div class="item-table-give">
+            <el-button type="primary" :disabled="selectedRows.length === 0">赠送</el-button>
+            <el-button type="primary" :disabled="selectedRows.length === 0">转化能量</el-button>
+
+            <el-switch
+              v-model="switchModel"
+              size="large"
+              inline-prompt
+              active-text="紧凑"
+              inactive-text="普通"
+            />
+          </div>
         </div>
         <el-table
           ref="tableRef"
@@ -125,15 +137,7 @@
     <el-splitter-panel size="35%" :resizable="false">
       <div class="log-wrap">
         <el-splitter layout="vertical">
-          <el-splitter-panel>
-            <el-switch
-              v-model="switchModel"
-              size="large"
-              inline-prompt
-              active-text="紧凑"
-              inactive-text="普通"
-            />
-          </el-splitter-panel>
+          <el-splitter-panel> 1 </el-splitter-panel>
           <el-splitter-panel :resizable="false">
             <MainLogPanel />
           </el-splitter-panel>
@@ -593,6 +597,16 @@ watch(selectedKeywordGroups, () => {
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
+
+    .item-table-give {
+      display: flex;
+      width: 100%;
+      align-items: center;
+
+      .el-switch {
+        margin-left: auto;
+      }
+    }
   }
 }
 
