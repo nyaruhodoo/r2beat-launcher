@@ -1,6 +1,6 @@
 import type { WebUserInfo } from '@src/types'
 import { webLogin } from './web-login'
-import { logInfo } from '../log'
+import { logInfo } from '../ipc-handlers/log'
 
 /** 与 check-web-login 一致：同时执行的账号数上限 */
 const REFRESH_WEB_USERS_CONCURRENCY = 3

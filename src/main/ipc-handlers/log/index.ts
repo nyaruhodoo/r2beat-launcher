@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron'
 import { IpcEmitter } from '@electron-toolkit/typed-ipc/main'
-import type { IpcRendererEvents, MainLogKind, MainLogPayload } from '../../ipc/contracts'
+import type { IpcRendererEvents, MainLogKind, MainLogPayload } from '@src/ipc/contracts'
 
 const emitter = new IpcEmitter<IpcRendererEvents>()
 

@@ -4,7 +4,7 @@ import { sendTcpLoginRequest } from '../login/tcp-login'
 import { webLogin } from '../login/web-login'
 import { checkWebLoginForUsers } from '../login/check-web-login'
 import { refreshWebUsersConcurrent } from '../login/refresh-web-users'
-import { logError, logInfo, logSuccess } from '../log'
+import { logError, logInfo, logSuccess } from './log'
 
 /** TCP 与网页登录、登录态检查与刷新 */
 export function registerLoginHandlers(ipc: IpcListener<IpcMainEvents>): void {
