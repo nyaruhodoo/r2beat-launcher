@@ -8,7 +8,7 @@
               v-if="width > 0 && tableHeight > 0"
               class="expanded-gift-table__grid"
               :columns="columnsFor(width)"
-              :data="sortItems"
+              :data="displayItems"
               :width="width"
               :height="tableHeight"
               :row-height="ROW_HEIGHT"
@@ -33,10 +33,20 @@ import { Utils } from '../utils'
 const props = defineProps<{
   items: GiftItem[]
   accounts: WebUserInfo[]
+  /**
+   * 若传入：只展示这些 idx 对应的行（如赠送弹窗与数量子集一致）；
+   * 不传：展示全部（如主表展开）。
+   */
+  visibleItemIdxSet?: Set<number>
 }>()
 
-const sortItems = computed(() => {
-  return [...props.items].sort((a, b) => {
+const displayItems = computed(() => {
+  let source = props.items
+  const vis = props.visibleItemIdxSet
+  if (vis != null) {
+    source = source.filter((it) => vis.has(it.idx))
+  }
+  return [...source].sort((a, b) => {
     return Utils.compareByFirstCodePointAsc(a.item_name, b.item_name)
   })
 })
@@ -56,7 +66,7 @@ const accountRemarkMap = computed(() => {
 })
 
 const tableHeight = computed(() => {
-  const itemCount = props.items.length
+  const itemCount = displayItems.value.length
   if (!itemCount) return 0
   return Math.min(MAX_HEIGHT, itemCount * ROW_HEIGHT + HEADER_HEIGHT)
 })

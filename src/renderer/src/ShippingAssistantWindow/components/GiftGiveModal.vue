@@ -35,7 +35,11 @@
       >
         <el-table-column type="expand" :resizable="false">
           <template #default="{ row }">
-            <ExpandedGiftTable :items="row.list" :accounts="accounts" />
+            <ExpandedGiftTable
+              :items="row.list"
+              :accounts="accounts"
+              :visible-item-idx-set="giveVisibleItemIdxByCode[row.code]"
+            />
           </template>
         </el-table-column>
         <el-table-column align="center" width="100" :resizable="false">
@@ -64,8 +68,37 @@
           :resizable="false"
         />
         <el-table-column prop="total" align="center" width="120" label="总计" :resizable="false" />
-        <el-table-column align="center" width="100" label="数量" :resizable="false">
-          <template #default="{ row }">{{ row.list.length }}</template>
+        <el-table-column align="center" width="180" label="数量" :resizable="false">
+          <template #default="{ row }">
+            <div class="gift-give-qty-stepper">
+              <el-button
+                size="small"
+                class="gift-give-qty-step-btn"
+                :disabled="!canGiveQtyStepDown(row.code)"
+                @click="giveQtyStepDown(row.code)"
+              >
+                −
+              </el-button>
+              <el-input-number
+                v-model="giveQuantities[row.code]"
+                class="gift-give-qty-input"
+                :min="giveQtyMeta[row.code]?.min ?? 0"
+                :max="giveQtyMeta[row.code]?.max ?? row._countValue"
+                :precision="0"
+                :controls="false"
+                size="small"
+                @change="(v: number | undefined) => onGiveQtyChange(row.code, v)"
+              />
+              <el-button
+                size="small"
+                class="gift-give-qty-step-btn"
+                :disabled="!canGiveQtyStepUp(row.code)"
+                @click="giveQtyStepUp(row.code)"
+              >
+                +
+              </el-button>
+            </div>
+          </template>
         </el-table-column>
       </el-table>
     </div>
@@ -77,10 +110,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import Modal from '@renderer/components/Modal.vue'
 import type { GiftGroupedData, WebUserInfo } from '@src/types'
+import { giftItemNumericCount, pickGiftListSubsetIndices } from '../gift-process'
 import { Utils } from '../utils'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
 
@@ -89,7 +123,7 @@ export type GiftGiveModalRow = GiftGroupedData & {
   latestCreatedAt: string
 }
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   rows: GiftGiveModalRow[]
   /** 与主表一致：为 true 时隐藏缩略图（紧凑模式） */
@@ -159,6 +193,168 @@ const [recentGivers] = useLocalStorageState<string[]>('r2beat_shipping_recent_gi
 
 const giverName = ref('')
 
+/** 每行赠送数量，key 为道具分组 code；合法值必须为 list 各条数量的某个子集和 */
+const giveQuantities = ref<Record<string, number>>({})
+
+type GiveQtyMeta = {
+  min: number
+  max: number
+  /** 升序：子集和 ∩ [min, max]，用于纠错到最近合法值 */
+  valid: number[]
+}
+
+const giveQtyMeta = ref<Record<string, GiveQtyMeta>>({})
+
+/** list 每条数量的所有子集和（含 0） */
+function buildSubsetSums(counts: number[]): number[] {
+  const sums = new Set<number>([0])
+  for (const c of counts) {
+    const toAdd: number[] = []
+    for (const s of sums) {
+      toAdd.push(s + c)
+    }
+    for (const x of toAdd) {
+      sums.add(x)
+    }
+  }
+  return [...sums].sort((a, b) => a - b)
+}
+
+/** 与 target 差距最小的合法值；距离相同取较小（偏向下修正） */
+function nearestSubsetSum(target: number, sortedValid: number[]): number {
+  if (!sortedValid.length) return target
+  let best = sortedValid[0]
+  let bestDist = Math.abs(target - best)
+  for (const v of sortedValid) {
+    const d = Math.abs(target - v)
+    if (d < bestDist) {
+      best = v
+      bestDist = d
+    } else if (d === bestDist && v < best) {
+      best = v
+    }
+  }
+  return best
+}
+
+function resetGiveQuantitiesFromRows() {
+  const next: Record<string, number> = {}
+  const meta: Record<string, GiveQtyMeta> = {}
+  for (const row of props.rows) {
+    const counts = row.list.map(giftItemNumericCount)
+    const max = row._countValue
+    if (!counts.length) {
+      next[row.code] = 0
+      meta[row.code] = { min: 0, max: 0, valid: [0] }
+      continue
+    }
+    const min = Math.min(...counts)
+    const valid = buildSubsetSums(counts)
+      .filter((s) => s >= min && s <= max)
+      .sort((a, b) => a - b)
+    next[row.code] = max
+    meta[row.code] = { min, max, valid }
+  }
+  giveQuantities.value = next
+  giveQtyMeta.value = meta
+}
+
+function onGiveQtyChange(code: string, value: number | undefined) {
+  const m = giveQtyMeta.value[code]
+  if (!m?.valid.length) return
+  let t = value
+  if (t == null || Number.isNaN(t)) {
+    t = m.max
+  }
+  const snapped = nearestSubsetSum(t, m.valid)
+  if (giveQuantities.value[code] !== snapped) {
+    giveQuantities.value[code] = snapped
+  }
+}
+
+function giveQtyStepUp(code: string) {
+  const m = giveQtyMeta.value[code]
+  if (!m?.valid.length) return
+  const cur = giveQuantities.value[code]
+  const base = cur == null || Number.isNaN(cur) ? m.valid[0]! : cur
+  const next = m.valid.find((v) => v > base)
+  if (next !== undefined) {
+    giveQuantities.value[code] = next
+  }
+}
+
+function giveQtyStepDown(code: string) {
+  const m = giveQtyMeta.value[code]
+  if (!m?.valid.length) return
+  const cur = giveQuantities.value[code]
+  const base = cur == null || Number.isNaN(cur) ? m.valid[m.valid.length - 1]! : cur
+  let prev: number | undefined
+  for (const v of m.valid) {
+    if (v < base) prev = v
+    else break
+  }
+  if (prev !== undefined) {
+    giveQuantities.value[code] = prev
+  }
+}
+
+function canGiveQtyStepUp(code: string): boolean {
+  const m = giveQtyMeta.value[code]
+  if (!m?.valid.length) return false
+  const cur = giveQuantities.value[code]
+  const base = cur == null || Number.isNaN(cur) ? m.valid[0]! : cur
+  return m.valid.some((v) => v > base)
+}
+
+function canGiveQtyStepDown(code: string): boolean {
+  const m = giveQtyMeta.value[code]
+  if (!m?.valid.length) return false
+  const cur = giveQuantities.value[code]
+  const base = cur == null || Number.isNaN(cur) ? m.valid[m.valid.length - 1]! : cur
+  return m.valid.some((v) => v < base)
+}
+
+/** 与规范化后的数量对应的 list 子集（按 idx）；仅这些行在展开表中展示 */
+const giveVisibleItemIdxByCode = computed(() => {
+  const q = giveQuantities.value
+  const metaMap = giveQtyMeta.value
+  const out: Record<string, Set<number>> = {}
+  for (const row of props.rows) {
+    const counts = row.list.map(giftItemNumericCount)
+    const meta = metaMap[row.code]
+    let t = q[row.code] ?? row._countValue
+    if (meta?.valid.length) {
+      t = nearestSubsetSum(t, meta.valid)
+    }
+    const picked = pickGiftListSubsetIndices(counts, t)
+    const ids = new Set<number>()
+    for (const i of picked) {
+      const it = row.list[i]
+      if (it) ids.add(it.idx)
+    }
+    out[row.code] = ids
+  }
+
+  console.log(out)
+
+  return out
+})
+
+watch(
+  () => props.visible,
+  (v) => {
+    if (v) resetGiveQuantitiesFromRows()
+  },
+)
+
+watch(
+  () => props.rows,
+  () => {
+    if (props.visible) resetGiveQuantitiesFromRows()
+  },
+  { deep: true },
+)
+
 function fetchGiverSuggestions(queryString: string, cb: (results: { value: string }[]) => void) {
   const q = queryString.trim().toLowerCase()
   const list = recentGivers.value ?? []
@@ -206,6 +402,22 @@ function fetchGiverSuggestions(queryString: string, cb: (results: { value: strin
 
 .gift-give-table {
   width: 100%;
+}
+
+.gift-give-qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.gift-give-qty-step-btn {
+  min-width: 28px;
+  padding: 6px 8px;
+}
+
+.gift-give-qty-input {
+  width: 88px;
 }
 
 .gift-item-thumb {
