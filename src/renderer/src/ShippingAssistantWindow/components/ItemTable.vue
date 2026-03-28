@@ -46,7 +46,13 @@
             </el-select>
           </div>
           <div class="item-table-give">
-            <el-button type="primary" :disabled="selectedRows.length === 0">赠送</el-button>
+            <el-button
+              type="primary"
+              :disabled="selectedRows.length === 0"
+              @click="giveModalVisible = true"
+            >
+              赠送
+            </el-button>
             <el-button type="primary" :disabled="selectedRows.length === 0">转化能量</el-button>
 
             <el-switch
@@ -145,6 +151,14 @@
       </div>
     </el-splitter-panel>
   </el-splitter>
+
+  <GiftGiveModal
+    :visible="giveModalVisible"
+    :rows="selectedRows"
+    :is-compact="Boolean(isCompact)"
+    :accounts="props.accounts"
+    @close="giveModalVisible = false"
+  />
 </template>
 
 <script lang="ts" setup>
@@ -159,6 +173,7 @@ import { Utils } from '../utils'
 import { pinyin } from 'pinyin-pro'
 import MainLogPanel from './MainLogPanel.vue'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
+import GiftGiveModal from './GiftGiveModal.vue'
 import { keywordGroupOptions } from '../config'
 
 type GroupedRow = GiftGroupedData & {
@@ -222,6 +237,7 @@ const debouncedKeyword = ref('')
 const selectedKeywordGroups = ref<string[]>([])
 // 当前选中道具
 const selectedRows = ref<GroupedRow[]>([])
+const giveModalVisible = ref(false)
 const tableRef = ref<InstanceType<typeof ElTable>>()
 const canFetch = computed(() => props.accounts.length > 0)
 const defaultSort = {
