@@ -32,21 +32,24 @@ import { Parser } from 'tsv'
 const tsxParser = new Parser('\t', { header: false })
 
 // 该文件只处理业务逻辑
-export const ipcHandlers = (mainWindow?: BrowserWindow) => {
+export const ipcHandlers = () => {
   const ipc = new IpcListener<IpcMainEvents>()
   const emitter = new IpcEmitter<IpcRendererEvents>()
 
-  ipc.on('window-show', () => {
-    mainWindow?.show()
+  ipc.on('window-show', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    win?.show()
   })
 
-  ipc.on('window-minimize', () => {
-    mainWindow?.minimize()
+  ipc.on('window-minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    win?.minimize()
   })
 
-  ipc.on('window-close', async () => {
+  ipc.on('window-close', async (event) => {
     // 主窗口关闭按钮：走与 Alt+F4 一致的逻辑，由主进程的 window.on('close') 统一处理
-    mainWindow?.close()
+    const win = BrowserWindow.fromWebContents(event.sender)
+    win?.close()
   })
 
   // 仅作用于发送方所在的窗口，用于子窗口独立控制
@@ -64,12 +67,14 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 展示系统通知（Windows 原生通知）
    * 只有在窗口在托盘（不可见或最小化）时才显示通知
    */
-  ipc.on('show-notification', (_event, payload) => {
+  ipc.on('show-notification', (event, payload) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+
     try {
       // 检查窗口状态：如果窗口可见且未最小化，则不显示通知
-      if (mainWindow) {
-        const isVisible = mainWindow.isVisible()
-        const isMinimized = mainWindow.isMinimized()
+      if (win) {
+        const isVisible = win.isVisible()
+        const isMinimized = win.isMinimized()
 
         // 窗口可见且未最小化，说明不在托盘，不显示通知
         if (isVisible && !isMinimized) {
@@ -92,16 +97,16 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
 
         // 点击通知时唤醒主窗口
         notification.on('click', () => {
-          if (mainWindow) {
+          if (win) {
             // 让窗口重新出现在任务栏并聚焦
-            mainWindow.setSkipTaskbar(false)
-            if (!mainWindow.isVisible()) {
-              mainWindow.show()
+            win.setSkipTaskbar(false)
+            if (!win.isVisible()) {
+              win.show()
             }
-            if (mainWindow.isMinimized()) {
-              mainWindow.restore()
+            if (win.isMinimized()) {
+              win.restore()
             }
-            mainWindow.focus()
+            win.focus()
           }
         })
 
@@ -210,6 +215,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 打开系统公告详情窗口
    */
   ipc.on('open-announcement-detail', (_event, detail) => {
+    const mainWindow = BrowserWindow.getAllWindows()[0]
     const mainBounds = mainWindow?.getBounds()
     const baseHeight = mainBounds?.height ?? 720
 
@@ -412,7 +418,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 打开文件夹选择对话框
    * @param currentPath 当前已保存的路径（可选）
    */
-  ipc.handle('select-folder', async (_, currentPath) => {
+  ipc.handle('select-folder', async (event, currentPath) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+
     try {
       // 确定默认路径：优先使用当前路径，否则使用用户主目录
       let defaultPath = currentPath
@@ -420,9 +428,9 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
         defaultPath = homedir()
       }
 
-      if (!mainWindow) return null
+      if (!win) return null
 
-      const result = await dialog.showOpenDialog(mainWindow, {
+      const result = await dialog.showOpenDialog(win, {
         properties: ['openDirectory'],
         title: '选择游戏安装目录',
         defaultPath: defaultPath,
@@ -2014,6 +2022,7 @@ export const ipcHandlers = (mainWindow?: BrowserWindow) => {
    * 打开发货助手
    */
   ipc.on('open-shipping-assistant', () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0]
     const mainBounds = mainWindow?.getBounds()
 
     // 计算新尺寸

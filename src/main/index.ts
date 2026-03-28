@@ -216,7 +216,7 @@ if (!gotTheLock) {
     createTray(mainWindow)
 
     // 初始化 IPC 业务逻辑
-    ipcHandlers(mainWindow)
+    ipcHandlers()
   })
 }
 
