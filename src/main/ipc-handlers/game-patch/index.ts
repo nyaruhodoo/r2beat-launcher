@@ -238,10 +238,7 @@ export function registerGamePatchHandlers(
 
       emitProgress(0, 'download', 0, 0, undefined, '开始更新补丁')
 
-      const processSinglePatch = async (
-        patch: (typeof patches)[number],
-        patchIndex: number,
-      ) => {
+      const processSinglePatch = async (patch: (typeof patches)[number], patchIndex: number) => {
         let downloadFraction = 0
         let decompressFraction = 0
         const targetFileName = patch.targetFileName
