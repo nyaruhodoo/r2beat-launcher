@@ -55,7 +55,9 @@
           width="170"
           :resizable="false"
         />
-        <el-table-column prop="total" align="center" width="120" label="总计" :resizable="false" />
+        <el-table-column align="center" width="120" label="总计" :resizable="false">
+          <template #default="{ row }">{{ row.list.length }}个</template>
+        </el-table-column>
         <el-table-column align="center" width="180" label="能量" :resizable="false">
           <template #default="{ row }">
             <div class="energy-convert-qty-stepper">
