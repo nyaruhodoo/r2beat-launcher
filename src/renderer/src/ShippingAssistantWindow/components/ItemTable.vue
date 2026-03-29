@@ -53,7 +53,13 @@
             >
               赠送
             </el-button>
-            <el-button type="primary" :disabled="selectedRows.length === 0">转化能量</el-button>
+            <el-button
+              type="primary"
+              :disabled="selectedRows.length === 0"
+              @click="energyConvertModalVisible = true"
+            >
+              转化能量
+            </el-button>
 
             <el-switch
               v-model="switchModel"
@@ -168,6 +174,14 @@
     :on-give-confirm-submit="onGiveConfirmSubmitFromModal"
     @close="giveModalVisible = false"
   />
+
+  <EnergyConvertModal
+    :visible="energyConvertModalVisible"
+    :rows="selectedRows"
+    :is-compact="Boolean(isCompact)"
+    :accounts="props.accounts"
+    @close="energyConvertModalVisible = false"
+  />
 </template>
 
 <script lang="ts" setup>
@@ -182,6 +196,7 @@ import { Utils } from '../utils'
 import { pinyin } from 'pinyin-pro'
 import MainLogPanel from './MainLogPanel.vue'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
+import EnergyConvertModal from './EnergyConvertModal.vue'
 import GiftGiveModal from './GiftGiveModal.vue'
 import PendingGiveItemsTable from './PendingGiveItemsTable.vue'
 import { keywordGroupOptions } from '../config'
@@ -249,8 +264,11 @@ const debouncedKeyword = ref('')
 const selectedKeywordGroups = ref<string[]>([])
 // 当前选中道具
 const selectedRows = ref<GroupedRow[]>([])
+// 赠送物品modal
 const giveModalVisible = ref(false)
-/** 待赠送物品（含赠送人） */
+// 能量转化modal
+const energyConvertModalVisible = ref(false)
+/** 待处理物品（赠送和转化二合一）（含赠送人） */
 const pendingGiveItems = ref<GiftItemWithGiver[]>([])
 /** 待赠送任务是否正在执行（并发赠送流程） */
 const giveTaskRunning = ref(false)
