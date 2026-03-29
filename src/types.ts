@@ -34,6 +34,11 @@ export interface GiftItem {
   vfun_user_id: string
 }
 
+/** 赠送确认载荷：完整道具行 + 赠送人（启动器侧填写） */
+export interface GiftItemWithGiver extends GiftItem {
+  giverName: string
+}
+
 /** get-gift-list 返回行：物品 + 可选账号信息 */
 export interface GiftItemTableRow extends GiftItem {
   accountUsername?: string

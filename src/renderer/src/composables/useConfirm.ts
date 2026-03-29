@@ -1,9 +1,12 @@
-import { createApp, h, ref, type Ref } from 'vue'
+import { createApp, h, ref, type Ref, type VNode } from 'vue'
 import ConfirmDialog from '@renderer/components/ConfirmDialog.vue'
 
 export interface ConfirmOptions {
   title?: string
-  message: string
+  /** 纯文本正文（与 content 二选一，至少传其一） */
+  message?: string
+  /** 自定义 VNode，用于着色、混排等（优先级高于 message） */
+  content?: () => VNode | VNode[]
   confirmText?: string
   cancelText?: string
 }
@@ -76,7 +79,8 @@ export function confirm(options: ConfirmOptions): Promise<void> {
           return h(ConfirmDialog, {
             visible: visibleRef.value,
             title: options.title ?? '提示',
-            message: options.message,
+            message: options.message ?? '',
+            content: options.content,
             confirmText: options.confirmText ?? '确认',
             cancelText: options.cancelText ?? '取消',
             onConfirm: handleConfirm,

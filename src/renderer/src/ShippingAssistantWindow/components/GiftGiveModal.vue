@@ -1,13 +1,14 @@
 <template>
   <Modal
     :visible="visible"
-    title="赠送预览"
+    title="赠送列表"
     title-icon="🎁"
     cancel-text="关闭"
-    :show-confirm="false"
-    :show-cancel="false"
+    confirm-text="赠送"
     max-width="900px"
     @close="emit('close')"
+    @cancel="emit('close')"
+    @confirm="onGiveConfirm"
   >
     <div class="gift-give-modal-body">
       <div class="gift-give-giver-row">
@@ -69,7 +70,7 @@
           :resizable="false"
         />
         <el-table-column prop="total" align="center" width="120" label="总计" :resizable="false" />
-        <el-table-column align="center" width="180" label="数量" :resizable="false">
+        <el-table-column align="center" width="180" label="数量/天数" :resizable="false">
           <template #default="{ row }">
             <div class="gift-give-qty-stepper">
               <el-button
@@ -103,21 +104,20 @@
         </el-table-column>
       </el-table>
     </div>
-
-    <template #footer>
-      <button class="btn btn-cancel" type="button" @click="emit('close')">关闭</button>
-    </template>
   </Modal>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, h, Fragment, ref, watch } from 'vue'
+import type { VNode } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import Modal from '@renderer/components/Modal.vue'
-import type { GiftGroupedData, WebUserInfo } from '@src/types'
+import type { GiftGroupedData, GiftItemWithGiver, WebUserInfo } from '@src/types'
 import { giftItemNumericCount, pickGiftListSubsetIndices } from '../gift-process'
 import { Utils } from '../utils'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
+import { useToast } from '@renderer/composables/useToast'
+import { confirm } from '@renderer/composables/useConfirm'
 
 /** 与 ItemTable 汇总行一致，用于展示 */
 export type GiftGiveModalRow = GiftGroupedData & {
@@ -130,11 +130,127 @@ const props = defineProps<{
   /** 与主表一致：为 true 时隐藏缩略图（紧凑模式） */
   isCompact: boolean
   accounts: WebUserInfo[]
+  /** 点击「赠送」确认时传入完整 GiftItem，并附带 giverName */
+  onGiveConfirmSubmit?: (items: GiftItemWithGiver[]) => void
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
+
+const { error: toastError } = useToast()
+
+/**
+ * 最近赠送过的人（与自动补全同源，确认框用于判断是否曾赠送过）
+ */
+const [recentGivers, setRecentGivers] = useLocalStorageState<string[]>(
+  'r2beat_shipping_recent_gift_givers_v1',
+  {
+    defaultValue: [],
+  },
+)
+
+/** 按主表行顺序，将当前选中的 idx 还原为 GiftItem，并附上赠送人 */
+function buildGiveItemsWithGiver(
+  byCode: Record<string, Set<number>>,
+  rows: GiftGiveModalRow[],
+  giverName: string,
+): GiftItemWithGiver[] {
+  const out: GiftItemWithGiver[] = []
+  for (const row of rows) {
+    const set = byCode[row.code]
+    if (!set?.size) continue
+    for (const idx of set) {
+      const item = row.list.find((it) => it.idx === idx)
+      if (!item) continue
+      out.push({ ...item, giverName })
+    }
+  }
+  return out
+}
+
+async function onGiveConfirm() {
+  if (giverName.value.length <= 0) {
+    toastError('赠送人不可为空')
+    return
+  }
+  const items = buildGiveItemsWithGiver(giveVisibleItemIdxByCode.value, props.rows, giverName.value)
+  if (items.length === 0) {
+    toastError('没有可赠送的物品')
+    return
+  }
+
+  const rawGiver = giverName.value ?? ''
+  const invisibleHint = buildGiverInvisibleHint(rawGiver)
+  const hasGiftedToGiverBefore = (recentGivers.value ?? []).includes(rawGiver)
+
+  await confirm({
+    title: '确认赠送',
+    confirmText: '赠送',
+    cancelText: '取消',
+    content: () => {
+      const blocks: VNode[] = [
+        h('div', null, '请确认赠送人是否正确？'),
+        h(
+          'div',
+          {
+            style: {
+              whiteSpace: 'pre-wrap',
+              color: 'var(--el-color-primary)',
+              marginTop: '6px',
+              wordBreak: 'break-word',
+            },
+          },
+          rawGiver,
+        ),
+      ]
+      if (invisibleHint) {
+        blocks.push(
+          h(
+            'div',
+            {
+              style: {
+                whiteSpace: 'pre-wrap',
+                color: 'var(--el-color-warning)',
+                marginTop: '10px',
+                fontSize: '13px',
+              },
+            },
+            invisibleHint,
+          ),
+        )
+      }
+
+      blocks.push(
+        h(
+          'div',
+          {
+            style: {
+              marginTop: '10px',
+              fontSize: '13px',
+              lineHeight: '1.5',
+              fontWeight: '500',
+              color: hasGiftedToGiverBefore
+                ? 'var(--el-color-success)'
+                : 'var(--el-color-danger)',
+            },
+          },
+          hasGiftedToGiverBefore ? '您曾向该玩家赠送过物品。' : '您第一次向该玩家赠送物品。',
+        ),
+      )
+
+      return h(Fragment, null, blocks)
+    },
+  })
+
+  setRecentGivers((prev) => {
+    const list = prev ?? []
+    return [rawGiver, ...list.filter((n) => n !== rawGiver)]
+  })
+
+  props.onGiveConfirmSubmit?.(items)
+  emit('close')
+}
 
 /**
  * Unicode 空白 + 格式类（含零宽、BOM 等不单独“占字”的字符）
@@ -184,13 +300,6 @@ function buildGiverInvisibleHint(raw: string): string {
 
 // 避免送错人，特别显示特殊符号
 const giverInvisibleHint = computed(() => buildGiverInvisibleHint(giverName.value ?? ''))
-
-/**
- * 最近赠送过的人
- */
-const [recentGivers] = useLocalStorageState<string[]>('r2beat_shipping_recent_gift_givers_v1', {
-  defaultValue: [],
-})
 
 const giverName = ref('')
 
@@ -315,7 +424,9 @@ function canGiveQtyStepDown(code: string): boolean {
   return m.valid.some((v) => v < base)
 }
 
-/** 与规范化后的数量对应的 list 子集（按 idx）；仅这些行在展开表中展示 */
+/**
+ * 与规范化后的数量对应的 list 子集（按 idx）；仅这些行在展开表中展示
+ */
 const giveVisibleItemIdxByCode = computed(() => {
   const q = giveQuantities.value
   const metaMap = giveQtyMeta.value
@@ -335,8 +446,6 @@ const giveVisibleItemIdxByCode = computed(() => {
     }
     out[row.code] = ids
   }
-
-  console.log(out)
 
   return out
 })

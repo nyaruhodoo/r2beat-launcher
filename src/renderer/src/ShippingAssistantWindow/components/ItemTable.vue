@@ -157,13 +157,14 @@
     :rows="selectedRows"
     :is-compact="Boolean(isCompact)"
     :accounts="props.accounts"
+    :on-give-confirm-submit="onGiveConfirmSubmitFromModal"
     @close="giveModalVisible = false"
   />
 </template>
 
 <script lang="ts" setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
-import type { GiftGroupedData, GiftItem, WebUserInfo } from '@src/types'
+import type { GiftGroupedData, GiftItem, GiftItemWithGiver, WebUserInfo } from '@src/types'
 import { processGiftData } from '../gift-process'
 import { ipcEmitter, ipcArg } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'
@@ -238,6 +239,16 @@ const selectedKeywordGroups = ref<string[]>([])
 // 当前选中道具
 const selectedRows = ref<GroupedRow[]>([])
 const giveModalVisible = ref(false)
+/** 待赠送物品（含赠送人） */
+const pendingGiveItems = ref<GiftItemWithGiver[]>([])
+
+/**
+ * 接收子组件生成的赠送列表
+ */
+function onGiveConfirmSubmitFromModal(items: GiftItemWithGiver[]) {
+  pendingGiveItems.value = items
+  console.log('将要赠送的物品', pendingGiveItems.value)
+}
 const tableRef = ref<InstanceType<typeof ElTable>>()
 const canFetch = computed(() => props.accounts.length > 0)
 const defaultSort = {
