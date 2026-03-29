@@ -145,7 +145,7 @@
               :model-value="!account.disable"
               @update:model-value="(enabled) => onAccountDisableChange(account.username, !enabled)"
             >
-              {{ account.remark ?? account.username }}
+              {{ account.remark || account.username }}
             </Checkbox>
             <button type="button" class="user-list-delete" @click="handleDeleteAccount(account)">
               删除
