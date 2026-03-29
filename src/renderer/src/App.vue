@@ -260,6 +260,7 @@ const [gameSettings, setGameSettings] = useLocalStorageState<GameSettings>('r2be
   defaultValue: {
     gamePath: '',
     localImageLibrary: '',
+    localImageObjectPosition: 'center top',
     autoUpdate: false,
     minimizeToTrayOnLaunch: true,
     processPriority: 'normal',

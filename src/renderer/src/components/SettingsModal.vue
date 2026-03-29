@@ -28,14 +28,20 @@
     <div class="settings-section">
       <h3 class="section-title">本地图库</h3>
       <div class="setting-item">
-        <div class="path-input-group">
+        <div class="path-input-group path-input-group-library">
           <input
             v-model="settings.localImageLibrary"
             type="text"
             class="path-input"
             placeholder="请选择本地图库目录（可选）"
           />
-          <button class="browse-btn" @click="handleBrowseLibrary">浏览</button>
+          <div class="library-object-position-select">
+            <CustomSelect
+              v-model="settings.localImageObjectPosition"
+              :options="localImageObjectPositionOptions"
+            />
+          </div>
+          <button class="browse-btn" type="button" @click="handleBrowseLibrary">浏览</button>
         </div>
         <p class="setting-hint">设置后，将优先使用本地图库中的图片进行随机展示</p>
       </div>
@@ -157,6 +163,7 @@ const { error: showError } = useToast()
 const settings = ref<GameSettings>({
   gamePath: '',
   localImageLibrary: '',
+  localImageObjectPosition: 'center top',
   autoUpdate: true,
   minimizeToTrayOnLaunch: true,
   processPriority: 'normal',
@@ -312,6 +319,15 @@ const resolutionOptions = [
 /**
  * 进程优先级配置
  */
+const localImageObjectPositionOptions: {
+  value: NonNullable<GameSettings['localImageObjectPosition']>
+  label: string
+}[] = [
+  { value: 'center top', label: '靠上显示' },
+  { value: 'center', label: '居中显示' },
+  { value: 'center bottom', label: '靠下显示' },
+]
+
 const processPriorityOptions = [
   { value: 'realtime', label: '实时' },
   { value: 'high', label: '高' },
@@ -400,7 +416,9 @@ watch(
   () => props.visible,
   (isVisible) => {
     if (isVisible && props.gameSettings) {
-      settings.value = { ...props.gameSettings }
+      settings.value = {
+        ...props.gameSettings,
+      }
       // 弹窗打开时读取并转换 config.ini
       loadConfigIni()
     }
@@ -455,6 +473,16 @@ watch(
 .path-input-group {
   display: flex;
   gap: 10px;
+  align-items: stretch;
+}
+
+.path-input-group-library {
+  flex-wrap: wrap;
+
+  .path-input {
+    flex: 1 1 200px;
+    min-width: 0;
+  }
 }
 
 .path-input {

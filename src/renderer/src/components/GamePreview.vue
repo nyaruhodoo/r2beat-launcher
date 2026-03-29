@@ -8,6 +8,7 @@
           :src="gameImagePath"
           alt="游戏封面"
           class="game-cover-image"
+          :style="{ objectPosition: coverObjectPosition }"
           title="点击切换图片"
           @click="handleImageClick"
         />
@@ -21,13 +22,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { GameSettings } from '@src/types'
 import { ipcEmitter } from '@renderer/ipc'
 
 const props = defineProps<{
   gameSettings?: GameSettings
 }>()
+
+const coverObjectPosition = computed(() => {
+  const p = props.gameSettings?.localImageObjectPosition
+  if (p === 'center' || p === 'center bottom' || p === 'center top') {
+    return p
+  }
+  return 'center top'
+})
 
 // 获取本地图片（作为后备）
 const images = import.meta.glob('../assets/imgs/mujica/*.avif', {
@@ -222,7 +231,6 @@ onMounted(() => {
         height: 100%;
         margin: 0 auto;
         object-fit: cover;
-        object-position: center top;
         border-radius: 16px;
         border: 2px solid var(--color-border);
         box-shadow: var(--shadow-md);
