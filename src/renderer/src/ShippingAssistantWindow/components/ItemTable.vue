@@ -243,10 +243,17 @@ const giveModalVisible = ref(false)
 const pendingGiveItems = ref<GiftItemWithGiver[]>([])
 
 /**
- * 接收子组件生成的赠送列表
+ * 接收子组件生成的赠送列表，与已有待赠送合并并按 idx 去重（同 idx 以本次为准）
  */
 function onGiveConfirmSubmitFromModal(items: GiftItemWithGiver[]) {
-  pendingGiveItems.value = items
+  const byIdx = new Map<number, GiftItemWithGiver>()
+  for (const it of pendingGiveItems.value) {
+    byIdx.set(it.idx, it)
+  }
+  for (const it of items) {
+    byIdx.set(it.idx, it)
+  }
+  pendingGiveItems.value = [...byIdx.values()]
   console.log('将要赠送的物品', pendingGiveItems.value)
 }
 const tableRef = ref<InstanceType<typeof ElTable>>()
@@ -274,7 +281,15 @@ const groupedRows = computed<GroupedRow[]>(() => {
 
   // 需要检查当前账户是否已启用
   const enabledIds = new Set(props.accounts.map((a) => a.username))
-  const filtered = items.filter((item) => enabledIds.has(item.user_id))
+  let filtered = items.filter((item) => enabledIds.has(item.user_id))
+
+  if (!filtered.length) return []
+
+  const pending = pendingGiveItems.value ?? []
+  if (pending.length > 0) {
+    const pendingIdxSet = new Set(pending.map((p) => p.idx))
+    filtered = filtered.filter((item) => !pendingIdxSet.has(item.idx))
+  }
 
   if (!filtered.length) return []
 
