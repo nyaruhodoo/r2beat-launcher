@@ -13,6 +13,7 @@
     <div class="gift-give-modal-body">
       <div class="gift-give-giver-row">
         <el-autocomplete
+          ref="giverAutocompleteRef"
           v-model="giverName"
           class="gift-give-giver-input"
           clearable
@@ -21,8 +22,31 @@
           placeholder="输入或选择赠送人"
           autocorrect="off"
           :debounce="200"
-          style="width: 200px"
-        />
+          popper-class="gift-giver-autocomplete-popper"
+          style="width: 260px"
+        >
+          <template #default="{ item }">
+            <div class="gift-giver-suggest-row">
+              <span class="gift-giver-suggest-text">{{ item.value }}</span>
+              <el-button
+                type="danger"
+                link
+                size="small"
+                class="gift-giver-suggest-remove"
+                @click.stop="onRemoveRecentGiver(item.value)"
+              >
+                删除
+              </el-button>
+            </div>
+          </template>
+          <template v-if="(recentGivers?.length ?? 0) > 0" #footer>
+            <div class="gift-giver-suggest-footer">
+              <el-button type="danger" link size="small" @click.stop="onClearAllRecentGivers">
+                清空全部
+              </el-button>
+            </div>
+          </template>
+        </el-autocomplete>
         <span v-if="giverInvisibleHint" class="gift-give-giver-hint">{{ giverInvisibleHint }}</span>
       </div>
       <el-table
@@ -108,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, Fragment, ref, watch } from 'vue'
+import { computed, h, Fragment, nextTick, ref, watch } from 'vue'
 import type { VNode } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import Modal from '@renderer/components/Modal.vue'
@@ -149,6 +173,41 @@ const [recentGivers, setRecentGivers] = useLocalStorageState<string[]>(
     defaultValue: [],
   },
 )
+
+/** el-autocomplete 实例，用于删除/清空后刷新下拉、收起面板 */
+const giverAutocompleteRef = ref<{
+  getData: (queryString: string) => Promise<void>
+  close: () => void
+} | null>(null)
+
+function refreshGiverSuggestions() {
+  void nextTick(() => {
+    giverAutocompleteRef.value?.getData(String(giverName.value ?? ''))
+  })
+}
+
+function onRemoveRecentGiver(name: string) {
+  setRecentGivers((prev) => (prev ?? []).filter((n) => n !== name))
+  refreshGiverSuggestions()
+}
+
+async function onClearAllRecentGivers() {
+  const list = recentGivers.value ?? []
+  if (!list.length) return
+  giverAutocompleteRef.value?.close()
+  try {
+    await confirm({
+      title: '清空记录',
+      message: '确定清空全部「最近赠送人」记录？',
+      confirmText: '清空',
+      cancelText: '取消',
+    })
+  } catch {
+    return
+  }
+  setRecentGivers([])
+  refreshGiverSuggestions()
+}
 
 /** 按主表行顺序，将当前选中的 idx 还原为 GiftItem，并附上赠送人 */
 function buildGiveItemsWithGiver(
@@ -230,9 +289,7 @@ async function onGiveConfirm() {
               fontSize: '13px',
               lineHeight: '1.5',
               fontWeight: '500',
-              color: hasGiftedToGiverBefore
-                ? 'var(--el-color-success)'
-                : 'var(--el-color-danger)',
+              color: hasGiftedToGiverBefore ? 'var(--el-color-success)' : 'var(--el-color-danger)',
             },
           },
           hasGiftedToGiverBefore ? '您曾向该玩家赠送过物品。' : '您第一次向该玩家赠送物品。',
@@ -453,7 +510,10 @@ const giveVisibleItemIdxByCode = computed(() => {
 watch(
   () => props.visible,
   (v) => {
-    if (v) resetGiveQuantitiesFromRows()
+    if (v) {
+      giverName.value = ''
+      resetGiveQuantitiesFromRows()
+    }
   },
 )
 
@@ -485,6 +545,32 @@ function fetchGiverSuggestions(queryString: string, cb: (results: { value: strin
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.gift-giver-suggest-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.gift-giver-suggest-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gift-giver-suggest-remove {
+  flex-shrink: 0;
+}
+
+.gift-giver-suggest-footer {
+  padding: 6px 8px;
+  text-align: center;
 }
 
 .gift-give-giver-hint {
