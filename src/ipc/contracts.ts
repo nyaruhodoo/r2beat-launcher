@@ -145,6 +145,21 @@ export type IpcMainEvents =
       'get-gift-list': (userInfoList: WebUserInfo[]) => IpcResult<{
         items: GiftItemTableRow[]
       }>
+      /** POST form: idx、character_name（赠送人）、type=2；需当前账号 token */
+      'send-gift-item': (args: {
+        token: string
+        idx: number
+        character_name: string
+        itemName: string
+      }) => IpcResult
+      /** POST form: 仅 idx；成功时响应 code === 1 */
+      'destroy-gift-item': (args: {
+        token: string
+        idx: number
+        /** 用于日志：一般为备注或用户名 */
+        accountLabel: string
+        itemName: string
+      }) => IpcResult
     }
 
 /** 主进程 → 渲染进程日志（正常 / 错误 / 成功） */

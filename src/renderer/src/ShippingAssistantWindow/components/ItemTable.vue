@@ -143,7 +143,14 @@
     <el-splitter-panel size="35%" :resizable="false">
       <div class="log-wrap">
         <el-splitter layout="vertical">
-          <el-splitter-panel> 1 </el-splitter-panel>
+          <el-splitter-panel :min="120">
+            <PendingGiveItemsTable
+              :items="pendingGiveItems"
+              :accounts="props.accounts"
+              :is-executing="giveTaskRunning"
+              @retry="processPendingGiveItems"
+            />
+          </el-splitter-panel>
           <el-splitter-panel :resizable="false">
             <MainLogPanel />
           </el-splitter-panel>
@@ -175,7 +182,9 @@ import { pinyin } from 'pinyin-pro'
 import MainLogPanel from './MainLogPanel.vue'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
 import GiftGiveModal from './GiftGiveModal.vue'
+import PendingGiveItemsTable from './PendingGiveItemsTable.vue'
 import { keywordGroupOptions } from '../config'
+import { runConcurrent } from '../runConcurrent'
 
 type GroupedRow = GiftGroupedData & {
   latestCreatedAt: string
@@ -187,6 +196,7 @@ type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | 'name' | null
 
 const props = defineProps<{
   accounts: WebUserInfo[]
+  /** 与父组件 `checkLoginStatus` 一致：同步数据、执行待赠送队列前校验/刷新登录态 */
   verifyLoginBeforeSync: () => Promise<boolean>
 }>()
 
@@ -241,6 +251,67 @@ const selectedRows = ref<GroupedRow[]>([])
 const giveModalVisible = ref(false)
 /** 待赠送物品（含赠送人） */
 const pendingGiveItems = ref<GiftItemWithGiver[]>([])
+/** 待赠送任务是否正在执行（并发赠送流程） */
+const giveTaskRunning = ref(false)
+
+/**
+ * 道具归属账号（user_id 即启动器用户名）对应的有效 token
+ */
+function resolveGiftOwnerToken(item: GiftItem): string | undefined {
+  const acc = props.accounts.find(
+    (a) => a.username === item.user_id && a.disable !== true && Boolean(a.token?.trim()),
+  )
+  return acc?.token
+}
+
+/**
+ * 从本地缓存与待赠送列表中按 idx 移除一条道具
+ */
+function removeGiftItemByIdx(idx: number) {
+  const nextStored = (storedGiftItems.value ?? []).filter((it) => it.idx !== idx)
+  setStoredGiftItems(nextStored)
+  pendingGiveItems.value = pendingGiveItems.value.filter((it) => it.idx !== idx)
+}
+
+/**
+ * 处理 pendingGiveItems：先走 verifyLoginBeforeSync（父组件 checkLoginStatus），再对快照并发执行赠送任务，成功则移除对应 idx；
+ * 任一赠送失败则中断后续任务（失败项仍保留在待赠送，可稍后重试）
+ */
+async function processPendingGiveItems() {
+  if (giveTaskRunning.value) return
+  const snapshot = [...pendingGiveItems.value]
+  if (!snapshot.length) return
+
+  const loginReady = await props.verifyLoginBeforeSync()
+  if (!loginReady) return
+
+  giveTaskRunning.value = true
+  try {
+    await runConcurrent(snapshot, async (item) => {
+      const token = resolveGiftOwnerToken(item)
+      if (!token) {
+        throw new Error(`账号 ${item.user_id} 无有效登录态，无法赠送`)
+      }
+      const result = await ipcEmitter.invoke(
+        'send-gift-item',
+        ipcArg({
+          token,
+          idx: item.idx,
+          character_name: item.giverName,
+          itemName: item.item_name,
+        }),
+      )
+      if (!result.success) {
+        throw new Error(result.error ?? '赠送失败')
+      }
+      removeGiftItemByIdx(item.idx)
+    })
+  } catch (e) {
+    toastError(e instanceof Error ? e.message : '赠送失败，已中断后续任务')
+  } finally {
+    giveTaskRunning.value = false
+  }
+}
 
 /**
  * 接收子组件生成的赠送列表，与已有待赠送合并并按 idx 去重（同 idx 以本次为准）
@@ -254,8 +325,9 @@ function onGiveConfirmSubmitFromModal(items: GiftItemWithGiver[]) {
     byIdx.set(it.idx, it)
   }
   pendingGiveItems.value = [...byIdx.values()]
-  console.log('将要赠送的物品', pendingGiveItems.value)
+  void processPendingGiveItems()
 }
+
 const tableRef = ref<InstanceType<typeof ElTable>>()
 const canFetch = computed(() => props.accounts.length > 0)
 const defaultSort = {

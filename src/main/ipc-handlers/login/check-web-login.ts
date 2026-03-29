@@ -49,7 +49,7 @@ export async function checkWebLoginForUsers(users: WebUserInfo[]): Promise<Check
   }
 
   await Utils.runConcurrent(users, async (user) => {
-    logInfo(`正在检查 ${user.remark ?? user.username} 登录态`)
+    logInfo(`正在检查 ${user.remark || user.username} 登录态`)
     await verifySingleUser(user)
   })
 

@@ -68,7 +68,7 @@ export async function fetchGiftItemsForEnabledAccounts(
     const items = await fetchAllGifts(acc.token)
     rows = rows.concat(items)
 
-    logSuccess(`${acc.remark ?? acc.username} 账户已统计完成，共计${items.length}个道具`)
+    logSuccess(`${acc.remark || acc.username} 账户已统计完成，共计${items.length}个道具`)
   }
 
   return rows
