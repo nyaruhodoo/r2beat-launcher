@@ -4,7 +4,7 @@
     title="转化能量"
     title-icon="⚡"
     cancel-text="关闭"
-    confirm-text="转化能量"
+    :confirm-text="confirmButtonLabel"
     max-width="900px"
     @close="emit('close')"
     @cancel="emit('close')"
@@ -154,6 +154,11 @@ function buildConvertItems(rows: EnergyConvertModalRow[]): GiftItemWithGiver[] {
   return out
 }
 
+const confirmButtonLabel = computed(() => {
+  const n = buildConvertItems(props.rows).length
+  return `转化能量(${n})`
+})
+
 async function onEnergyConvertConfirm() {
   const items = buildConvertItems(props.rows)
   if (items.length === 0) {
@@ -161,12 +166,13 @@ async function onEnergyConvertConfirm() {
     return
   }
 
+  const n = buildConvertItems(props.rows).length
   try {
     await confirm({
       title: '确认转化能量',
-      confirmText: '转化能量',
+      confirmText: `转化能量(${n})`,
       cancelText: '取消',
-      message: '确定将所选道具转化为能量？',
+      message: `确定将 ${n} 件道具转化为能量？`,
     })
   } catch {
     return

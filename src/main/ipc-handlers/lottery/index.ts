@@ -40,7 +40,7 @@ export function registerLotteryHandlers(ipc: IpcListener<IpcMainEvents>): void {
   ipc.handle('destroy-gift-item', async (_, args) => {
     const { accountLabel, itemName } = args
     const result = await destroyGiftItemRequest({ token: args.token, idx: args.idx })
-    const logBase = `${accountLabel}的所属道具 ${itemName}`
+    const logBase = `${accountLabel}的 ${itemName}`
     if (result.success) {
       logSuccess(`${logBase} 已转换为能量`)
       return { success: true }

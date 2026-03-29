@@ -28,7 +28,7 @@
             fixed
           >
             <template #empty>
-              <div class="main-log-empty" aria-hidden="true" />
+              <div class="main-log-empty" aria-hidden="true">暂无日志</div>
             </template>
           </el-table-v2>
         </template>
@@ -275,6 +275,14 @@ watch(
 
 /* 无数据时不展示默认 No Data，仅占位空白 */
 .main-log-panel .main-log-empty {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
   min-height: 0;
 }
 </style>

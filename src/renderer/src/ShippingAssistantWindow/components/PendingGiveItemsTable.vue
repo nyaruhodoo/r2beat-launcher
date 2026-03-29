@@ -42,7 +42,6 @@
         <el-auto-resizer>
           <template #default="{ width, height }">
             <el-table-v2
-              v-if="width > 0 && height > 0 && items.length > 0"
               class="pending-give-table__grid"
               :columns="columnsFor(width)"
               :data="items"
@@ -51,17 +50,14 @@
               :row-height="ROW_HEIGHT"
               row-key="idx"
               :h-scrollbar-size="0"
-              :header-height="HEADER_HEIGHT"
+              :header-height="items.length ? HEADER_HEIGHT : 0"
               :row-class-name="rowClassName"
               fixed
-            />
-            <div
-              v-else-if="width > 0 && height > 0 && items.length === 0"
-              class="pending-give-table__empty"
-              :style="{ width: `${width}px`, height: `${height}px` }"
             >
-              暂无待执行的任务
-            </div>
+              <template #empty>
+                <div class="pending-give-table__empty" aria-hidden="true">暂无待执行任务</div>
+              </template>
+            </el-table-v2>
           </template>
         </el-auto-resizer>
       </div>
@@ -253,6 +249,7 @@ function columnsFor(w: number) {
 }
 
 .pending-give-table__empty {
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;

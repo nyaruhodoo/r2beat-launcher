@@ -180,6 +180,7 @@
     :rows="selectedRows"
     :is-compact="Boolean(isCompact)"
     :accounts="props.accounts"
+    :on-energy-convert-confirm-submit="onEnergyConvertConfirmFromModal"
     @close="energyConvertModalVisible = false"
   />
 </template>
@@ -270,7 +271,7 @@ const giveModalVisible = ref(false)
 const energyConvertModalVisible = ref(false)
 /** 待处理物品（赠送和转化二合一）（含赠送人） */
 const pendingGiveItems = ref<GiftItemWithGiver[]>([])
-/** 待赠送任务是否正在执行（并发赠送流程） */
+/** 待赠送任务是否正在执行 */
 const giveTaskRunning = ref(false)
 
 /**
@@ -299,7 +300,7 @@ function clearPendingGiveItems() {
 }
 
 /**
- * 处理 pendingGiveItems：先走 verifyLoginBeforeSync（父组件 checkLoginStatus），再对快照并发执行赠送任务，成功则移除对应 idx；
+ * 并发执行赠送任务，成功则移除对应 idx；
  * 任一赠送失败则中断后续任务（失败项仍保留在待赠送，可稍后重试）
  */
 async function processPendingGiveItems() {
@@ -351,6 +352,11 @@ function onGiveConfirmSubmitFromModal(items: GiftItemWithGiver[]) {
   }
   pendingGiveItems.value = [...byIdx.values()]
   void processPendingGiveItems()
+}
+
+/** 转化能量确认：暂仅打印子组件回传数据，后续再接 IPC / 队列 */
+function onEnergyConvertConfirmFromModal(items: GiftItemWithGiver[]) {
+  console.log('[ItemTable] EnergyConvertModal 确认', items)
 }
 
 const tableRef = ref<InstanceType<typeof ElTable>>()
