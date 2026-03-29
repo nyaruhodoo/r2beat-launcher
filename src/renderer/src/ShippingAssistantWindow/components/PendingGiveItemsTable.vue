@@ -11,6 +11,15 @@
         >
           重试
         </el-button>
+        <el-button
+          v-if="items.length > 0 && !isExecuting"
+          size="small"
+          type="danger"
+          link
+          @click="emit('clear')"
+        >
+          清空
+        </el-button>
       </div>
       <div class="pending-give-table__toolbar-right">
         <span
@@ -73,6 +82,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   retry: []
+  clear: []
 }>()
 
 const HEADER_HEIGHT = 32
@@ -194,6 +204,8 @@ function columnsFor(w: number) {
   min-height: 24px;
   display: flex;
   align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .pending-give-table__toolbar-right {

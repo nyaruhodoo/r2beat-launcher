@@ -32,7 +32,8 @@ export function registerLotteryHandlers(ipc: IpcListener<IpcMainEvents>): void {
       logSuccess(`向 ${character_name} 发送 ${itemName} 成功`)
       return { success: true }
     }
-    logError(`向 ${character_name} 发送 ${itemName} 失败`)
+    const errDetail = result.error?.trim() ? `：${result.error}` : ''
+    logError(`向 ${character_name} 发送 ${itemName} 失败${errDetail}`)
     return { success: false, error: result.error }
   })
 
@@ -44,7 +45,8 @@ export function registerLotteryHandlers(ipc: IpcListener<IpcMainEvents>): void {
       logSuccess(`${logBase} 已转换为能量`)
       return { success: true }
     }
-    logError(`${logBase} 转换为能量失败`)
+    const errDetail = result.error?.trim() ? `：${result.error}` : ''
+    logError(`${logBase} 转换为能量失败${errDetail}`)
     return { success: false, error: result.error }
   })
 }

@@ -149,6 +149,7 @@
               :accounts="props.accounts"
               :is-executing="giveTaskRunning"
               @retry="processPendingGiveItems"
+              @clear="clearPendingGiveItems"
             />
           </el-splitter-panel>
           <el-splitter-panel :resizable="false">
@@ -271,6 +272,12 @@ function removeGiftItemByIdx(idx: number) {
   const nextStored = (storedGiftItems.value ?? []).filter((it) => it.idx !== idx)
   setStoredGiftItems(nextStored)
   pendingGiveItems.value = pendingGiveItems.value.filter((it) => it.idx !== idx)
+}
+
+/** 清空待赠送队列（不删本地已同步的仓库数据，仅取消排队） */
+function clearPendingGiveItems() {
+  if (giveTaskRunning.value) return
+  pendingGiveItems.value = []
 }
 
 /**
