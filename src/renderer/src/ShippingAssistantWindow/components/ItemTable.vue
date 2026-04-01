@@ -691,6 +691,7 @@ async function syncData() {
         props.accounts.map((account) => account.username).filter(Boolean),
       )
       toastSuccess('数据同步完成')
+      lastSyncDisplay.value = `上次同步：${Utils.formatRelativePastZh(lastSyncAt.value)}`
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
