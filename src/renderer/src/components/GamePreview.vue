@@ -27,7 +27,7 @@ import type { GameSettings } from '@src/types'
 import { ipcEmitter } from '@renderer/ipc'
 
 const props = defineProps<{
-  gameSettings?: GameSettings
+  gameSettings: GameSettings
 }>()
 
 const coverObjectPosition = computed(() => {

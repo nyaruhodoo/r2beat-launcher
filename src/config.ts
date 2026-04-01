@@ -1,3 +1,5 @@
+import { GameSettings } from './types'
+
 function minutesToMilliseconds(minutes: number) {
   if (typeof minutes !== 'number' || isNaN(minutes)) {
     throw new Error('输入必须是有效的数值类型（数字），例如 1、2.5、0.1 等')
@@ -32,6 +34,28 @@ export const checkUnknownServerStatusTime = minutesToMilliseconds(1)
  * 登录器版本检查间隔时间
  */
 export const checkUpdateIntervalTime = minutesToMilliseconds(30)
+
+/**
+ * 登录器默认配置
+ */
+export const defaultGameSettings: GameSettings = {
+  // 游戏路径
+  gamePath: '',
+  // 本地图库路径
+  localImageLibrary: '',
+  // 启动器图片定位方式
+  localImageObjectPosition: 'center top',
+  // 游戏自动更新
+  autoUpdate: false,
+  // 启动游戏后最小化到系统托盘
+  minimizeToTrayOnLaunch: true,
+  // 游戏进程优先级
+  processPriority: 'normal',
+  // 降低np优先级
+  lowerNPPriority: false,
+  // 禁用屏蔽字
+  isShieldWordDisabled: false,
+}
 
 /**
  * 窗口大小

@@ -73,9 +73,9 @@ export type ProcessPriority = 'realtime' | 'high' | 'abovenormal' | 'normal' | '
 export interface GameSettings {
   gamePath: string
   /** 本地图库路径，用于 GamePreview 组件显示图片 */
-  localImageLibrary?: string
+  localImageLibrary: string
   /** 封面图 object-position，默认 center top */
-  localImageObjectPosition?: 'center top' | 'center' | 'center bottom'
+  localImageObjectPosition: 'center top' | 'center' | 'center bottom'
   autoUpdate: boolean
   /** 启动游戏后最小化到系统托盘 */
   minimizeToTrayOnLaunch: boolean

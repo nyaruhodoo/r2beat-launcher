@@ -43,7 +43,7 @@ import { ipcEmitter } from '@renderer/ipc'
 
 interface Props {
   userInfo?: UserInfo
-  gameSettings?: GameSettings
+  gameSettings: GameSettings
 }
 
 const props = defineProps<Props>()

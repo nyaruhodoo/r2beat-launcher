@@ -42,7 +42,7 @@ import { ipcEmitter } from '@renderer/ipc'
 
 const props = defineProps<{
   visible: boolean
-  gamePath?: string
+  gamePath: string
 }>()
 
 const emit = defineEmits<{

@@ -69,9 +69,9 @@
       <div class="content-wrapper">
         <!-- 左侧区域 -->
         <div class="left-section">
-          <GamePreview :game-settings="gameSettings" />
+          <GamePreview :game-settings="safeGameSettings" />
 
-          <VersionCheck :game-settings="gameSettings" />
+          <VersionCheck :game-settings="safeGameSettings" />
         </div>
 
         <!-- 右侧区域 -->
@@ -80,7 +80,7 @@
 
           <LaunchButton
             :user-info="userInfo"
-            :game-settings="gameSettings"
+            :game-settings="safeGameSettings"
             @login-required="showLoginModal = true"
           />
         </div>
@@ -90,7 +90,7 @@
     <!-- 设置模态框 -->
     <SettingsModal
       :visible="showSettings"
-      :game-settings="gameSettings"
+      :game-settings="safeGameSettings"
       @close="showSettings = false"
       @save="setGameSettings"
     />
@@ -98,14 +98,14 @@
     <!-- 补丁模态框 -->
     <PakModal
       :visible="showPakModal"
-      :game-path="gameSettings?.gamePath"
+      :game-path="safeGameSettings.gamePath"
       @close="showPakModal = false"
     />
 
     <!-- 相册模态框 -->
     <AlbumModal
       :visible="showAlbumModal"
-      :game-path="gameSettings?.gamePath"
+      :game-path="safeGameSettings.gamePath"
       @close="showAlbumModal = false"
     />
 
@@ -125,7 +125,7 @@
 
 <script setup lang="ts">
 import type { DropdownItem } from './components/Dropdown.vue'
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import CustomTitleBar from './components/CustomTitleBar.vue'
 import Announcement from './components/Announcement.vue'
@@ -148,9 +148,10 @@ import wangzhanImg from '@renderer/assets/imgs/wangzhan.png'
 import biaogeImg from '@renderer/assets/imgs/biaoge.png'
 import WindowResizer from './components/WindowResizer.vue'
 import { useToast } from './composables/useToast'
-import { checkUpdateIntervalTime } from '@src/config'
+import { checkUpdateIntervalTime, defaultGameSettings } from '@src/config'
 import { confirm } from './composables/useConfirm'
 import { ipcEmitter } from '@renderer/ipc'
+import { Utils } from './utils'
 
 const { info, success, error } = useToast()
 
@@ -213,7 +214,7 @@ const patchSettingsItems: DropdownItem[] = [
     label: '修复',
     icon: xiufuImg,
     onClick: async () => {
-      const gamePath = gameSettings.value?.gamePath
+      const gamePath = safeGameSettings.value.gamePath
       if (!gamePath) {
         info('请先在设置中配置游戏目录')
         return
@@ -235,7 +236,7 @@ const patchSettingsItems: DropdownItem[] = [
           '该功能会移除游戏目录下的 GameGuard ，如果你经常遇到游戏弹出相关警告，或许可以通过该功能修复',
       })
 
-      const gamePath = gameSettings.value?.gamePath
+      const gamePath = safeGameSettings.value.gamePath
       if (!gamePath) {
         info('请先在设置中配置游戏目录')
         return
@@ -254,19 +255,16 @@ const patchSettingsItems: DropdownItem[] = [
 ]
 
 /**
- * 一些基础配置
+ * 登录器基础配置
  */
-const [gameSettings, setGameSettings] = useLocalStorageState<GameSettings>('r2beat_game_settings', {
-  defaultValue: {
-    gamePath: '',
-    localImageLibrary: '',
-    localImageObjectPosition: 'center top',
-    autoUpdate: false,
-    minimizeToTrayOnLaunch: true,
-    processPriority: 'normal',
-    lowerNPPriority: false,
-    isShieldWordDisabled: false,
+const [_gameSettings, setGameSettings] = useLocalStorageState<Partial<GameSettings>>(
+  'r2beat_game_settings',
+  {
+    defaultValue: defaultGameSettings,
   },
+)
+const safeGameSettings = computed(() => {
+  return Utils.mergeSettings(defaultGameSettings, _gameSettings.value)
 })
 
 // 已登录过账号
@@ -279,21 +277,24 @@ const [savedAccounts, setSavedAccounts] = useLocalStorageState<UserInfo[]>(
 
 /* 当前登录账号 - 应用内状态，不永久存储 */
 const userInfo = ref<UserInfo | undefined>(savedAccounts.value?.[0])
-const setUseInfo = (info?: UserInfo) => {
+const setUseInfo = (info: UserInfo) => {
   userInfo.value = info
 }
 
 // 账号管理方法
-const saveAccount = (userInfo: UserInfo): void => {
+const saveAccount = (userInfo: UserInfo) => {
   const filteredAccounts =
     savedAccounts.value?.filter((account) => account.username !== userInfo.username) ?? []
   setSavedAccounts([userInfo, ...filteredAccounts])
 }
-const deleteAccount = (userName: string): void => {
+const deleteAccount = (userName: string) => {
   const newAccounts = savedAccounts.value?.filter((account) => account.username !== userName)
   setSavedAccounts(newAccounts)
 }
 
+/**
+ * 当前主题，默认值从日夜间模式取
+ */
 const [theme, setTheme] = useLocalStorageState<string>('r2beat-launcher-theme', {
   defaultValue: (() => {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -335,17 +336,20 @@ const handleLoginSuccess = async (userInfo: UserInfo) => {
   if (userInfo.rememberPassword) {
     saveAccount(userInfo)
   } else {
-    deleteAccount(userInfo.username ?? '')
+    deleteAccount(userInfo.username)
   }
 
   showLoginModal.value = false
 }
 
+/**
+ * 自动搜索路径(仅支持安装过的觉醒)
+ */
 const searchGamePath = async () => {
   const res = await ipcEmitter.invoke('get-r2beat-path')
-  if (res?.path && res.success && !gameSettings.value?.gamePath) {
+  if (res.success && !safeGameSettings.value.gamePath) {
     setGameSettings({
-      ...gameSettings.value!,
+      ...safeGameSettings.value,
       gamePath: res.path,
     })
   }

@@ -61,7 +61,7 @@ import { ipcEmitter } from '@renderer/ipc'
 interface MergedPakItem {
   name: string
   modsPath?: string
-  gamePath?: string
+  gamePath: string
 }
 
 const props = defineProps<{

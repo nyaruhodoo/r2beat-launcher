@@ -68,7 +68,7 @@ import useInterval from 'vue-hooks-plus/lib/useInterval'
 import { ipcEmitter, ipcListener } from '@renderer/ipc'
 
 interface Props {
-  gameSettings?: GameSettings
+  gameSettings: GameSettings
 }
 
 const props = defineProps<Props>()

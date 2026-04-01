@@ -146,10 +146,11 @@ import { computed, ref, watch } from 'vue'
 import Checkbox from './Checkbox.vue'
 import CustomSelect from './CustomSelect.vue'
 import Modal from './Modal.vue'
+import { defaultGameSettings } from '@src/config'
 
 const props = defineProps<{
   visible: boolean
-  gameSettings?: GameSettings
+  gameSettings: GameSettings
 }>()
 
 const emit = defineEmits<{
@@ -160,16 +161,7 @@ const emit = defineEmits<{
 const { error: showError } = useToast()
 
 // 创建一个本地的响应式对象用于 v-model 绑定
-const settings = ref<GameSettings>({
-  gamePath: '',
-  localImageLibrary: '',
-  localImageObjectPosition: 'center top',
-  autoUpdate: true,
-  minimizeToTrayOnLaunch: true,
-  processPriority: 'normal',
-  lowerNPPriority: false,
-  isShieldWordDisabled: false,
-})
+const settings = ref<GameSettings>(defaultGameSettings)
 
 // 保存 config.ini 转换后的 JSON 数据
 const configIniJson = ref<GameConfig>()
