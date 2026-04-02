@@ -151,7 +151,7 @@
         <el-splitter layout="vertical">
           <el-splitter-panel :min="120">
             <PendingGiveItemsTable
-              :items="pendingGiveItems"
+              :items="pendingGiveItemsList"
               :accounts="props.accounts"
               :is-executing="giveTaskRunning"
               @retry="processPendingGiveItems"
@@ -249,6 +249,18 @@ const [lastSyncedAccountUsernames, setLastSyncedAccountUsernames] = useLocalStor
 const [isCompact, setIsCompact] = useLocalStorageState<boolean>('is-compact', {
   defaultValue: false,
 })
+
+/**
+ * 待处理赠送/转化队列（含赠送人），关闭窗口后保留
+ */
+const [_pendingGiveItems, setPendingGiveItems] = useLocalStorageState<GiftItemWithGiver[]>(
+  'r2beat_shipping_pending_give_items_v1',
+  { defaultValue: [] },
+)
+
+/** 待赠送列表（保证为数组，便于模板与类型收窄） */
+const pendingGiveItemsList = computed(() => _pendingGiveItems.value ?? [])
+
 const switchModel = computed({
   get() {
     return isCompact.value
@@ -269,9 +281,7 @@ const selectedRows = ref<GroupedRow[]>([])
 const giveModalVisible = ref(false)
 // 能量转化modal
 const energyConvertModalVisible = ref(false)
-/** 待处理物品（赠送和转化二合一）（含赠送人） */
-const pendingGiveItems = ref<GiftItemWithGiver[]>([])
-/** 待赠送任务是否正在执行 */
+// 待赠送任务是否正在执行
 const giveTaskRunning = ref(false)
 
 /**
@@ -290,13 +300,13 @@ function resolveGiftOwnerToken(item: GiftItem): string | undefined {
 function removeGiftItemByIdx(idx: number) {
   const nextStored = (storedGiftItems.value ?? []).filter((it) => it.idx !== idx)
   setStoredGiftItems(nextStored)
-  pendingGiveItems.value = pendingGiveItems.value.filter((it) => it.idx !== idx)
+  setPendingGiveItems((prev) => (prev ?? []).filter((it) => it.idx !== idx))
 }
 
 /** 清空待赠送队列（不删本地已同步的仓库数据，仅取消排队） */
 function clearPendingGiveItems() {
   if (giveTaskRunning.value) return
-  pendingGiveItems.value = []
+  setPendingGiveItems([])
 }
 
 /**
@@ -304,36 +314,41 @@ function clearPendingGiveItems() {
  * 任一赠送失败则中断后续任务（失败项仍保留在待赠送，可稍后重试）
  */
 async function processPendingGiveItems() {
+  // 只允许有一个执行器
   if (giveTaskRunning.value) return
-  const snapshot = [...pendingGiveItems.value]
-  if (!snapshot.length) return
+  if (!pendingGiveItemsList.value.length) return
 
   const loginReady = await props.verifyLoginBeforeSync()
   if (!loginReady) return
 
   giveTaskRunning.value = true
+
   try {
-    await runConcurrent(snapshot, async (item) => {
-      const token = resolveGiftOwnerToken(item)
-      if (!token) {
-        throw new Error(`账号 ${item.user_id} 无有效登录态，无法赠送`)
-      }
-      const result = await ipcEmitter.invoke(
-        'send-gift-item',
-        ipcArg({
-          token,
-          idx: item.idx,
-          character_name: item.giverName,
-          itemName: item.item_name,
-        }),
-      )
-      if (!result.success) {
-        throw new Error(result.error ?? '赠送失败')
-      }
-      removeGiftItemByIdx(item.idx)
-    })
+    await runConcurrent(
+      pendingGiveItemsList.value,
+      async (item) => {
+        const token = resolveGiftOwnerToken(item)
+        if (!token) {
+          throw new Error(`账号 ${item.user_id} 无有效登录态，无法赠送`)
+        }
+        const result = await ipcEmitter.invoke(
+          'send-gift-item',
+          ipcArg({
+            token,
+            idx: item.idx,
+            character_name: item.giverName,
+            itemName: item.item_name,
+          }),
+        )
+        if (!result.success) {
+          throw new Error(result.error ?? '赠送失败')
+        }
+        removeGiftItemByIdx(item.idx)
+      },
+      { abortOnError: false },
+    )
   } catch (e) {
-    toastError(e instanceof Error ? e.message : '赠送失败，已中断后续任务')
+    toastError(e instanceof Error ? e.message : '赠送失败')
   } finally {
     giveTaskRunning.value = false
   }
@@ -344,13 +359,13 @@ async function processPendingGiveItems() {
  */
 function onGiveConfirmSubmitFromModal(items: GiftItemWithGiver[]) {
   const byIdx = new Map<number, GiftItemWithGiver>()
-  for (const it of pendingGiveItems.value) {
+  for (const it of pendingGiveItemsList.value) {
     byIdx.set(it.idx, it)
   }
   for (const it of items) {
     byIdx.set(it.idx, it)
   }
-  pendingGiveItems.value = [...byIdx.values()]
+  setPendingGiveItems([...byIdx.values()])
   void processPendingGiveItems()
 }
 
@@ -388,7 +403,7 @@ const groupedRows = computed<GroupedRow[]>(() => {
 
   if (!filtered.length) return []
 
-  const pending = pendingGiveItems.value ?? []
+  const pending = pendingGiveItemsList.value
   if (pending.length > 0) {
     const pendingIdxSet = new Set(pending.map((p) => p.idx))
     filtered = filtered.filter((item) => !pendingIdxSet.has(item.idx))
