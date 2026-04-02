@@ -115,7 +115,17 @@
             show-overflow-tooltip
             sortable="custom"
             :resizable="false"
-          />
+          >
+            <template #default="{ row }">
+              <span
+                class="item-table-name-copy"
+                title="点击复制道具名称"
+                @click.stop="copyItemNameToClipboard(row.name)"
+              >
+                {{ row.name }}
+              </span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="latestCreatedAt"
             label="获得时间"
@@ -637,6 +647,17 @@ function onKeywordSelect(item: Record<string, string>) {
   keyword.value = item.value
 }
 
+async function copyItemNameToClipboard(name: string) {
+  const text = String(name ?? '').trim()
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+    toastSuccess('复制成功')
+  } catch {
+    toastError('复制失败，请检查剪贴板权限')
+  }
+}
+
 /**
  * 导出道具种类汇总：
  * 【道具名称】  总数+单位
@@ -833,6 +854,15 @@ watch(selectedKeywordGroups, () => {
 .item-table {
   flex: 1;
   min-height: 0;
+}
+
+.item-table-name-copy {
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.item-table-name-copy:hover {
+  color: var(--el-color-primary, #409eff);
 }
 
 .gift-item-thumb {
