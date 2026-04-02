@@ -318,7 +318,7 @@ function clearPendingGiveItems() {
 }
 
 /**
- * 并发执行赠送任务，成功则从待赠送移除对应 idx
+ * 并发执行赠送/转化任务，任务完成后更新本地数据
  */
 async function processPendingGiveItems() {
   // 只允许有一个执行器
@@ -382,7 +382,7 @@ async function processPendingGiveItems() {
       { abortOnError: false },
     )
   } catch (e) {
-    toastError(e instanceof Error ? e.message : '赠送失败')
+    toastError(e instanceof Error ? e.message : String(e))
   } finally {
     if (successIdxs.size > 0) {
       setStoredGiftItems((storedGiftItems.value ?? []).filter((it) => !successIdxs.has(it.idx)))
