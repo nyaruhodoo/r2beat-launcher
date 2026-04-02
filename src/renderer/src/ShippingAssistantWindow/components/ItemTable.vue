@@ -190,7 +190,7 @@
     :rows="selectedRows"
     :is-compact="Boolean(isCompact)"
     :accounts="props.accounts"
-    :on-energy-convert-confirm-submit="onEnergyConvertConfirmFromModal"
+    :on-energy-convert-confirm-submit="onGiveConfirmSubmitFromModal"
     @close="energyConvertModalVisible = false"
   />
 </template>
@@ -295,17 +295,17 @@ const energyConvertModalVisible = ref(false)
 const giveTaskRunning = ref(false)
 
 /**
- * 道具归属账号（user_id 即启动器用户名）对应的有效 token
+ * 根据道具获取对应的账户数据
  */
-function resolveGiftOwnerToken(item: GiftItem): string | undefined {
+function resolveGiftOwnerToken(item: GiftItem) {
   const acc = props.accounts.find(
     (a) => a.username === item.user_id && a.disable !== true && Boolean(a.token?.trim()),
   )
-  return acc?.token
+  return acc
 }
 
 /**
- * 从待赠送列表中按 idx 移除一条（不立刻改本地仓库缓存；成功项在 `processPendingGiveItems` 的 `finally` 里批量从 `storedGiftItems` 剔除）
+ * 从待赠送列表中按 idx 移除一条
  */
 function removeGiftItemByIdx(idx: number) {
   setPendingGiveItems((prev) => (prev ?? []).filter((it) => it.idx !== idx))
@@ -333,28 +333,49 @@ async function processPendingGiveItems() {
     return
   }
 
+  // 存储处理完成的道具，用于更新本地数据(为了性能优化才这样写的)
   const successIdxs = new Set<number>()
 
   try {
     await runConcurrent(
       pendingGiveItemsList.value,
       async (item) => {
-        const token = resolveGiftOwnerToken(item)
+        const userInfo = resolveGiftOwnerToken(item)
+        const token = userInfo?.token
         if (!token) {
           throw new Error(`账号 ${item.user_id} 无有效登录态，无法赠送`)
         }
-        const result = await ipcEmitter.invoke(
-          'send-gift-item',
-          ipcArg({
-            token,
-            idx: item.idx,
-            character_name: item.giverName,
-            itemName: item.item_name,
-          }),
-        )
-        if (!result.success) {
-          throw new Error(result.error ?? '赠送失败')
+        // 赠送
+        if (item.giverName) {
+          const result = await ipcEmitter.invoke(
+            'send-gift-item',
+            ipcArg({
+              token,
+              idx: item.idx,
+              character_name: item.giverName,
+              itemName: item.item_name,
+            }),
+          )
+          if (!result.success) {
+            throw new Error(result.error ?? '赠送失败')
+          }
         }
+        // 能量转化
+        else {
+          const result = await ipcEmitter.invoke(
+            'destroy-gift-item',
+            ipcArg({
+              token,
+              idx: item.idx,
+              itemName: item.item_name,
+              accountLabel: userInfo.remark || userInfo.username,
+            }),
+          )
+          if (!result.success) {
+            throw new Error(result.error ?? '转化失败')
+          }
+        }
+
         removeGiftItemByIdx(item.idx)
         successIdxs.add(item.idx)
       },
@@ -383,11 +404,6 @@ function onGiveConfirmSubmitFromModal(items: GiftItemWithGiver[]) {
   }
   setPendingGiveItems([...byIdx.values()])
   void processPendingGiveItems()
-}
-
-/** 转化能量确认：暂仅打印子组件回传数据，后续再接 IPC / 队列 */
-function onEnergyConvertConfirmFromModal(items: GiftItemWithGiver[]) {
-  console.log('[ItemTable] EnergyConvertModal 确认', items)
 }
 
 const tableRef = ref<InstanceType<typeof ElTable>>()
