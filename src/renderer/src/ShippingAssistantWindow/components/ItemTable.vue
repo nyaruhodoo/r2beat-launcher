@@ -120,7 +120,7 @@
               <span
                 class="item-table-name-copy"
                 title="点击复制道具名称"
-                @click.stop="copyItemNameToClipboard(row.name)"
+                @click.stop="Utils.copy(row.name)"
               >
                 {{ row.name }}
               </span>
@@ -318,8 +318,7 @@ function clearPendingGiveItems() {
 }
 
 /**
- * 并发执行赠送任务，成功则从待赠送移除对应 idx；
- * `abortOnError: false`：单项失败不阻止其余项；失败项仍留在待赠送可稍后重试；若有任意失败，`runConcurrent` 结束后会抛错并 toast。
+ * 并发执行赠送任务，成功则从待赠送移除对应 idx
  */
 async function processPendingGiveItems() {
   // 只允许有一个执行器
@@ -372,7 +371,7 @@ async function processPendingGiveItems() {
 }
 
 /**
- * 接收子组件生成的赠送列表，与已有待赠送合并并按 idx 去重（同 idx 以本次为准）
+ * 保存子组件传递的道具列表，开启执行器
  */
 function onGiveConfirmSubmitFromModal(items: GiftItemWithGiver[]) {
   const byIdx = new Map<number, GiftItemWithGiver>()
@@ -645,17 +644,6 @@ function querySearchItemName(queryString: string, cb: (results: { value: string 
  */
 function onKeywordSelect(item: Record<string, string>) {
   keyword.value = item.value
-}
-
-async function copyItemNameToClipboard(name: string) {
-  const text = String(name ?? '').trim()
-  if (!text) return
-  try {
-    await navigator.clipboard.writeText(text)
-    toastSuccess('复制成功')
-  } catch {
-    toastError('复制失败，请检查剪贴板权限')
-  }
 }
 
 /**

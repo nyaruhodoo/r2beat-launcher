@@ -1,3 +1,7 @@
+import { useToast } from './composables/useToast'
+
+const { error: toastError, success: toastSuccess } = useToast()
+
 export class Utils {
   /**
    * 合并配置对象：以默认配置为基准，用户配置覆盖默认配置
@@ -20,5 +24,14 @@ export class Utils {
 
     // 4. 返回全新的合并对象
     return merged
+  }
+
+  static async copy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      toastSuccess('复制成功')
+    } catch {
+      toastError('复制失败，请检查剪贴板权限')
+    }
   }
 }

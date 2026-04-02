@@ -1,4 +1,6 @@
+import { useToast } from '@renderer/composables/useToast'
 import { GiftGroupedData } from '@src/types'
+const { error: toastError, success: toastSuccess } = useToast()
 
 export class Utils {
   /**
@@ -86,5 +88,14 @@ export class Utils {
     const cb = this.firstCharCodePoint(b)
     if (ca !== cb) return ca - cb
     return (a || '').localeCompare(b || '', 'zh-CN')
+  }
+
+  static async copy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      toastSuccess('复制成功')
+    } catch {
+      toastError('复制失败，请检查剪贴板权限')
+    }
   }
 }
