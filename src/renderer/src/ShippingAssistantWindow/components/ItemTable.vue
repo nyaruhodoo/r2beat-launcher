@@ -406,11 +406,11 @@ const groupedRows = computed<GroupedRow[]>(() => {
 
   if (!filtered.length) return []
 
-  const pending = pendingGiveItemsList.value
-  if (pending.length > 0) {
-    const pendingIdxSet = new Set(pending.map((p) => p.idx))
-    filtered = filtered.filter((item) => !pendingIdxSet.has(item.idx))
-  }
+  // const pending = pendingGiveItemsList.value
+  // if (pending.length > 0) {
+  //   const pendingIdxSet = new Set(pending.map((p) => p.idx))
+  //   filtered = filtered.filter((item) => !pendingIdxSet.has(item.idx))
+  // }
 
   if (!filtered.length) return []
 
