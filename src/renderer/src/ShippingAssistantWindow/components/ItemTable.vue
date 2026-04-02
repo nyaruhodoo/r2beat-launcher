@@ -48,14 +48,14 @@
           <div class="item-table-give">
             <el-button
               type="primary"
-              :disabled="selectedRows.length === 0"
+              :disabled="selectedRows.length === 0 || giveTaskRunning"
               @click="giveModalVisible = true"
             >
               赠送
             </el-button>
             <el-button
               type="primary"
-              :disabled="selectedRows.length === 0"
+              :disabled="selectedRows.length === 0 || giveTaskRunning"
               @click="energyConvertModalVisible = true"
             >
               转化能量
@@ -295,11 +295,9 @@ function resolveGiftOwnerToken(item: GiftItem): string | undefined {
 }
 
 /**
- * 从本地缓存与待赠送列表中按 idx 移除一条道具
+ * 从待赠送列表中按 idx 移除一条（不立刻改本地仓库缓存；成功项在 `processPendingGiveItems` 的 `finally` 里批量从 `storedGiftItems` 剔除）
  */
 function removeGiftItemByIdx(idx: number) {
-  const nextStored = (storedGiftItems.value ?? []).filter((it) => it.idx !== idx)
-  setStoredGiftItems(nextStored)
   setPendingGiveItems((prev) => (prev ?? []).filter((it) => it.idx !== idx))
 }
 
@@ -310,8 +308,8 @@ function clearPendingGiveItems() {
 }
 
 /**
- * 并发执行赠送任务，成功则移除对应 idx；
- * 任一赠送失败则中断后续任务（失败项仍保留在待赠送，可稍后重试）
+ * 并发执行赠送任务，成功则从待赠送移除对应 idx；
+ * `abortOnError: false`：单项失败不阻止其余项；失败项仍留在待赠送可稍后重试；若有任意失败，`runConcurrent` 结束后会抛错并 toast。
  */
 async function processPendingGiveItems() {
   // 只允许有一个执行器
@@ -321,6 +319,7 @@ async function processPendingGiveItems() {
   const loginReady = await props.verifyLoginBeforeSync()
   if (!loginReady) return
 
+  const successIdxs = new Set<number>()
   giveTaskRunning.value = true
 
   try {
@@ -344,12 +343,16 @@ async function processPendingGiveItems() {
           throw new Error(result.error ?? '赠送失败')
         }
         removeGiftItemByIdx(item.idx)
+        successIdxs.add(item.idx)
       },
       { abortOnError: false },
     )
   } catch (e) {
     toastError(e instanceof Error ? e.message : '赠送失败')
   } finally {
+    if (successIdxs.size > 0) {
+      setStoredGiftItems((storedGiftItems.value ?? []).filter((it) => !successIdxs.has(it.idx)))
+    }
     giveTaskRunning.value = false
   }
 }
