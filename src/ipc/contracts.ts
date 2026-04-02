@@ -160,6 +160,7 @@ export type IpcMainEvents =
         accountLabel: string
         itemName: string
       }) => IpcResult
+      'get-lottery-current-items': () => IpcResult
     }
 
 /** 主进程 → 渲染进程日志（正常 / 错误 / 成功） */

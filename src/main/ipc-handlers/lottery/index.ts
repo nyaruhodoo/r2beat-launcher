@@ -49,4 +49,11 @@ export function registerLotteryHandlers(ipc: IpcListener<IpcMainEvents>): void {
     logError(`${logBase} 转换为能量失败${errDetail}`)
     return { success: false, error: result.error }
   })
+
+  // 下期抽奖再做
+  ipc.handle('get-lottery-current-items', async () => {
+    return {
+      success: true,
+    }
+  })
 }
