@@ -316,11 +316,15 @@ async function processPendingGiveItems() {
   if (giveTaskRunning.value) return
   if (!pendingGiveItemsList.value.length) return
 
+  giveTaskRunning.value = true
+
   const loginReady = await props.verifyLoginBeforeSync()
-  if (!loginReady) return
+  if (!loginReady) {
+    giveTaskRunning.value = false
+    return
+  }
 
   const successIdxs = new Set<number>()
-  giveTaskRunning.value = true
 
   try {
     await runConcurrent(
