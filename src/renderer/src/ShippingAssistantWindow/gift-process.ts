@@ -1,6 +1,6 @@
 import type { GiftGroupedData, GiftItem } from '../../../types'
 
-function parseGiftItemName(item: GiftItem) {
+export function parseGiftItemName(item: GiftItem) {
   const match = item.item_name.match(/^(.+?)[（(](\d+)(.+?)[）)]$/)
   return {
     count: match ? parseInt(match[2], 10) : 1,

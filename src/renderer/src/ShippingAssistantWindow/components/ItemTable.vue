@@ -198,7 +198,7 @@
 <script lang="ts" setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
 import type { GiftGroupedData, GiftItem, GiftItemWithGiver, WebUserInfo } from '@src/types'
-import { processGiftData } from '../gift-process'
+import { parseGiftItemName, processGiftData } from '../gift-process'
 import { ipcEmitter, ipcArg } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'
 import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
@@ -435,14 +435,6 @@ const groupedRows = computed<GroupedRow[]>(() => {
 
   if (!filtered.length) return []
 
-  // const pending = pendingGiveItemsList.value
-  // if (pending.length > 0) {
-  //   const pendingIdxSet = new Set(pending.map((p) => p.idx))
-  //   filtered = filtered.filter((item) => !pendingIdxSet.has(item.idx))
-  // }
-
-  if (!filtered.length) return []
-
   // 额外添加最新一次道具的获取时间，方便排序
   const grouped = processGiftData(filtered).map((g) => {
     let latestText = ''
@@ -663,27 +655,63 @@ function onKeywordSelect(item: Record<string, string>) {
 }
 
 /**
- * 导出道具种类汇总：
- * 【道具名称】  总数+单位
+ * 导出道具种类汇总
  */
 function exportGroupedSummaryTxt() {
-  const rows = displayData.value
+  const rows = storedGiftItems.value ?? []
+
   if (!rows.length) {
     toastError('暂无可导出的道具种类')
     return
   }
 
-  const content = '\uFEFF' + rows.map((row) => `【${row.name}】  ${row.total}\r\n\r\n`).join('')
+  const sorted = [...rows].sort((a, b) => {
+    return Utils.compareByFirstCodePointAsc(a.item_name, b.item_name)
+  })
+
+  // 1. 按 item_code 进行归类统计
+  const summaryMap = new Map<
+    string,
+    { name: string; totalCount: number; totalDays: number; unit: string }
+  >()
+
+  sorted.forEach((item) => {
+    const code = item.item_id
+    const { count, unit } = parseGiftItemName(item)
+
+    if (!summaryMap.has(code)) {
+      summaryMap.set(code, {
+        name: item.item_name,
+        totalCount: 0,
+        totalDays: 0,
+        unit,
+      })
+    }
+
+    const group = summaryMap.get(code)!
+    group.totalCount += 1 // 累计件数（item_code 出现的次数）
+    group.totalDays += count // 累计天数（从名字解析出来的数值）
+  })
+
+  const contentLines = Array.from(summaryMap.values()).map((group) => {
+    return `${group.name}----${group.totalCount}件----共${group.totalDays}${group.unit}`
+  })
+
+  const content = '\uFEFF' + contentLines.join('\r\n')
+
+  // 3. 执行下载
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
 
   const a = document.createElement('a')
   a.href = url
-  a.download = Utils.formatExportFileName('道具列表')
+  a.download = Utils.formatExportFileName('道具汇总列表')
   a.rel = 'noopener'
   document.body.appendChild(a)
   a.click()
-  a.remove()
+
+  // 清理
+  document.body.removeChild(a)
   URL.revokeObjectURL(url)
 }
 
