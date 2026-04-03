@@ -48,14 +48,14 @@
           <div class="item-table-give">
             <el-button
               type="primary"
-              :disabled="selectedRows.length === 0 || giveTaskRunning"
+              :disabled="selectedRows.length === 0 || pendingGiveItemsList.length > 0"
               @click="giveModalVisible = true"
             >
               赠送
             </el-button>
             <el-button
               type="primary"
-              :disabled="selectedRows.length === 0 || giveTaskRunning"
+              :disabled="selectedRows.length === 0 || pendingGiveItemsList.length > 0"
               @click="energyConvertModalVisible = true"
             >
               转化能量
@@ -297,7 +297,7 @@ const giveTaskRunning = ref(false)
 /**
  * 根据道具获取对应的账户数据
  */
-function resolveGiftOwnerToken(item: GiftItem) {
+function resolveGiftOwnerUserInfo(item: GiftItem) {
   const acc = props.accounts.find(
     (a) => a.username === item.user_id && a.disable !== true && Boolean(a.token?.trim()),
   )
@@ -340,7 +340,7 @@ async function processPendingGiveItems() {
     await runConcurrent(
       pendingGiveItemsList.value,
       async (item) => {
-        const userInfo = resolveGiftOwnerToken(item)
+        const userInfo = resolveGiftOwnerUserInfo(item)
         const token = userInfo?.token
         if (!token) {
           throw new Error(`账号 ${item.user_id} 无有效登录态，无法赠送`)
