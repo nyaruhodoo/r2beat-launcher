@@ -3,10 +3,14 @@ import { writeFile } from 'fs/promises'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents } from '../../../ipc/contracts'
 import type { ProcessPriority } from '@src/types'
-import { spawnGameProcess, spawnDetached, spawnPromise } from '../../spawn'
+import { spawnGameProcess, spawnDetached } from '../../spawn'
 import { patchPak } from './patch-pak'
 import { hookDll } from './hook-dll'
 import { MainUtils } from '../../main-utils'
+import _psList from 'ps-list'
+
+// @ts-expect-error  不知道原因，暂时这样修正
+const psList: typeof _psList = typeof _psList === 'function' ? _psList : _psList.default
 
 /** 启动游戏、补丁 pak、进程优先级 */
 export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -66,8 +70,8 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
           args.push(...argParts.map((arg: string) => arg.replace(/^"|"$/g, '')))
         }
 
-        console.log(`[Main] 启动游戏: ${gameExePath}`)
-        console.log(`[Main] 命令行参数:`, args)
+        // console.log(`[Main] 启动游戏: ${gameExePath}`)
+        // console.log(`[Main] 命令行参数:`, args)
 
         const gameProcess = await spawnGameProcess(
           gameExePath,
@@ -82,6 +86,8 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
 
         if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
 
+        console.log('[Main] 启动游戏成功')
+
         if (launchArgs === 'xyxOpen') {
           await hookDll({
             pid: gameProcess.pid,
@@ -91,100 +97,82 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
         }
 
         MainUtils.safeExecute(() => {
-          const { promise, resolve } = Promise.withResolvers()
+          const { promise, resolve, reject } = Promise.withResolvers()
 
           if (process.platform !== 'win32') {
-            resolve(undefined)
+            reject()
             return promise
           }
 
-          const priorityKey: ProcessPriority = processPriority || 'normal'
-          const priorityMap: Record<ProcessPriority, number> = {
-            realtime: 256,
-            high: 128,
-            abovenormal: 32768,
-            normal: 32,
-            belownormal: 16384,
-            low: 64,
+          if (processPriority && processPriority !== 'normal') {
+            const priorityKey: ProcessPriority = processPriority || 'normal'
+            const priorityMap: Record<ProcessPriority, number> = {
+              realtime: 256,
+              high: 128,
+              abovenormal: 32768,
+              normal: 32,
+              belownormal: 16384,
+              low: 64,
+            }
+
+            const priorityValue = priorityMap[priorityKey] ?? priorityMap.normal
+
+            console.log(
+              `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`,
+            )
+
+            spawnDetached('wmic', [
+              'process',
+              'where',
+              `processid=${gameProcess.pid}`,
+              'CALL',
+              'setpriority',
+              String(priorityValue),
+            ])
           }
-
-          const priorityValue = priorityMap[priorityKey] ?? priorityMap.normal
-
-          console.log(
-            `[Main] 开始设置游戏进程优先级: pid=${gameProcess.pid}, priority=${priorityKey}(${priorityValue})`,
-          )
-
-          spawnDetached('wmic', [
-            'process',
-            'where',
-            `processid=${gameProcess.pid}`,
-            'CALL',
-            'setpriority',
-            String(priorityValue),
-          ])
 
           if (lowerNPPriority) {
             let checkCount = 0
             const maxChecks = 15
 
-            const intervalId = setInterval(() => {
+            const intervalId = setInterval(async () => {
               checkCount++
               if (checkCount > maxChecks) {
-                clearInterval(intervalId)
                 console.warn('[Main] 未发现 GameMon 相关进程（已超时）')
-                resolve(undefined)
+                clearInterval(intervalId)
+                reject()
                 return
               }
 
-              MainUtils.safeExecute(async () => {
-                const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
-                  collectStdout: true,
-                  collectStderr: false,
+              const list = await psList()
+              const gameMonList = list.filter((i) => {
+                return i.name.includes('GameMon')
+              })
+
+              if (gameMonList.length > 0) {
+                console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：')
+                clearInterval(intervalId)
+
+                const targetPriorityValue = 64
+                const processPromises = gameMonList.map(async ({ name, pid }) => {
+                  await spawnDetached('wmic', [
+                    'process',
+                    'where',
+                    `processid=${pid}`,
+                    'CALL',
+                    'setpriority',
+                    String(targetPriorityValue),
+                  ])
+
+                  console.log(
+                    `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`,
+                  )
                 })
 
-                const lines = result.stdout
-                  .split(/\r?\n/)
-                  .map((line) => line.trim())
-                  .filter(Boolean)
-
-                const matches: Array<{ name: string; pid: number }> = []
-                for (const line of lines) {
-                  const match = line.match(/^(.*\S)\s+(\d+)$/)
-                  if (match) {
-                    const name = match[1].trim()
-                    const pid = Number(match[2])
-                    if (name.includes('GameMon')) {
-                      matches.push({ name, pid })
-                    }
-                  }
-                }
-
-                if (matches.length > 0) {
-                  console.log('[Main] 已检测到包含关键字 "GameMon" 的进程：', matches)
-                  clearInterval(intervalId)
-
-                  const targetPriorityValue = 64
-                  const processPromises = matches.map(async ({ name, pid }) => {
-                    await MainUtils.safeExecute(async () => {
-                      console.log(
-                        `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`,
-                      )
-                      await spawnDetached('wmic', [
-                        'process',
-                        'where',
-                        `processid=${pid}`,
-                        'CALL',
-                        'setpriority',
-                        String(targetPriorityValue),
-                      ])
-                    }, `[Main] 设置进程优先级失败: ${name} (pid=${pid})`)
-                  })
-
-                  await Promise.all(processPromises)
-                  resolve(undefined)
-                }
-              }, '设置 GameMon 进程优先级失败')
-            }, 1000)
+                await Promise.all(processPromises)
+                resolve(undefined)
+              }
+            }, 2000)
           } else {
             resolve(undefined)
           }

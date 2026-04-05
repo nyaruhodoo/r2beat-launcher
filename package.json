@@ -30,6 +30,7 @@
     "ini": "^6.0.0",
     "lzma-native": "^8.0.6",
     "pinyin-pro": "^3.28.0",
+    "ps-list": "^9.0.0",
     "tsv": "^0.2.0",
     "vue": "^3.5.25",
     "vue-hooks-plus": "^2.4.1"
