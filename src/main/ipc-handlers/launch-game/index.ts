@@ -7,10 +7,6 @@ import { spawnGameProcess, spawnDetached } from '../../spawn'
 import { patchPak } from './patch-pak'
 import { hookDll } from './hook-dll'
 import { MainUtils } from '../../main-utils'
-import _psList from 'ps-list'
-
-// @ts-expect-error  不知道原因，暂时这样修正
-const psList: typeof _psList = typeof _psList === 'function' ? _psList : _psList.default
 
 /** 启动游戏、补丁 pak、进程优先级 */
 export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -144,7 +140,7 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
                 return
               }
 
-              const list = await psList()
+              const list = await MainUtils.getPsList()
               const gameMonList = list.filter((i) => {
                 return i.name.includes('GameMon')
               })
