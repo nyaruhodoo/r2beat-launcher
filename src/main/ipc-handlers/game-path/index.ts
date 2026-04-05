@@ -4,7 +4,7 @@ import { homedir } from 'os'
 import { stat, rm } from 'fs/promises'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents } from '../../../ipc/contracts'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 /** 游戏安装路径、目录选择、GameGuard 重置 */
 export function registerGamePathHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -22,7 +22,7 @@ export function registerGamePathHandlers(ipc: IpcListener<IpcMainEvents>): void 
         )
       }
 
-      if (!(await Utils.exists(finalShortcutPath))) {
+      if (!(await MainUtils.exists(finalShortcutPath))) {
         throw new Error(`找不到快捷方式文件: ${finalShortcutPath}`)
       }
 
@@ -33,7 +33,7 @@ export function registerGamePathHandlers(ipc: IpcListener<IpcMainEvents>): void 
 
       const targetDir = dirname(shortcutDetails.target)
 
-      if (!(await Utils.exists(targetDir))) {
+      if (!(await MainUtils.exists(targetDir))) {
         throw new Error(`目标目录不存在: ${targetDir}`)
       }
 
@@ -88,11 +88,11 @@ export function registerGamePathHandlers(ipc: IpcListener<IpcMainEvents>): void 
         throw new Error('游戏路径未设置，请在设置中配置游戏安装目录')
       }
 
-      await Utils.checkGameRunning()
+      await MainUtils.checkGameRunning()
 
       const ggDir = join(gamePath, 'GameGuard')
 
-      if (!(await Utils.exists(ggDir))) {
+      if (!(await MainUtils.exists(ggDir))) {
         return { success: true }
       }
 

@@ -7,7 +7,7 @@
   "main": "./out/main/index.js",
   "scripts": {
     "format": "oxfmt",
-    "lint": "eslint --fix --cache .",
+    "lint": "eslint --fix --cache . && npm run typecheck",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",

@@ -2,7 +2,7 @@ import { join, basename } from 'path'
 import { readdir, mkdir, unlink, stat, copyFile, writeFile } from 'fs/promises'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents } from '../../../ipc/contracts'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 /** MOD / .pak 管理 */
 export function registerModsHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -12,7 +12,7 @@ export function registerModsHandlers(ipc: IpcListener<IpcMainEvents>): void {
         throw new Error('目录路径未设置')
       }
 
-      const gameDirExists = await Utils.exists(gamePath)
+      const gameDirExists = await MainUtils.exists(gamePath)
       if (!gameDirExists) {
         throw new Error(`目录不存在: ${gamePath}`)
       }
@@ -29,11 +29,11 @@ export function registerModsHandlers(ipc: IpcListener<IpcMainEvents>): void {
           path: join(gamePath, name),
         }))
 
-      const appRoot = Utils.getTargetDir()
+      const appRoot = MainUtils.getTargetDir()
       const modsRoot = join(appRoot, 'mods')
 
       let modsPaks: { name: string; path: string }[] = []
-      if (await Utils.exists(modsRoot)) {
+      if (await MainUtils.exists(modsRoot)) {
         const modsEntries = await readdir(modsRoot, { withFileTypes: true })
         modsPaks = modsEntries
           .filter((entry) => entry.isFile())
@@ -67,7 +67,7 @@ export function registerModsHandlers(ipc: IpcListener<IpcMainEvents>): void {
         throw new Error('文件名、文件数据或游戏路径为空')
       }
 
-      if (!(await Utils.exists(gamePath))) {
+      if (!(await MainUtils.exists(gamePath))) {
         throw new Error(`游戏目录不存在: ${gamePath}`)
       }
 
@@ -91,11 +91,11 @@ export function registerModsHandlers(ipc: IpcListener<IpcMainEvents>): void {
         throw new Error('源路径或游戏路径为空')
       }
 
-      if (!(await Utils.exists(srcPath))) {
+      if (!(await MainUtils.exists(srcPath))) {
         throw new Error(`源文件不存在: ${srcPath}`)
       }
 
-      if (!(await Utils.exists(gamePath))) {
+      if (!(await MainUtils.exists(gamePath))) {
         throw new Error(`游戏目录不存在: ${gamePath}`)
       }
 
@@ -120,14 +120,14 @@ export function registerModsHandlers(ipc: IpcListener<IpcMainEvents>): void {
         throw new Error('源路径为空')
       }
 
-      if (!(await Utils.exists(srcPath))) {
+      if (!(await MainUtils.exists(srcPath))) {
         throw new Error(`源文件不存在: ${srcPath}`)
       }
 
-      const appRoot = Utils.getTargetDir()
+      const appRoot = MainUtils.getTargetDir()
       const modsRoot = join(appRoot, 'mods')
 
-      if (!(await Utils.exists(modsRoot))) {
+      if (!(await MainUtils.exists(modsRoot))) {
         await mkdir(modsRoot, { recursive: true })
       }
 
@@ -153,7 +153,7 @@ export function registerModsHandlers(ipc: IpcListener<IpcMainEvents>): void {
         throw new Error('删除路径为空')
       }
 
-      if (await Utils.exists(srcPath)) {
+      if (await MainUtils.exists(srcPath)) {
         const info = await stat(srcPath)
         if (info.isFile()) {
           await unlink(srcPath)

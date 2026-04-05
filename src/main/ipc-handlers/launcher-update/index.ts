@@ -3,7 +3,7 @@ import { join } from 'path'
 import { execFile } from 'child_process'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents } from '../../../ipc/contracts'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 /** 启动器自身更新（GitHub）、游戏修复工具 */
 export function registerLauncherUpdateHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -14,7 +14,7 @@ export function registerLauncherUpdateHandlers(ipc: IpcListener<IpcMainEvents>):
       const currentVersion = app.getVersion()
       console.log(`[Main] 当前应用版本: ${currentVersion}`)
 
-      const result = await Utils.checkLatestVersion(repoOwner, repoName)
+      const result = await MainUtils.checkLatestVersion(repoOwner, repoName)
 
       if (!result.success || !result.latestVersion || !result.downloadUrl) {
         console.warn(`[Main] 检查更新失败: ${result.error || '未知错误'}`)
@@ -25,7 +25,7 @@ export function registerLauncherUpdateHandlers(ipc: IpcListener<IpcMainEvents>):
       const downloadUrl = result.downloadUrl
       console.log(`[Main] GitHub 最新版本: ${latestVersion}`)
 
-      const comparison = Utils.compareVersions(currentVersion, latestVersion)
+      const comparison = MainUtils.compareVersions(currentVersion, latestVersion)
 
       if (comparison > 0) {
         console.log(`[Main] ✨ 发现新版本！当前版本: ${currentVersion}, 最新版本: ${latestVersion}`)
@@ -57,11 +57,11 @@ export function registerLauncherUpdateHandlers(ipc: IpcListener<IpcMainEvents>):
       }
 
       const gameRecoveryPath = join(gamePath, 'GameRecovery.exe')
-      if (!(await Utils.exists(gameRecoveryPath))) {
+      if (!(await MainUtils.exists(gameRecoveryPath))) {
         throw new Error(`找不到修复文件: ${gameRecoveryPath} 请检查游戏安装目录是否正确`)
       }
 
-      await Utils.checkGameRunning()
+      await MainUtils.checkGameRunning()
 
       const { promise, resolve } = Promise.withResolvers<
         { success: true } | { success: false; error: string }

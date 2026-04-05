@@ -3,7 +3,7 @@ import { join } from 'path'
 import { stat, unlink } from 'fs/promises'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents } from '../../../ipc/contracts'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 /** 游戏截图目录、本地图库、打开与删除图片 */
 export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -14,7 +14,7 @@ export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {
       }
 
       const screenshotDir = join(gamePath, 'SCREENSHOT')
-      if (!(await Utils.exists(screenshotDir))) {
+      if (!(await MainUtils.exists(screenshotDir))) {
         return { success: true, files: [] as Array<{ name: string; path: string }> }
       }
 
@@ -35,7 +35,7 @@ export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {
         '.avif',
       ])
 
-      const files = await Utils.getAllFilesInDir(screenshotDir, {
+      const files = await MainUtils.getAllFilesInDir(screenshotDir, {
         recursive: true,
         filter: (f) => imageExts.has(f.ext),
       })
@@ -59,7 +59,7 @@ export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {
         return { success: true, files: [] as Array<{ name: string; path: string }> }
       }
 
-      if (!(await Utils.exists(libraryPath))) {
+      if (!(await MainUtils.exists(libraryPath))) {
         return { success: true, files: [] as Array<{ name: string; path: string }> }
       }
 
@@ -80,7 +80,7 @@ export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {
         '.avif',
       ])
 
-      const files = await Utils.getAllFilesInDir(libraryPath, {
+      const files = await MainUtils.getAllFilesInDir(libraryPath, {
         recursive: true,
         filter: (f) => imageExts.has(f.ext),
       })
@@ -105,7 +105,7 @@ export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {
       }
 
       const screenshotDir = join(gamePath, 'SCREENSHOT')
-      if (!(await Utils.exists(screenshotDir))) {
+      if (!(await MainUtils.exists(screenshotDir))) {
         return { success: true }
       }
 
@@ -114,7 +114,7 @@ export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {
         throw new Error('SCREENSHOT 不是目录')
       }
 
-      await Utils.clearDirFiles(screenshotDir, { recursive: true })
+      await MainUtils.clearDirFiles(screenshotDir, { recursive: true })
 
       return { success: true }
     } catch (error) {
@@ -132,7 +132,7 @@ export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {
         throw new Error('文件路径为空')
       }
 
-      if (!(await Utils.exists(filePath))) {
+      if (!(await MainUtils.exists(filePath))) {
         throw new Error('文件不存在')
       }
 
@@ -157,7 +157,7 @@ export function registerAlbumHandlers(ipc: IpcListener<IpcMainEvents>): void {
         throw new Error('删除路径为空')
       }
 
-      if (await Utils.exists(filePath)) {
+      if (await MainUtils.exists(filePath)) {
         const info = await stat(filePath)
         if (info.isFile()) {
           await unlink(filePath)

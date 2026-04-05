@@ -1,7 +1,7 @@
 import type { WebUserInfo } from '@src/types'
 import { http } from '../../http'
 import { logInfo } from '../../log'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 const GET_USER_COIN_URL = 'http://external-api.xiyouxi.com/api/gift/getUserCoin'
 
@@ -39,7 +39,7 @@ async function verifySingleUser(user: WebUserInfo): Promise<void> {
 }
 
 /**
- * 并发校验各账号 web 登录态（并行度见 {@link Utils.runConcurrent} 默认上限）；
+ * 并发校验各账号 web 登录态（并行度见 {@link MainUtils.runConcurrent} 默认上限）；
  * 任一失败则不再领取新任务；已在进行中的 HTTP 请求仍会跑完（未接 axios Abort）。
  * 失败错误向上抛出，由 IPC 层 catch。
  */
@@ -48,7 +48,7 @@ export async function checkWebLoginForUsers(users: WebUserInfo[]): Promise<Check
     return { userInfoList: [] }
   }
 
-  await Utils.runConcurrent(users, async (user) => {
+  await MainUtils.runConcurrent(users, async (user) => {
     logInfo(`正在检查 ${user.remark || user.username} 登录态`)
     await verifySingleUser(user)
   })

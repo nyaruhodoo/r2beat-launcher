@@ -3,7 +3,7 @@ import { join } from 'path'
 import type { IpcListener, IpcEmitter } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents, IpcRendererEvents } from '../../../ipc/contracts'
 import icon from '../../../../build/game.ico?asset'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 /**
  * 窗口控制、系统通知、充值中心、公告详情子窗口、发货助手子窗口
@@ -111,7 +111,7 @@ export function registerWindowHandlers(
     rechargeWindow.webContents.on('did-finish-load', () => {
       const stringUserName = JSON.stringify(username ?? '')
 
-      Utils.safeExecute(
+      MainUtils.safeExecute(
         () =>
           rechargeWindow.webContents.executeJavaScript(`
             const pgPayAmt = document.querySelector("#pg_pay_amt")  

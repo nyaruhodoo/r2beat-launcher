@@ -12,7 +12,7 @@ import { http } from './http'
 /** `runConcurrent` 在 `abortOnError: false` 时每一项的归纳结果 */
 export type RunConcurrentSettledItem<R> = { ok: true; value: R } | { ok: false; error: unknown }
 
-/** 未传 `maxConcurrency` 时 {@link Utils.runConcurrent} 使用的默认并行上限 */
+/** 未传 `maxConcurrency` 时 {@link this.runConcurrent} 使用的默认并行上限 */
 export const RUN_CONCURRENT_DEFAULT_MAX = 3
 
 /**
@@ -39,7 +39,7 @@ interface GitHubLatestRelease {
   assets?: Array<{ browser_download_url?: string }>
 }
 
-export class Utils {
+export class MainUtils {
   /**
    * 并发执行器
    *
@@ -353,7 +353,7 @@ export class Utils {
       return result
     } catch (error) {
       // 仅打印错误，不向上抛出
-      console.error(`[Utils.safeExecute]:`, errorMsg)
+      console.error(`[this.safeExecute]:`, errorMsg)
       console.log(error)
 
       // 返回 null 或自定义的默认值，确保外部 await 不会崩溃
@@ -382,7 +382,7 @@ export class Utils {
       return []
     }
 
-    if (!(await Utils.exists(dir))) {
+    if (!(await this.exists(dir))) {
       return []
     }
 
@@ -438,7 +438,7 @@ export class Utils {
     const filter = options?.filter
 
     if (!dir || typeof dir !== 'string' || dir.trim() === '') return 0
-    if (!(await Utils.exists(dir))) return 0
+    if (!(await this.exists(dir))) return 0
 
     const dirStat = await stat(dir)
     if (!dirStat.isDirectory()) return 0
@@ -454,7 +454,7 @@ export class Utils {
             await clear(fullPath)
           }
           // 清空逻辑与历史 clear-screenshots 一致：把子目录也移除
-          await Utils.safeExecute(
+          await this.safeExecute(
             () => rm(fullPath, { recursive: true, force: true }),
             `清空目录失败: ${fullPath}`,
           )
@@ -470,7 +470,7 @@ export class Utils {
         const ok = filter ? filter({ path: fullPath, name: entry.name, ext }) : true
         if (!ok) continue
 
-        await Utils.safeExecute(async () => {
+        await this.safeExecute(async () => {
           await unlink(fullPath)
           deleted++
         }, `清空目录文件失败: ${fullPath}`)

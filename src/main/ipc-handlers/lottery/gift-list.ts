@@ -1,7 +1,7 @@
 import { logInfo, logSuccess } from '../../log'
 import type { GiftItem, WebUserInfo } from '@src/types'
 import { http } from '../../http'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 interface GiftListApiResponse {
   list: GiftItem[]
@@ -44,7 +44,7 @@ async function fetchAllGifts(token: string): Promise<GiftItem[]> {
   const extraPageCount = totalPages - 1
   const pageSlots = Array.from({ length: extraPageCount }, (_, slot) => slot)
 
-  const perPage = await Utils.runConcurrent(pageSlots, async (slot) => {
+  const perPage = await MainUtils.runConcurrent(pageSlots, async (slot) => {
     const pageNum = slot + 2
     const res = await requestGiftList(token, { page: pageNum, per_page: 100, status: 1 })
     if (res.message) {

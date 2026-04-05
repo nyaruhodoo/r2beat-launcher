@@ -4,7 +4,7 @@ import { stringify, parse } from 'ini'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents } from '../../../ipc/contracts'
 import type { GameConfig, PatchInfo } from '@src/types'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 /** 游戏 config.ini 与 Patch.ini */
 export function registerGameConfigHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -15,7 +15,7 @@ export function registerGameConfigHandlers(ipc: IpcListener<IpcMainEvents>): voi
       }
 
       const configIniPath = join(gamePath, 'config.ini')
-      const iniExists = await Utils.exists(configIniPath)
+      const iniExists = await MainUtils.exists(configIniPath)
 
       if (!iniExists) {
         throw new Error('未在指定路径中找到配置文件')
@@ -72,7 +72,7 @@ export function registerGameConfigHandlers(ipc: IpcListener<IpcMainEvents>): voi
       }
 
       const patchIniPath = join(gamePath, 'PatchInfo', 'Patch.ini')
-      if (!(await Utils.exists(patchIniPath))) {
+      if (!(await MainUtils.exists(patchIniPath))) {
         throw new Error(`找不到 Patch.ini 文件: ${patchIniPath}`)
       }
 

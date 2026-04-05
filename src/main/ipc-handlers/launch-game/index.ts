@@ -6,7 +6,7 @@ import type { ProcessPriority } from '@src/types'
 import { spawnGameProcess, spawnDetached, spawnPromise } from '../../spawn'
 import { patchPak } from './patch-pak'
 import { hookDll } from './hook-dll'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 /** 启动游戏、补丁 pak、进程优先级 */
 export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -33,7 +33,7 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
         }
 
         const gameExePath = join(gamePath, 'Game.exe')
-        if (!(await Utils.exists(gameExePath))) {
+        if (!(await MainUtils.exists(gameExePath))) {
           throw new Error(`找不到游戏文件: ${gameExePath} 请检查游戏安装目录是否正确`)
         }
 
@@ -42,7 +42,7 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
 
         const tasks: Promise<unknown>[] = []
 
-        if (await Utils.exists(pakPath)) {
+        if (await MainUtils.exists(pakPath)) {
           tasks.push(
             patchPak({
               pakPath,
@@ -52,7 +52,7 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
         }
 
         tasks.push(
-          Utils.safeExecute(async () => {
+          MainUtils.safeExecute(async () => {
             await writeFile(xyxIdFilePath, username.trim(), 'utf-8')
             console.log(`[Main] 已更新 xyxID.txt: ${username.trim()}`)
           }, '[Main] 写入 xyxID.txt 失败'),
@@ -90,7 +90,7 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
           })
         }
 
-        Utils.safeExecute(() => {
+        MainUtils.safeExecute(() => {
           const { promise, resolve } = Promise.withResolvers()
 
           if (process.platform !== 'win32') {
@@ -136,7 +136,7 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
                 return
               }
 
-              Utils.safeExecute(async () => {
+              MainUtils.safeExecute(async () => {
                 const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
                   collectStdout: true,
                   collectStderr: false,
@@ -165,7 +165,7 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
 
                   const targetPriorityValue = 64
                   const processPromises = matches.map(async ({ name, pid }) => {
-                    await Utils.safeExecute(async () => {
+                    await MainUtils.safeExecute(async () => {
                       console.log(
                         `[Main] 已将进程优先级设置为最低: ${name} (pid=${pid}, priority=${targetPriorityValue})`,
                       )

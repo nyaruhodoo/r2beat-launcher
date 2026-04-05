@@ -8,7 +8,7 @@ import type { IpcListener, IpcEmitter } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents, IpcRendererEvents } from '../../../ipc/contracts'
 import type { PatchInfo } from '@src/types'
 import { http } from '../../http'
-import { Utils } from '../../utils'
+import { MainUtils } from '../../main-utils'
 
 const tsxParser = new Parser('\t', { header: false })
 
@@ -53,11 +53,11 @@ export function registerGamePatchHandlers(
         throw new Error('没有有效的版本号')
       }
 
-      const appRoot = Utils.getTargetDir()
+      const appRoot = MainUtils.getTargetDir()
       const targetDir = join(appRoot, 'patch', 'lst')
 
       try {
-        if (!(await Utils.exists(targetDir))) {
+        if (!(await MainUtils.exists(targetDir))) {
           await mkdir(targetDir, { recursive: true })
         }
       } catch (error) {
@@ -71,7 +71,7 @@ export function registerGamePatchHandlers(
         const fileName = `${version}.lst.txt`
         const filePath = join(targetDir, fileName)
 
-        if (await Utils.exists(filePath)) {
+        if (await MainUtils.exists(filePath)) {
           console.log(`[Main] 补丁列表已存在，跳过: ${fileName}`)
           localFiles.push({ version, filePath })
           continue
@@ -81,7 +81,7 @@ export function registerGamePatchHandlers(
         console.log('[Main] 开始下载补丁列表:', url)
 
         try {
-          await Utils.downloadFile(url, filePath)
+          await MainUtils.downloadFile(url, filePath)
           localFiles.push({ version, filePath })
           console.log('[Main] 补丁列表下载完成:', filePath)
         } catch (error) {
@@ -185,11 +185,11 @@ export function registerGamePatchHandlers(
         throw new Error('没有可下载的补丁文件')
       }
 
-      const appRoot = Utils.getTargetDir()
+      const appRoot = MainUtils.getTargetDir()
       const targetDir = join(appRoot, 'patch', 'file')
 
       try {
-        if (!(await Utils.exists(targetDir))) {
+        if (!(await MainUtils.exists(targetDir))) {
           await mkdir(targetDir, { recursive: true })
         }
       } catch (error) {
@@ -257,7 +257,7 @@ export function registerGamePatchHandlers(
             const dirParts = pathParts.slice(0, -1)
             outDir = join(targetDir, ...dirParts)
 
-            if (!(await Utils.exists(outDir))) {
+            if (!(await MainUtils.exists(outDir))) {
               await mkdir(outDir, { recursive: true })
               console.log(`[Main] 已创建目录: ${outDir}`)
             }
@@ -266,7 +266,7 @@ export function registerGamePatchHandlers(
 
         const outPath = join(outDir, outFileName)
 
-        if (await Utils.exists(outPath)) {
+        if (await MainUtils.exists(outPath)) {
           console.log('[Main] 目标文件已存在，跳过下载与解压:', outPath)
           downloadFraction = 1
           decompressFraction = 1
@@ -285,17 +285,21 @@ export function registerGamePatchHandlers(
         console.log('[Main] 开始下载补丁文件:', patch.downloadUrl)
 
         try {
-          await Utils.downloadFile(patch.downloadUrl, tmpPath, (_downloaded, _total, progress) => {
-            downloadFraction = progress
-            emitProgress(
-              patchIndex,
-              'download',
-              downloadFraction,
-              decompressFraction,
-              targetFileName,
-              '补丁下载中',
-            )
-          })
+          await MainUtils.downloadFile(
+            patch.downloadUrl,
+            tmpPath,
+            (_downloaded, _total, progress) => {
+              downloadFraction = progress
+              emitProgress(
+                patchIndex,
+                'download',
+                downloadFraction,
+                decompressFraction,
+                targetFileName,
+                '补丁下载中',
+              )
+            },
+          )
 
           console.log('[Main] 补丁文件下载完成，开始解压:', tmpPath)
 
@@ -346,7 +350,7 @@ export function registerGamePatchHandlers(
             source.pipe(decoder).pipe(dest)
           })
 
-          await Utils.safeExecute(
+          await MainUtils.safeExecute(
             () => unlink(tmpPath),
             `[Main] 删除临时补丁文件失败（可忽略）: ${tmpPath}`,
           )
@@ -368,7 +372,7 @@ export function registerGamePatchHandlers(
         }
       }
 
-      await Utils.runConcurrent(patches, processSinglePatch)
+      await MainUtils.runConcurrent(patches, processSinglePatch)
 
       emitProgress(totalFiles - 1, 'decompress', 1, 1, undefined, '所有补丁文件处理完成')
 
@@ -390,17 +394,17 @@ export function registerGamePatchHandlers(
         throw new Error('游戏路径或版本号为空')
       }
 
-      await Utils.checkGameRunning()
+      await MainUtils.checkGameRunning()
 
-      const appRoot = Utils.getTargetDir()
+      const appRoot = MainUtils.getTargetDir()
       const patchRoot = join(appRoot, 'patch')
       const patchFileDir = join(patchRoot, 'file')
 
-      if (!(await Utils.exists(patchFileDir))) {
+      if (!(await MainUtils.exists(patchFileDir))) {
         throw new Error('未找到补丁文件目录')
       }
 
-      const allFiles = (await Utils.getAllFilesInDir(patchFileDir, { recursive: true })).map(
+      const allFiles = (await MainUtils.getAllFilesInDir(patchFileDir, { recursive: true })).map(
         (f) => ({
           path: f.path,
           relativePath: relative(patchFileDir, f.path),
@@ -417,7 +421,7 @@ export function registerGamePatchHandlers(
           hasDeleteFileList = true
           console.log(`[Main] 检测到 DeleteFileList.dat: ${relativePath}`)
 
-          await Utils.safeExecute(async () => {
+          await MainUtils.safeExecute(async () => {
             const deleteFileListContent = await readFile(file.path, 'utf-8')
             deleteFileList = deleteFileListContent
               .split(/\r?\n/)
@@ -448,7 +452,7 @@ export function registerGamePatchHandlers(
             const dirParts = pathParts.slice(0, -1)
             destDir = join(gamePath, ...dirParts)
 
-            if (!(await Utils.exists(destDir))) {
+            if (!(await MainUtils.exists(destDir))) {
               await mkdir(destDir, { recursive: true })
               console.log(`[Main] 已创建目录: ${destDir}`)
             }
@@ -467,16 +471,16 @@ export function registerGamePatchHandlers(
           )
         })
 
-        if (shouldDelete || (await Utils.exists(dest))) {
+        if (shouldDelete || (await MainUtils.exists(dest))) {
           const isInDeleteList = deleteFileList.some((deletePath) => {
             const normalizedDeletePath = deletePath.replace(/[\\/]/g, '/')
             const normalizedDestPath = relativePath.replace(/[\\/]/g, '/')
             return normalizedDestPath === normalizedDeletePath
           })
 
-          if (isInDeleteList || (await Utils.exists(dest))) {
+          if (isInDeleteList || (await MainUtils.exists(dest))) {
             try {
-              if (await Utils.exists(dest)) {
+              if (await MainUtils.exists(dest)) {
                 const statResult = await stat(dest)
                 if (statResult.isFile()) {
                   console.log(`[Main] 复制前删除目标文件: ${dest}`)
@@ -527,8 +531,8 @@ export function registerGamePatchHandlers(
               console.warn(
                 `[Main] 复制文件被锁定，等待后重试 (${copyRetryCount}/${maxCopyRetries}): ${dest}`,
               )
-              await Utils.safeExecute(async () => {
-                if (await Utils.exists(dest)) {
+              await MainUtils.safeExecute(async () => {
+                if (await MainUtils.exists(dest)) {
                   await unlink(dest)
                 }
               }, `[Main] 复制前删除目标文件失败: ${dest}`)
@@ -542,7 +546,7 @@ export function registerGamePatchHandlers(
 
       try {
         const patchIniPath = join(gamePath, 'PatchInfo', 'Patch.ini')
-        if (await Utils.exists(patchIniPath)) {
+        if (await MainUtils.exists(patchIniPath)) {
           const iniContent = await readFile(patchIniPath, 'utf-8')
           const patchInfo = parse(iniContent) as PatchInfo
           const versionNum = Number(latestVersion)
@@ -558,7 +562,7 @@ export function registerGamePatchHandlers(
       }
 
       if (hasDeleteFileList && deleteFileList.length > 0) {
-        await Utils.safeExecute(async () => {
+        await MainUtils.safeExecute(async () => {
           console.log('[Main] 开始处理 DeleteFileList.dat 中剩余的待删除文件')
 
           const copiedFiles = new Set<string>()
@@ -582,7 +586,7 @@ export function registerGamePatchHandlers(
 
               console.log(`[Main] 尝试删除文件: ${filePath} -> ${targetPath}`)
 
-              if (await Utils.exists(targetPath)) {
+              if (await MainUtils.exists(targetPath)) {
                 const statResult = await stat(targetPath)
                 if (statResult.isFile()) {
                   let deleteSuccess = false
