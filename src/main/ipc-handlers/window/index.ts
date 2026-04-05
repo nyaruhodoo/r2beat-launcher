@@ -5,6 +5,8 @@ import type { IpcMainEvents, IpcRendererEvents } from '../../../ipc/contracts'
 import icon from '../../../../build/game.ico?asset'
 import { MainUtils } from '../../main-utils'
 
+let shippingAssistantWindow: BrowserWindow | null = null
+
 /**
  * 窗口控制、系统通知、充值中心、公告详情子窗口、发货助手子窗口
  */
@@ -220,6 +222,12 @@ export function registerWindowHandlers(
   })
 
   ipc.on('open-shipping-assistant', () => {
+    if (shippingAssistantWindow && !shippingAssistantWindow.isDestroyed()) {
+      if (shippingAssistantWindow.isMinimized()) shippingAssistantWindow.restore() // 如果最小化了则恢复
+      shippingAssistantWindow.focus() // 唤醒到最前台
+      return
+    }
+
     const mainWindow = BrowserWindow.getAllWindows()[0]
     const mainBounds = mainWindow?.getBounds()
 
@@ -230,7 +238,7 @@ export function registerWindowHandlers(
     const x = Math.max(0, Math.floor(mainBounds!.x + (mainBounds!.width - newWidth) / 2))
     const y = Math.max(0, Math.floor(mainBounds!.y + (mainBounds!.height - newHeight) / 2))
 
-    const window = new BrowserWindow({
+    shippingAssistantWindow = new BrowserWindow({
       width: newWidth,
       height: newHeight,
       minWidth: newWidth,
@@ -251,7 +259,11 @@ export function registerWindowHandlers(
       },
     })
 
-    window.webContents.setWindowOpenHandler((details) => {
+    shippingAssistantWindow.on('closed', () => {
+      shippingAssistantWindow = null
+    })
+
+    shippingAssistantWindow.webContents.setWindowOpenHandler((details) => {
       shell.openExternal(details.url)
       return { action: 'deny' }
     })
@@ -261,11 +273,11 @@ export function registerWindowHandlers(
       ? `${isDevUrl}?windowType=shippingAssistant`
       : `file://${join(__dirname, '../renderer/index.html')}?windowType=shippingAssistant`
 
-    window.loadURL(url).catch((error) => {
+    shippingAssistantWindow.loadURL(url).catch((error) => {
       console.error('[Main] 打开发货助手窗口失败:', error)
       window.close()
     })
 
-    window.on('ready-to-show', window.show)
+    shippingAssistantWindow.on('ready-to-show', shippingAssistantWindow.show)
   })
 }
