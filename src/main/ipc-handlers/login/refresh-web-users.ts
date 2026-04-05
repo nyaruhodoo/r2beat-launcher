@@ -8,7 +8,7 @@ import { MainUtils } from '../../main-utils'
  */
 export async function refreshWebUsersConcurrent(users: WebUserInfo[]): Promise<WebUserInfo[]> {
   return MainUtils.runConcurrent(users, async (user) => {
-    logInfo(`正在刷新 ${user.remark ?? user.username} 登录态`)
+    logInfo(`正在刷新「${user.remark || user.username}」登录态`)
 
     const refreshed = await webLogin({
       username: user.username,

@@ -53,9 +53,9 @@ export function registerLoginHandlers(ipc: IpcListener<IpcMainEvents>): void {
 
   ipc.handle('check-web-login', async (_, userInfoList) => {
     try {
-      logInfo(`正在检查登录态，当前已启用${userInfoList.length}个账号`)
+      logInfo(`正在检查登录态，当前已启用 ${userInfoList.length} 个账号`)
       const result = await checkWebLoginForUsers(userInfoList)
-      logSuccess(`${userInfoList.length}个账号，登录态检查成功`)
+      logSuccess(`${userInfoList.length} 个账号，登录态检查成功`)
 
       return {
         success: true,
@@ -75,9 +75,8 @@ export function registerLoginHandlers(ipc: IpcListener<IpcMainEvents>): void {
 
   ipc.handle('refresh-web-users', async (_, userInfoList) => {
     try {
-      logInfo(`正在刷新网页登录态，当前已启用 ${userInfoList.length} 个账号`)
       const userInfoListOut = await refreshWebUsersConcurrent(userInfoList)
-      logSuccess(`${userInfoList.length} 个账号 token 已刷新`)
+      logSuccess(`${userInfoList.length} 个账号登录态已刷新`)
 
       return {
         success: true,

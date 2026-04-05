@@ -63,12 +63,12 @@ export async function fetchGiftItemsForEnabledAccounts(
   let rows: GiftItem[] = []
 
   for (const acc of enabled) {
-    logInfo(`开始统计 ${acc.remark || acc.username} 账户的抽奖道具，请稍等片刻`)
+    logInfo(`开始统计「${acc.remark || acc.username}」账户的抽奖道具，请稍等片刻`)
 
     const items = await fetchAllGifts(acc.token)
     rows = rows.concat(items)
 
-    logSuccess(`${acc.remark || acc.username} 账户已统计完成，共计${items.length}个道具`)
+    logSuccess(`「${acc.remark || acc.username}」账户已统计完成，共计 ${items.length} 个道具`)
   }
 
   return rows

@@ -9,9 +9,9 @@ import { sendGiftItemRequest } from './send-item'
 export function registerLotteryHandlers(ipc: IpcListener<IpcMainEvents>): void {
   ipc.handle('get-gift-list', async (_, userInfoList) => {
     try {
-      logInfo(`开始统计抽奖物品，当前已启用${userInfoList.length}个账号`)
+      logInfo(`开始统计抽奖物品，当前已启用 ${userInfoList.length} 个账号`)
       const items = await fetchGiftItemsForEnabledAccounts(userInfoList)
-      logSuccess(`${userInfoList.length}个账号，物品已统计完成，共${items.length}个道具`)
+      logSuccess(`${userInfoList.length} 个账号已统计完成，共 ${items.length} 个道具`)
 
       return { success: true, items }
     } catch (error) {
@@ -29,24 +29,25 @@ export function registerLotteryHandlers(ipc: IpcListener<IpcMainEvents>): void {
       character_name,
     })
     if (result.success) {
-      logSuccess(`向 ${character_name} 发送 ${itemName} 成功`)
+      logSuccess(`「${itemName}」已赠送给「${character_name}」`)
       return { success: true }
     }
-    const errDetail = result.error?.trim() ? `：${result.error}` : ''
-    logError(`向 ${character_name} 发送 ${itemName} 失败${errDetail}`)
+
+    logError(`无法将「${itemName}」赠送给「${character_name}」原因：${result.error}`)
+
     return { success: false, error: result.error }
   })
 
   ipc.handle('destroy-gift-item', async (_, args) => {
     const { accountLabel, itemName } = args
     const result = await destroyGiftItemRequest({ token: args.token, idx: args.idx })
-    const logBase = `${accountLabel}的 ${itemName}`
+    const logBase = `「${accountLabel}」的「${itemName}」`
     if (result.success) {
-      logSuccess(`${logBase} 已转换为能量`)
+      logSuccess(`${logBase}已转换为能量`)
       return { success: true }
     }
-    const errDetail = result.error?.trim() ? `：${result.error}` : ''
-    logError(`${logBase} 转换为能量失败${errDetail}`)
+
+    logError(`${logBase}转换失败，原因：${result.error}`)
     return { success: false, error: result.error }
   })
 
