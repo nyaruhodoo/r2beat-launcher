@@ -159,34 +159,34 @@ export function spawnGameProcess(
   onExit?: (code: number | null, signal: NodeJS.Signals | null) => void,
 ): Promise<ChildProcess> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      ...options,
-      detached: true,
-      stdio: 'ignore',
-    })
+    queueMicrotask(() => {
+      try {
+        const child = spawn(command, args, {
+          ...options,
+          detached: true,
+          stdio: 'ignore',
+        })
 
-    // 处理启动错误
-    child.on('error', (error) => {
-      reject(error)
-    })
+        // 处理启动错误
+        child.on('error', (error) => {
+          reject(error)
+        })
 
-    // 监听进程退出（用于日志记录）
-    if (onExit) {
-      child.on('exit', (code, signal) => {
-        onExit(code, signal)
-      })
-    }
+        // 监听进程退出（用于日志记录）
+        if (onExit) {
+          child.on('exit', (code, signal) => {
+            onExit(code, signal)
+          })
+        }
 
-    // 在 detached 模式下，主进程不应该被子进程“挂住”，
-    // 这里统一调用一次 unref，保证 Electron 主进程可以独立退出。
-    if (child.unref) {
-      child.unref()
-    }
+        // 在 detached 模式下，主进程不应该被子进程“挂住”，
+        // 这里统一调用一次 unref，保证 Electron 主进程可以独立退出。
+        child.unref()
 
-    // 进程启动成功后立即 resolve（下一轮事件循环再返回），
-    // 避免调用方在同步代码中误以为进程尚未创建完成。
-    setImmediate(() => {
-      resolve(child)
+        resolve(child)
+      } catch (error) {
+        reject(error)
+      }
     })
   })
 }
