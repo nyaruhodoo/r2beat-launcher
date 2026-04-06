@@ -121,24 +121,24 @@ export function spawnDetached(
   options: SpawnOptions = {},
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      ...options,
-      detached: true,
-      stdio: 'ignore',
-    })
+    queueMicrotask(() => {
+      try {
+        const child = spawn(command, args, {
+          ...options,
+          detached: true,
+          stdio: 'ignore',
+        })
 
-    child.on('error', (error) => {
-      reject(error)
-    })
+        child.on('error', (error) => {
+          reject(error)
+        })
 
-    // detached 模式下，立即 resolve
-    if (child.unref) {
-      child.unref()
-    }
+        child.unref()
 
-    // 给一个短暂的延迟，确保进程启动成功
-    setImmediate(() => {
-      resolve()
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
     })
   })
 }
