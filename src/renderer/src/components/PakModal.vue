@@ -60,7 +60,7 @@ import { ipcEmitter } from '@renderer/ipc'
 
 interface MergedPakItem {
   name: string
-  modsPath?: string
+  modsPath: string
   gamePath: string
 }
 
@@ -115,14 +115,14 @@ const getPaks = async () => {
 
     // 本地 mods 目录中的补丁
     for (const item of res.modsPaks ?? []) {
-      const exist = map[item.name] ?? { name: item.name }
+      const exist = map[item.name] ?? { name: item.name, modsPath: '', gamePath: '' }
       exist.modsPath = item.path
       map[item.name] = exist
     }
 
     // 游戏目录中的补丁
     for (const item of res.gamePaks ?? []) {
-      const exist = map[item.name] ?? { name: item.name }
+      const exist = map[item.name] ?? { name: item.name, modsPath: '', gamePath: '' }
       exist.gamePath = item.path
       map[item.name] = exist
     }
