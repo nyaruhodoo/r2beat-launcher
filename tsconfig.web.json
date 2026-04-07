@@ -6,15 +6,16 @@
     "src/renderer/src/**/*.vue",
     "src/preload/*.d.ts",
     "src/*.ts",
-    "src/ipc/**/*"
+    "src/ipc/**/*",
   ],
   "compilerOptions": {
     "composite": true,
     "baseUrl": ".",
+    "strictNullChecks": false,
     "paths": {
       "@renderer/*": ["src/renderer/src/*"],
-      "@src/*": ["./src/*"]
+      "@src/*": ["./src/*"],
     },
-    "types": ["element-plus/global"]
-  }
+    "types": ["element-plus/global"],
+  },
 }

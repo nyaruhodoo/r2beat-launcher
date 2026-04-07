@@ -1,12 +1,13 @@
 <template>
   <el-splitter>
+    <!-- Table -->
     <el-splitter-panel size="65%">
       <div class="item-table-wrap">
         <div class="item-table-toolbar">
           <div class="item-table-toolbar-sync">
             <el-button type="primary" :disabled="!canFetch" @click="syncData"> 数据同步 </el-button>
             <span class="item-table-last-sync">
-              {{ lastSyncDisplay }}
+              上次更新：{{ relativeTime }}
               <span v-if="shouldSuggestSync" class="item-table-sync-suggest-text"
                 >，建议同步（启用账号有变更）</span
               >
@@ -82,7 +83,7 @@
           row-key="code"
           :default-sort="defaultSort"
           @sort-change="onSortChange"
-          @selection-change="selectedRows = $event"
+          @selection-change="handleSelectionChange"
         >
           <el-table-column
             type="selection"
@@ -120,7 +121,7 @@
               <span
                 class="item-table-name-copy"
                 title="点击复制道具名称"
-                @click.stop="Utils.copy(row.name)"
+                @click.stop="RendererUtils.copy(row.name)"
               >
                 {{ row.name }}
               </span>
@@ -156,6 +157,8 @@
         </el-table>
       </div>
     </el-splitter-panel>
+
+    <!-- 任务单/日志 -->
     <el-splitter-panel size="35%" :resizable="false">
       <div class="log-wrap">
         <el-splitter layout="vertical">
@@ -196,14 +199,15 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, markRaw, ref, watch } from 'vue'
 import type { GiftGroupedData, GiftItem, GiftItemWithGiver, WebUserInfo } from '@src/types'
 import { parseGiftItemName, processGiftData } from '../gift-process'
 import { ipcEmitter, ipcArg } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'
-import { useInterval, useLocalStorageState } from 'vue-hooks-plus'
+import { useDebounce, useLocalStorageState } from 'vue-hooks-plus'
 import type { ElTable } from 'element-plus'
 import { Utils } from '../utils'
+import { RendererUtils } from '@renderer/renderer-utils'
 import { pinyin } from 'pinyin-pro'
 import MainLogPanel from './MainLogPanel.vue'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
@@ -212,6 +216,8 @@ import GiftGiveModal from './GiftGiveModal.vue'
 import PendingGiveItemsTable from './PendingGiveItemsTable.vue'
 import { keywordGroupOptions } from '../config'
 import { runConcurrent } from '../runConcurrent'
+import { useRelativeTime } from '../composables/useRelativeTime'
+import { useLocalStorageStateShallow } from '../composables/useLocalStorageStateShallow'
 
 type GroupedRow = GiftGroupedData & {
   latestCreatedAt: string
@@ -223,7 +229,6 @@ type SortProp = 'latestCreatedAt' | 'itemCount' | 'total' | 'name' | null
 
 const props = defineProps<{
   accounts: WebUserInfo[]
-  /** 与父组件 `checkLoginStatus` 一致：同步数据、执行待赠送队列前校验/刷新登录态 */
   verifyLoginBeforeSync: () => Promise<boolean>
 }>()
 
@@ -232,7 +237,7 @@ const { error: toastError, success: toastSuccess } = useToast()
 /**
  * 原始道具数据
  */
-const [storedGiftItems, setStoredGiftItems] = useLocalStorageState<GiftItem[]>(
+const [storedGiftItems, setStoredGiftItems] = useLocalStorageStateShallow<GiftItem[]>(
   'r2beat_shipping_gift_raw_items_v1',
   { defaultValue: [] },
 )
@@ -244,6 +249,7 @@ const [lastSyncAt, setLastSyncAt] = useLocalStorageState<number | null>(
   'r2beat_shipping_last_sync_at',
   { defaultValue: null },
 )
+const { relativeTime } = useRelativeTime(lastSyncAt)
 
 /**
  * 上次同步时参与同步的账号列表（username）
@@ -254,23 +260,11 @@ const [lastSyncedAccountUsernames, setLastSyncedAccountUsernames] = useLocalStor
 )
 
 /**
- * 预览模式(是否紧凑)
+ * 是否紧凑模式(无图)
  */
 const [isCompact, setIsCompact] = useLocalStorageState<boolean>('is-compact', {
   defaultValue: false,
 })
-
-/**
- * 待处理赠送/转化队列（含赠送人），关闭窗口后保留
- */
-const [_pendingGiveItems, setPendingGiveItems] = useLocalStorageState<GiftItemWithGiver[]>(
-  'r2beat_shipping_pending_give_items_v1',
-  { defaultValue: [] },
-)
-
-/** 待赠送列表（保证为数组，便于模板与类型收窄） */
-const pendingGiveItemsList = computed(() => _pendingGiveItems.value ?? [])
-
 const switchModel = computed({
   get() {
     return isCompact.value
@@ -280,9 +274,18 @@ const switchModel = computed({
   },
 })
 
+/**
+ * 待处理赠送/转化队列
+ */
+const [_pendingGiveItems, setPendingGiveItems] = useLocalStorageState<GiftItemWithGiver[]>(
+  'r2beat_shipping_pending_give_items_v1',
+  { defaultValue: [] },
+)
+const pendingGiveItemsList = computed(() => _pendingGiveItems.value ?? [])
+
 const loading = ref(false)
 const keyword = ref('')
-const debouncedKeyword = ref('')
+const debouncedKeyword = useDebounce(keyword, { wait: 500 })
 // 当前选中的道具分类组
 const selectedKeywordGroups = ref<string[]>([])
 // 当前选中道具
@@ -293,6 +296,14 @@ const giveModalVisible = ref(false)
 const energyConvertModalVisible = ref(false)
 // 待赠送任务是否正在执行
 const giveTaskRunning = ref(false)
+
+const tableRef = ref<InstanceType<typeof ElTable>>()
+const canFetch = computed(() => props.accounts.length > 0)
+const defaultSort = {
+  prop: 'latestCreatedAt',
+  order: 'descending',
+} as const
+const sortState = ref<{ prop: SortProp; order: SortOrder }>(defaultSort)
 
 /**
  * 根据道具获取对应的账户数据
@@ -406,57 +417,6 @@ function onGiveConfirmSubmitFromModal(items: GiftItemWithGiver[]) {
   void processPendingGiveItems()
 }
 
-const tableRef = ref<InstanceType<typeof ElTable>>()
-const canFetch = computed(() => props.accounts.length > 0)
-const defaultSort = {
-  prop: 'latestCreatedAt',
-  order: 'descending',
-} as const
-const sortState = ref<{ prop: SortProp; order: SortOrder }>(defaultSort)
-
-/**
- * 动态计算上次数据同步时间
- */
-const lastSyncDisplay = ref(`上次同步：${Utils.formatRelativePastZh(lastSyncAt.value)}`)
-useInterval(() => {
-  lastSyncDisplay.value = `上次同步：${Utils.formatRelativePastZh(lastSyncAt.value)}`
-}, 60_000)
-
-/**
- *  对所有道具进行一次同类型合并
- */
-const groupedRows = computed<GroupedRow[]>(() => {
-  const items = storedGiftItems.value ?? []
-  if (!items.length) return []
-
-  // 需要检查当前账户是否已启用
-  const enabledIds = new Set(props.accounts.map((a) => a.username))
-  let filtered = items.filter((item) => enabledIds.has(item.user_id))
-
-  if (!filtered.length) return []
-
-  // 额外添加最新一次道具的获取时间，方便排序
-  const grouped = processGiftData(filtered).map((g) => {
-    let latestText = ''
-    let latestTs = 0
-    for (const item of g.list) {
-      const ts = Utils.parseCreatedAtToTs(item.created_at)
-      if (ts >= latestTs) {
-        latestTs = ts
-        latestText = item.created_at
-      }
-    }
-
-    return {
-      ...g,
-      latestCreatedAt: latestText,
-      latestCreatedAtTs: latestTs,
-    }
-  })
-
-  return grouped
-})
-
 /**
  * 根据道具名称码点排序
  */
@@ -470,16 +430,11 @@ function sortByFirstCodePoint(rows: GroupedRow[], order: SortOrder): GroupedRow[
   return sorted
 }
 
-// 缓存拼音组合
-const pinyinSearchCache = new Map<string, { full: string; first: string }>()
-
 /**
  * 辅助函数: 获取拼音组合
  */
 function getPinyinSearchKeys(text: string): { full: string; first: string } {
   const raw = String(text ?? '')
-  const hit = pinyinSearchCache.get(raw)
-  if (hit) return hit
   let full = ''
   let first = ''
   try {
@@ -502,10 +457,6 @@ function getPinyinSearchKeys(text: string): { full: string; first: string } {
     /* ignore */
   }
   const v = { full, first }
-  if (pinyinSearchCache.size > 2000) {
-    pinyinSearchCache.clear()
-  }
-  pinyinSearchCache.set(raw, v)
   return v
 }
 
@@ -526,6 +477,44 @@ function textMatchesKeyword(text: string, kwLower: string): boolean {
 
   return false
 }
+
+/**
+ *  对所有道具进行一次同类型合并
+ */
+const groupedRows = computed<GroupedRow[]>(() => {
+  const items = storedGiftItems.value ?? []
+
+  if (!items.length) return []
+
+  // 需要检查当前账户是否已启用
+  const enabledIds = new Set(props.accounts.map((a) => a.username))
+  let filtered = items.filter((item) => enabledIds.has(item.user_id))
+
+  if (!filtered.length) return []
+
+  // 额外添加最新一次道具的获取时间，方便排序
+  const grouped = processGiftData(filtered).map((g) => {
+    let latestText = ''
+    let latestTs = 0
+    for (const item of g.list) {
+      const ts = Utils.parseCreatedAtToTs(item.created_at)
+      if (ts >= latestTs) {
+        latestTs = ts
+        latestText = item.created_at
+      }
+    }
+
+    return {
+      ...g,
+      // FIX: 一定要加，不然无法处理百万级数据
+      list: markRaw(g.list),
+      latestCreatedAt: latestText,
+      latestCreatedAtTs: latestTs,
+    }
+  })
+
+  return grouped
+})
 
 /**
  * 表格数据
@@ -613,6 +602,10 @@ const displayDataAllCount = computed(() => {
   }, 0)
 })
 
+const handleSelectionChange = (rows: GroupedRow[]) => {
+  // 只提取 ID，避开对大对象的 Proxy 追踪
+  selectedRows.value = rows
+}
 /**
  * 判断是否有新添加的账户未参与数据同步
  */
@@ -766,7 +759,6 @@ async function syncData() {
         props.accounts.map((account) => account.username).filter(Boolean),
       )
       toastSuccess('数据同步完成')
-      lastSyncDisplay.value = `上次同步：${Utils.formatRelativePastZh(lastSyncAt.value)}`
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -776,27 +768,7 @@ async function syncData() {
   }
 }
 
-let keywordDebounceTimer: ReturnType<typeof setTimeout> | null = null
-
-/**
- * 给输入框做个简易防抖
- */
-watch(keyword, () => {
-  if (keywordDebounceTimer) clearTimeout(keywordDebounceTimer)
-  keywordDebounceTimer = setTimeout(() => {
-    debouncedKeyword.value = keyword.value
-    keywordDebounceTimer = null
-  }, 500)
-  tableRef.value?.clearSelection()
-})
-onUnmounted(() => {
-  if (keywordDebounceTimer) {
-    clearTimeout(keywordDebounceTimer)
-    keywordDebounceTimer = null
-  }
-})
-
-watch(selectedKeywordGroups, () => {
+watch([keyword, selectedKeywordGroups], () => {
   tableRef.value?.clearSelection()
 })
 </script>

@@ -5,13 +5,14 @@
     "src/main/**/*",
     "src/preload/**/*",
     "src/*.ts",
-    "src/ipc/**/*"
+    "src/ipc/**/*",
   ],
   "compilerOptions": {
     "composite": true,
+    "strictNullChecks": false,
     "types": ["electron-vite/node"],
     "paths": {
-      "@src/*": ["./src/*"]
-    }
-  }
+      "@src/*": ["./src/*"],
+    },
+  },
 }

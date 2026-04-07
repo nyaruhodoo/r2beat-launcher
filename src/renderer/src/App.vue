@@ -151,7 +151,7 @@ import { useToast } from './composables/useToast'
 import { checkUpdateIntervalTime, defaultGameSettings } from '@src/config'
 import { confirm } from './composables/useConfirm'
 import { ipcEmitter } from '@renderer/ipc'
-import { Utils } from './utils'
+import { RendererUtils } from './renderer-utils'
 
 const { info, success, error } = useToast()
 
@@ -264,7 +264,7 @@ const [_gameSettings, setGameSettings] = useLocalStorageState<Partial<GameSettin
   },
 )
 const safeGameSettings = computed(() => {
-  return Utils.mergeSettings(defaultGameSettings, _gameSettings.value)
+  return RendererUtils.mergeSettings(defaultGameSettings, _gameSettings.value)
 })
 
 // 已登录过账号

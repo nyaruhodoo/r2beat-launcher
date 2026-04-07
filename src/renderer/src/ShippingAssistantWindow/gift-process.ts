@@ -23,52 +23,52 @@ export function pickGiftListSubsetIndices(counts: number[], target: number): Set
   const n = counts.length
   if (target === 0 || n === 0) return new Set()
 
-  // --- 改为【升序】排列 ---
-  // 这样数组末尾 items[n-1] 就是最大的天数 (例如 7)
-  const items = counts
-    .map((count, originIdx) => ({ count, originIdx }))
-    .sort((a, b) => a.count - b.count)
-
-  const sortedCounts = items.map((it) => it.count)
-
-  // DP 过程保持不变
-  const dp: boolean[][] = Array.from({ length: n + 1 }, () =>
-    Array<boolean>(target + 1).fill(false),
-  )
-  dp[0][0] = true
-
+  // 1. 统计频率并记录索引
+  const valToIndices = new Map<number, number[]>()
   for (let i = 0; i < n; i++) {
-    const c = sortedCounts[i]
-    for (let s = 0; s <= target; s++) {
-      if (!dp[i][s]) continue
-      dp[i + 1][s] = true
-      const ns = s + c
-      if (ns <= target) dp[i + 1][ns] = true
-    }
+    const c = counts[i]
+    if (c > target) continue // 略过比目标还大的
+    if (!valToIndices.has(c)) valToIndices.set(c, [])
+    valToIndices.get(c)!.push(i)
   }
 
-  if (!dp[n][target]) return new Set()
+  const uniqueValues = Array.from(valToIndices.keys()).sort((a, b) => b - a)
+  const resultIndices: number[] = []
 
-  const picked = new Set<number>()
-  let s = target
+  // 2. 使用回溯法寻找组合
+  function findCombination(remaining: number, startIndex: number): boolean {
+    if (remaining === 0) return true
+    if (startIndex >= uniqueValues.length) return false
 
-  // --- 回溯方向从后往前 ---
-  // i=n 时，sortedCounts[i-1] 是最大的值
-  for (let i = n; i >= 1; i--) {
-    const c = sortedCounts[i - 1]
-    const originIdx = items[i - 1].originIdx
+    const val = uniqueValues[startIndex]
+    const availableIndices = valToIndices.get(val)!
 
-    // 优先判断能否拿走当前这个（当前最大的）
-    const canTake = s >= c && dp[i - 1][s - c]
+    // 计算当前面值最多能用多少个
+    const maxPossible = Math.min(Math.floor(remaining / val), availableIndices.length)
 
-    if (canTake) {
-      picked.add(originIdx)
-      s -= c
+    // 尝试从多到少使用该面值 (优先尝试大的组合)
+    for (let count = maxPossible; count >= 0; count--) {
+      // 记录当前选中的索引
+      for (let i = 0; i < count; i++) {
+        resultIndices.push(availableIndices[i])
+      }
+
+      // 递归寻找剩余部分
+      if (findCombination(remaining - val * count, startIndex + 1)) {
+        return true
+      }
+
+      // 回溯：弹出刚才尝试的索引
+      for (let i = 0; i < count; i++) {
+        resultIndices.pop()
+      }
     }
-    // 如果不能拿大的，自然会由于循环继续去尝试较小的 dp[i-1][s]
+
+    return false
   }
 
-  return picked
+  findCombination(target, 0)
+  return new Set(resultIndices)
 }
 
 /**

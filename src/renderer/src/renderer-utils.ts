@@ -2,7 +2,7 @@ import { useToast } from './composables/useToast'
 
 const { error: toastError, success: toastSuccess } = useToast()
 
-export class Utils {
+export class RendererUtils {
   /**
    * 合并配置对象：以默认配置为基准，用户配置覆盖默认配置
    * @param defaultValue 默认配置

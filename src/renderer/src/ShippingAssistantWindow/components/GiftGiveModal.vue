@@ -137,7 +137,7 @@ import { computed, h, Fragment, nextTick, ref, watch } from 'vue'
 import type { VNode } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import Modal from '@renderer/components/Modal.vue'
-import type { GiftGroupedData, GiftItemWithGiver, WebUserInfo } from '@src/types'
+import type { GiftGroupedData, GiftItem, GiftItemWithGiver, WebUserInfo } from '@src/types'
 import { giftItemNumericCount, pickGiftListSubsetIndices } from '../gift-process'
 import { Utils } from '../utils'
 import ExpandedGiftTable from './ExpandedGiftTable.vue'
@@ -217,15 +217,34 @@ function buildGiveItemsWithGiver(
   giverName: string,
 ): GiftItemWithGiver[] {
   const out: GiftItemWithGiver[] = []
+
   for (const row of rows) {
-    const set = byCode[row.code]
-    if (!set?.size) continue
-    for (const idx of set) {
-      const item = row.list.find((it) => it.idx === idx)
-      if (!item) continue
-      out.push({ ...item, giverName })
+    const selectedIdxs = byCode[row.code]
+    if (!selectedIdxs || selectedIdxs.size === 0) continue
+
+    // --- 核心优化：建立当前行 list 的索引映射 ---
+    // 只需要遍历一次 list，复杂度 O(N)
+    const itemMap = new Map<number, GiftItem>()
+    for (let i = 0; i < row.list.length; i++) {
+      const item = row.list[i]
+      // 只有在选中的集合里才放入 Map，进一步缩小规模
+      if (selectedIdxs.has(item.idx)) {
+        itemMap.set(item.idx, item)
+      }
+    }
+
+    // --- 快速提取结果 ---
+    // selectedIdxs 的顺序可能不重要，如果需要保持顺序，直接从 Map 取
+    for (const idx of selectedIdxs) {
+      const item = itemMap.get(idx)
+      if (item) {
+        // 使用 Object.assign 或直接赋值，在某些引擎下比解构更快
+        // 但最重要的是确保 item 本身已经是 markRaw 的
+        out.push({ ...item, giverName })
+      }
     }
   }
+
   return out
 }
 
@@ -234,6 +253,7 @@ async function onGiveConfirm() {
     toastError('赠送人不可为空')
     return
   }
+
   const items = buildGiveItemsWithGiver(giveVisibleItemIdxByCode.value, props.rows, giverName.value)
   if (items.length === 0) {
     toastError('没有可赠送的物品')
@@ -242,6 +262,7 @@ async function onGiveConfirm() {
 
   const rawGiver = giverName.value ?? ''
   const invisibleHint = buildGiverInvisibleHint(rawGiver)
+
   const hasGiftedToGiverBefore = (recentGivers.value ?? []).includes(rawGiver)
 
   await confirm({
@@ -261,7 +282,7 @@ async function onGiveConfirm() {
               wordBreak: 'break-word',
             },
           },
-          rawGiver,
+          `「${rawGiver}」`,
         ),
       ]
       if (invisibleHint) {
@@ -373,19 +394,50 @@ type GiveQtyMeta = {
 
 const giveQtyMeta = ref<Record<string, GiveQtyMeta>>({})
 
-/** list 每条数量的所有子集和（含 0） */
-function buildSubsetSums(counts: number[]): number[] {
-  const sums = new Set<number>([0])
-  for (const c of counts) {
-    const toAdd: number[] = []
-    for (const s of sums) {
-      toAdd.push(s + c)
-    }
-    for (const x of toAdd) {
-      sums.add(x)
-    }
+/**
+ * 生成每个道具的合法天数列表
+ */
+function buildFilteredSubsetSums(counts: number[], min: number, max: number): number[] {
+  // 1. 将数据降维到面值种类级（通常只有几种）
+  const freqMap = new Map<number, number>()
+  for (let i = 0; i < counts.length; i++) {
+    const c = counts[i]
+    freqMap.set(c, (freqMap.get(c) || 0) + 1)
   }
-  return [...sums].sort((a, b) => a - b)
+
+  let sums = new Set<number>([0])
+
+  // 2. 迭代每种面值
+  for (const [value, count] of freqMap) {
+    const nextSums = new Set<number>(sums)
+
+    for (const s of sums) {
+      for (let i = 1; i <= count; i++) {
+        const nextSum = s + value * i
+
+        // --- 集成过滤逻辑 (剪枝) ---
+        if (nextSum <= max) {
+          nextSums.add(nextSum)
+        } else {
+          // 因为 i 是递增的，一旦 s + value * i 超过 max，
+          // 后续更大的 i 肯定也会超过，直接 break 减少无效循环
+          break
+        }
+      }
+    }
+    sums = nextSums
+  }
+
+  // 3. 最终转换：将 Set 转为数组，同时应用下限 min 过滤，并排序
+  // 使用简单的 for 循环转换比 Array.from + filter 更快
+  const result: number[] = []
+  sums.forEach((s) => {
+    if (s >= min) {
+      result.push(s)
+    }
+  })
+
+  return result.sort((a, b) => a - b)
 }
 
 /** 与 target 差距最小的合法值；距离相同取较小（偏向下修正） */
@@ -416,13 +468,22 @@ function resetGiveQuantitiesFromRows() {
       meta[row.code] = { min: 0, max: 0, valid: [0] }
       continue
     }
-    const min = Math.min(...counts)
-    const valid = buildSubsetSums(counts)
-      .filter((s) => s >= min && s <= max)
-      .sort((a, b) => a - b)
+
+    // FIX: 超大数据只能使用简易循环来增强性能
+    let min = Infinity
+    for (let i = 0; i < counts.length; i++) {
+      const val = counts[i]
+      if (val < min) {
+        min = val
+      }
+    }
+
+    const valid = buildFilteredSubsetSums(counts, min, max)
+
     next[row.code] = max
     meta[row.code] = { min, max, valid }
   }
+
   giveQuantities.value = next
   giveQtyMeta.value = meta
 }
@@ -483,7 +544,7 @@ function canGiveQtyStepDown(code: string): boolean {
 }
 
 /**
- * 与规范化后的数量对应的 list 子集（按 idx）；仅这些行在展开表中展示
+ * 与规范化后的数量对应的 list 子集（按 idx），也就是实际要赠送的物品列表
  */
 const giveVisibleItemIdxByCode = computed(() => {
   const q = giveQuantities.value
@@ -523,7 +584,6 @@ watch(
   () => {
     if (props.visible) resetGiveQuantitiesFromRows()
   },
-  { deep: true },
 )
 
 function fetchGiverSuggestions(queryString: string, cb: (results: { value: string }[]) => void) {

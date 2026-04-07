@@ -20,7 +20,7 @@ export type CheckWebLoginResult = { userInfoList: WebUserInfo[] }
 async function verifySingleUser(user: WebUserInfo): Promise<void> {
   // 老实说，我都不知道他啥时候过期，太邪乎了
   if (Date.now() - user.time > 1000 * 60 * 30) {
-    throw new Error(`「${user.remark ?? user.username}」登录临近过期`)
+    throw new Error(`「${user.remark || user.username}」登录临近过期`)
   }
 
   const token = user.token

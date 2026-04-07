@@ -2,7 +2,9 @@
   <div class="main-log-panel">
     <div class="main-log-toolbar">
       <div class="main-log-toolbar-actions">
-        <el-button size="small" @click="clearLogs">清空</el-button>
+        <el-button size="small" :disabled="logsList.length === 0" @click="clearLogs"
+          >清空</el-button
+        >
         <el-button size="small" :disabled="logsList.length === 0" @click="exportLogsTxt"
           >导出</el-button
         >
