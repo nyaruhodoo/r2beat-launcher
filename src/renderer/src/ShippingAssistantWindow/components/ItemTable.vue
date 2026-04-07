@@ -277,7 +277,7 @@ const switchModel = computed({
 /**
  * 待处理赠送/转化队列
  */
-const [_pendingGiveItems, setPendingGiveItems] = useLocalStorageState<GiftItemWithGiver[]>(
+const [_pendingGiveItems, setPendingGiveItems] = useLocalStorageStateShallow<GiftItemWithGiver[]>(
   'r2beat_shipping_pending_give_items_v1',
   { defaultValue: [] },
 )
