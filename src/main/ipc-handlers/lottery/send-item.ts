@@ -13,7 +13,7 @@ export async function sendGiftItemRequest(params: {
   token: string
   idx: number
   character_name: string
-}): Promise<{ success: true } | { success: false; error: string }> {
+}): Promise<{ success: boolean; error?: string }> {
   const { token, idx, character_name } = params
 
   const body = new URLSearchParams({

@@ -471,7 +471,7 @@ export class MainUtils {
    * 返回一个指定时间后决议为 resolve 的 promise
    */
   static wait(millisecond: number) {
-    if (millisecond <= 0) return
+    if (millisecond <= 0) return undefined
     return new Promise((resolve) => setTimeout(resolve, millisecond))
   }
 }

@@ -12,7 +12,7 @@ interface DestroyGiftItemApiResponse {
 export async function destroyGiftItemRequest(params: {
   token: string
   idx: number
-}): Promise<{ success: true } | { success: false; error: string }> {
+}): Promise<{ success: boolean; error?: string }> {
   const { token, idx } = params
 
   const body = new URLSearchParams({
