@@ -121,25 +121,23 @@ export function spawnDetached(
   options: SpawnOptions = {},
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    queueMicrotask(() => {
-      try {
-        const child = spawn(command, args, {
-          ...options,
-          detached: true,
-          stdio: 'ignore',
-        })
+    try {
+      const child = spawn(command, args, {
+        ...options,
+        detached: true,
+        stdio: 'ignore',
+      })
 
-        child.on('error', (error) => {
-          reject(error)
-        })
-
-        child.unref()
-
-        resolve()
-      } catch (error) {
+      child.on('error', (error) => {
         reject(error)
-      }
-    })
+      })
+
+      child.unref()
+
+      resolve()
+    } catch (error) {
+      reject(error)
+    }
   })
 }
 
@@ -159,34 +157,32 @@ export function spawnGameProcess(
   onExit?: (code: number | null, signal: NodeJS.Signals | null) => void,
 ): Promise<ChildProcess> {
   return new Promise((resolve, reject) => {
-    queueMicrotask(() => {
-      try {
-        const child = spawn(command, args, {
-          ...options,
-          detached: true,
-          stdio: 'ignore',
-        })
+    try {
+      const child = spawn(command, args, {
+        ...options,
+        detached: true,
+        stdio: 'ignore',
+      })
 
-        // 处理启动错误
-        child.on('error', (error) => {
-          reject(error)
-        })
+      // 在 detached 模式下，主进程不应该被子进程“挂住”，
+      // 这里统一调用一次 unref，保证 Electron 主进程可以独立退出。
+      child.unref()
 
-        // 监听进程退出（用于日志记录）
-        if (onExit) {
-          child.on('exit', (code, signal) => {
-            onExit(code, signal)
-          })
-        }
-
-        // 在 detached 模式下，主进程不应该被子进程“挂住”，
-        // 这里统一调用一次 unref，保证 Electron 主进程可以独立退出。
-        child.unref()
-
-        resolve(child)
-      } catch (error) {
+      // 处理启动错误
+      child.on('error', (error) => {
         reject(error)
+      })
+
+      // 监听进程退出（用于日志记录）
+      if (onExit) {
+        child.on('exit', (code, signal) => {
+          onExit(code, signal)
+        })
       }
-    })
+
+      resolve(child)
+    } catch (error) {
+      reject(error)
+    }
   })
 }

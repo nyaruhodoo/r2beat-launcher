@@ -3,10 +3,12 @@ import { writeFile } from 'fs/promises'
 import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents } from '../../../ipc/contracts'
 import type { ProcessPriority } from '@src/types'
-import { spawnGameProcess, spawnDetached } from '../../spawn'
+import { spawnDetached } from '../../spawn'
 import { patchPak } from './patch-pak'
 import { hookDll } from './hook-dll'
 import { MainUtils } from '../../main-utils'
+import launchWorker from './launch-worker?modulePath'
+import { Worker } from 'node:worker_threads'
 
 /** 启动游戏、补丁 pak、进程优先级 */
 export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -66,23 +68,51 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
           args.push(...argParts.map((arg: string) => arg.replace(/^"|"$/g, '')))
         }
 
-        // console.log(`[Main] 启动游戏: ${gameExePath}`)
-        // console.log(`[Main] 命令行参数:`, args)
+        const pid: number = await new Promise((res, rej) => {
+          const worker = new Worker(launchWorker, {})
+          worker.postMessage({
+            gameExePath,
+            args,
+            gamePath,
+          })
 
-        const gameProcess = await spawnGameProcess(
-          gameExePath,
-          args,
-          {
-            cwd: gamePath,
-          },
-          (code, signal) => {
-            console.log(`[Main] 游戏进程退出: code=${code}, signal=${signal}`)
-          },
-        )
+          worker.on('message', (msg: { type: string; pid?: number; error?: string }) => {
+            switch (msg.type) {
+              case 'PID_READY':
+                console.log(`[Main] 游戏已启动，PID: ${msg.pid}`)
+                res(msg.pid)
+                break
 
-        if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
+              case 'EXITED':
+                worker.terminate() // 任务完成，关闭 Worker 释放资源
+                break
 
-        console.log('[Main] 启动游戏成功')
+              case 'ERROR':
+                console.error(`[Main] 启动失败`, msg.error)
+                worker.terminate()
+                rej(msg.error ?? `游戏启动失败`)
+                break
+            }
+          })
+        })
+        const gameProcess = {
+          pid,
+        }
+
+        // const gameProcess = await spawnGameProcess(
+        //   gameExePath,
+        //   args,
+        //   {
+        //     cwd: gamePath,
+        //   },
+        //   (code, signal) => {
+        //     console.log(`[Main] 游戏进程退出: code=${code}, signal=${signal}`)
+        //   },
+        // )
+
+        // if (!gameProcess.pid) throw new Error('启动游戏进程失败，无法获取进程ID')
+
+        // console.log('[Main] 启动游戏成功')
 
         if (launchArgs === 'xyxOpen') {
           await hookDll({
