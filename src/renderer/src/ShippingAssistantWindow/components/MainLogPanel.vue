@@ -46,6 +46,7 @@ import { useLocalStorageState } from 'vue-hooks-plus'
 import { ipcListener } from '@renderer/ipc'
 import { useToast } from '@renderer/composables/useToast'
 import type { MainLogKind, MainLogPayload } from '../../../../ipc/contracts'
+import { confirm } from '@renderer/composables/useConfirm'
 
 const { success: toastSuccess } = useToast()
 
@@ -103,7 +104,11 @@ function append(payload: MainLogPayload) {
   setLogs(next.length > MAX_LOGS ? next.slice(-MAX_LOGS) : next)
 }
 
-function clearLogs() {
+async function clearLogs() {
+  await confirm({
+    message: '请确认是否需要清空日志',
+  })
+
   setLogs([])
   seq = 0
 }
