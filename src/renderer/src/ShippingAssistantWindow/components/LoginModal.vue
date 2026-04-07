@@ -701,6 +701,7 @@ watch(
   align-items: center;
   gap: 8px;
   justify-content: space-between;
+  padding-right: 10px;
 
   .checkbox-wrapper {
     max-width: 70%;
