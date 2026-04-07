@@ -199,7 +199,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, markRaw, ref, watch } from 'vue'
+import { computed, markRaw, ref, shallowRef, watch } from 'vue'
 import type { GiftGroupedData, GiftItem, GiftItemWithGiver, WebUserInfo } from '@src/types'
 import { parseGiftItemName, processGiftData } from '../gift-process'
 import { ipcEmitter, ipcArg } from '@renderer/ipc'
@@ -287,9 +287,9 @@ const loading = ref(false)
 const keyword = ref('')
 const debouncedKeyword = useDebounce(keyword, { wait: 500 })
 // 当前选中的道具分类组
-const selectedKeywordGroups = ref<string[]>([])
+const selectedKeywordGroups = shallowRef<string[]>([])
 // 当前选中道具
-const selectedRows = ref<GroupedRow[]>([])
+const selectedRows = shallowRef<GroupedRow[]>([])
 // 赠送物品modal
 const giveModalVisible = ref(false)
 // 能量转化modal

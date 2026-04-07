@@ -91,13 +91,13 @@ export const keywordGroupOptions: {
   {
     label: '女',
     value: 'nv',
-    keywords: ['女', 'girl'],
+    keywords: ['女', '少女', 'girl'],
     blacklist: ['红桃女王背景框'],
   },
   {
     label: '男',
     value: 'nan',
-    keywords: ['男', 'boy'],
+    keywords: ['男', '少男', 'boy'],
     blacklist: [],
   },
 ]
