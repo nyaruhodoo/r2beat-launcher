@@ -81,16 +81,13 @@ export function registerLaunchGameHandlers(ipc: IpcListener<IpcMainEvents>): voi
               case 'PID_READY':
                 console.log(`[Main] 游戏已启动，PID: ${msg.pid}`)
                 res(msg.pid)
-                break
-
-              case 'EXITED':
                 worker.terminate() // 任务完成，关闭 Worker 释放资源
                 break
 
               case 'ERROR':
                 console.error(`[Main] 启动失败`, msg.error)
-                worker.terminate()
                 rej(msg.error ?? `游戏启动失败`)
+                worker.terminate()
                 break
             }
           })
