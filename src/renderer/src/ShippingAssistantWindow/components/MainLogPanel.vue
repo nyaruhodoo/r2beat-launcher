@@ -42,11 +42,11 @@
 <script lang="ts" setup>
 import type { TableV2Instance } from 'element-plus'
 import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useLocalStorageState } from 'vue-hooks-plus'
 import { ipcListener } from '@renderer/ipc'
 import type { MainLogKind, MainLogPayload } from '../../../../ipc/contracts'
 import { confirm } from '@renderer/composables/useConfirm'
 import { Utils } from '../utils'
+import { useLocalStorageStateShallow } from '../composables/useLocalStorageStateShallow'
 
 const MAX_LOGS = 500
 
@@ -59,7 +59,7 @@ interface LogRow {
   text: string
 }
 
-const [logs, setLogs] = useLocalStorageState<LogRow[]>('r2beat_shipping_main_log_v1', {
+const [logs, setLogs] = useLocalStorageStateShallow<LogRow[]>('r2beat_shipping_main_log_v1', {
   defaultValue: [],
 })
 

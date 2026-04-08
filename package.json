@@ -25,6 +25,7 @@
     "@electron-toolkit/typed-ipc": "^1.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "axios": "^1.13.6",
+    "dexie": "^4.4.2",
     "element-plus": "^2.13.6",
     "frida": "^17.6.0",
     "ini": "^6.0.0",

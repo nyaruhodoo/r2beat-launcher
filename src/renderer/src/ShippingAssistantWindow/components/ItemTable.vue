@@ -218,6 +218,7 @@ import { keywordGroupOptions } from '../config'
 import { runConcurrent } from '../runConcurrent'
 import { useRelativeTime } from '../composables/useRelativeTime'
 import { useLocalStorageStateShallow } from '../composables/useLocalStorageStateShallow'
+import { useStoredGiftItems } from '../composables/useStoredGiftItems'
 
 type GroupedRow = GiftGroupedData & {
   latestCreatedAt: string
@@ -237,10 +238,7 @@ const { error: toastError, success: toastSuccess } = useToast()
 /**
  * 原始道具数据
  */
-const [storedGiftItems, setStoredGiftItems] = useLocalStorageStateShallow<GiftItem[]>(
-  'r2beat_shipping_gift_raw_items_v1',
-  { defaultValue: [] },
-)
+const { storedGiftItems, saveGiftItems, delGiftItems } = useStoredGiftItems()
 
 /**
  * 上次同步数据时间
@@ -396,7 +394,7 @@ async function processPendingGiveItems() {
     toastError(e instanceof Error ? e.message : String(e))
   } finally {
     if (successIdxs.size > 0) {
-      setStoredGiftItems((storedGiftItems.value ?? []).filter((it) => !successIdxs.has(it.idx)))
+      delGiftItems([...successIdxs])
     }
     giveTaskRunning.value = false
   }
@@ -737,7 +735,8 @@ async function fetchAndStoreGifts() {
     return false
   }
   const raw = result.items ?? []
-  setStoredGiftItems(raw)
+  saveGiftItems(raw)
+
   return true
 }
 
