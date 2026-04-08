@@ -31,10 +31,8 @@
   --border-radius-app: 8px;
 }
 
-/* 这里加 root 是为了让系统公告强行用 dark 覆盖 */
-:root,
 /* 暗夜紫(夜间默认) */
-	:root.dark-theme {
+:root.dark-theme {
   --color-primary: #ffb6c1;
   --color-primary-dark: #ff6b9d;
   --color-primary-light: #ffe4e1;

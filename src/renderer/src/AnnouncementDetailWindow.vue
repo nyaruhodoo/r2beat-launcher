@@ -92,6 +92,18 @@ const formatRichTextImage = (html: string) => {
   return processedHtml
 }
 
+/**
+ * 暂时不做主题适配，给个默认色得了
+ */
+const applyTheme = (newTheme?: string) => {
+  if (!newTheme) return
+  const root = document.documentElement
+  root.setAttribute('data-theme', newTheme)
+  root.className = ''
+  root.classList.add(`${newTheme.trim()}-theme`)
+}
+applyTheme('dark')
+
 onMounted(() => {
   // 主进程在窗口加载完成后会通过 IPC 发送 announcement-detail-data
   const off = ipcListener.on('announcement-detail-data', (_event, payload: AnnouncementData) => {
