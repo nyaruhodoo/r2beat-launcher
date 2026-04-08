@@ -44,11 +44,9 @@ import type { TableV2Instance } from 'element-plus'
 import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useLocalStorageState } from 'vue-hooks-plus'
 import { ipcListener } from '@renderer/ipc'
-import { useToast } from '@renderer/composables/useToast'
 import type { MainLogKind, MainLogPayload } from '../../../../ipc/contracts'
 import { confirm } from '@renderer/composables/useConfirm'
-
-const { success: toastSuccess } = useToast()
+import { Utils } from '../utils'
 
 const MAX_LOGS = 500
 
@@ -113,12 +111,6 @@ async function clearLogs() {
   seq = 0
 }
 
-function formatExportFileName() {
-  const d = new Date()
-  const p = (n: number) => String(n).padStart(2, '0')
-  return `shipping-assistant-log_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.txt`
-}
-
 function exportLogsTxt() {
   const rows = logsList.value
   if (!rows.length) return
@@ -132,13 +124,12 @@ function exportLogsTxt() {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = formatExportFileName()
+  a.download = Utils.formatExportFileName('统计日志')
   a.rel = 'noopener'
   document.body.appendChild(a)
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
-  toastSuccess('已导出日志')
 }
 
 function columnsFor(w: number) {

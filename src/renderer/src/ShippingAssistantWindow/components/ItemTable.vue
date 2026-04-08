@@ -13,7 +13,7 @@
               >
             </span>
 
-            <el-button :disabled="displayData.length === 0" @click="exportGroupedSummaryTxt">
+            <el-button :disabled="storedGiftItems.length === 0" @click="exportGroupedSummaryTxt">
               导出
             </el-button>
           </div>

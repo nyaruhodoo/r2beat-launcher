@@ -42,9 +42,9 @@ export class Utils {
     const minutes = pad(date.getMinutes())
     const seconds = pad(date.getSeconds())
 
-    const dateStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    const dateStr = `${year}-${month}-${day} ${hours}点${minutes}分${seconds}秒`
 
-    return `${fileName}_${dateStr}.txt`
+    return `${fileName} ${dateStr}.txt`
   }
 
   /**
