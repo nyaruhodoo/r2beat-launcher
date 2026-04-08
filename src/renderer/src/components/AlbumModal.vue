@@ -112,7 +112,7 @@ const handleOpen = async (filePath: string) => {
 const handleDelete = async (file: ScreenshotFileInfo) => {
   try {
     await confirm({
-      message: `确定要删除 ${file.name} 吗？`,
+      message: `确定要删除「${file.name}」吗？`,
     })
 
     const res = await ipcEmitter.invoke('delete-screenshot', file.path)

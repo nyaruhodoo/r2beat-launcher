@@ -250,7 +250,7 @@ const handleDeleteAccount = async (userInfo: UserInfo) => {
   try {
     await confirm({
       title: '删除账号',
-      message: `确定要删除账号 "${displayName}" 吗？`,
+      message: `确定要删除账号「${displayName}」吗？`,
       confirmText: '删除',
       cancelText: '取消',
     })

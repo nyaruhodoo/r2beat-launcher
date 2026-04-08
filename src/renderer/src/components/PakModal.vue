@@ -152,7 +152,7 @@ const handleDeleteClick = async (name: string) => {
   try {
     await confirm({
       title: '删除补丁',
-      message: `确定要删除补丁 "${name}" 吗？此操作会同时删除本地和游戏目录下的文件（若存在），且不可撤销。`,
+      message: `确定要删除补丁「${name}」吗？此操作会同时删除本地和游戏目录下的文件（若存在），且不可撤销。`,
       confirmText: '删除',
       cancelText: '取消',
     })
