@@ -75,20 +75,20 @@ const showLoginModal = ref(false)
 
 const giftRechargeItems: DropdownItem[] = [
   {
-    label: '抽奖中心',
+    label: '抽奖',
     icon: '🎁',
     href: 'https://r2beat.xiyouxi.com/gift/draw',
     target: '_blank',
   },
   {
-    label: '充值中心',
+    label: '充值',
     icon: '💎',
     onClick: () => {
       ipcEmitter.send('open-recharge-center', '')
     },
   },
   {
-    label: '游戏官网',
+    label: '官网',
     icon: wangzhanImg,
     href: 'https://r2beat.xiyouxi.com/',
     target: '_blank',
