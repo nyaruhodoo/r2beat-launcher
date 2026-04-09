@@ -326,8 +326,6 @@ export class MainUtils {
       // 再次过滤无效解析
       .filter((p) => !isNaN(p.pid))
 
-    console.log(processList)
-
     return processList
   }
 
