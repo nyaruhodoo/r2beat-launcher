@@ -7,10 +7,7 @@ import { get as httpsGet } from 'https'
 import { URL } from 'url'
 import { access, readdir, rm, stat, unlink } from 'fs/promises'
 import { http } from './http'
-import _psList from 'ps-list'
-
-// @ts-expect-error  不知道原因，暂时这样修正
-const psList: typeof _psList = typeof _psList === 'function' ? _psList : _psList.default
+import { spawnPromise } from './spawn'
 
 /** `runConcurrent` 在 `abortOnError: false` 时每一项的归纳结果 */
 export type RunConcurrentSettledItem<R> = { ok: true; value: R } | { ok: false; error: unknown }
@@ -299,7 +296,39 @@ export class MainUtils {
   }
 
   static async getPsList() {
-    return psList()
+    const result = await spawnPromise('wmic', ['process', 'get', 'Name,ProcessId'], {
+      collectStdout: true,
+      collectStderr: false,
+    })
+
+    const stdout = result.stdout || ''
+
+    // 1. 按行分割
+    const lines = stdout.split(/\r?\n/)
+
+    const processList = lines
+      .map((line) => line.trim())
+      // 2. 过滤掉空行、表头(Name)以及 wmic 自身产生的干扰行
+      .filter((line) => line && !line.startsWith('Name') && !line.startsWith('Node'))
+      .map((line) => {
+        // 3. 使用正则匹配：通常格式是 "进程名   PID"
+        // wmic 的输出中间会有多个空格，这里用 \s+ 匹配
+        // 注意：wmic 默认输出通常是 PID 在后，Name 在前（取决于字段字母排序或指定顺序）
+        const parts = line.split(/\s+/)
+
+        // 针对 'Name,ProcessId'，通常最后一项是 PID，前面的部分是进程名
+        // 考虑到有些进程名可能包含空格（虽然少见），这里做个简单的健壮性处理
+        const pid = parseInt(parts.pop(), 10)
+        const name = parts.join(' ')
+
+        return { name, pid }
+      })
+      // 再次过滤无效解析
+      .filter((p) => !isNaN(p.pid))
+
+    console.log(processList)
+
+    return processList
   }
 
   /**
