@@ -96,6 +96,8 @@
       </div>
 
       <div class="setting-item">
+        <label class="setting-label">服务器IP</label>
+
         <div class="path-input-group path-input-group-library">
           <input
             v-model="settings.tcpLoginIp"
@@ -106,16 +108,20 @@
           />
           <button class="browse-btn" @click="getServerIp">检测</button>
         </div>
-        <p class="setting-hint">如果你不知道这个功能是干嘛的，你就不要修改！！！</p>
+        <p class="setting-hint">当登录器无法正常登录时可以考虑使用此功能（如果作者还活着）</p>
       </div>
-      <div class="checkbox-group">
-        <Checkbox v-model="settings.minimizeToTrayOnLaunch">启动游戏后最小化到托盘</Checkbox>
-        <Checkbox v-model="settings.isShieldWordDisabled">关闭屏蔽字</Checkbox>
-        <Checkbox v-model="settings.autoUpdate">自动更新游戏</Checkbox>
-        <Checkbox v-model="settings.isLauncherUpdateDisabled">隐藏登录器更新弹窗</Checkbox>
-        <Checkbox v-model="settings.isTcpLoginDisabled">关闭登录检查</Checkbox>
+
+      <div class="setting-item">
+        <label class="setting-label">启动配置</label>
+        <div class="checkbox-group">
+          <Checkbox v-model="settings.minimizeToTrayOnLaunch">启动游戏后最小化到托盘</Checkbox>
+          <Checkbox v-model="settings.isShieldWordDisabled">关闭屏蔽字</Checkbox>
+          <Checkbox v-model="settings.autoUpdate">自动更新游戏</Checkbox>
+          <Checkbox v-model="settings.isLauncherUpdateDisabled">隐藏登录器更新弹窗</Checkbox>
+          <Checkbox v-model="settings.isTcpLoginDisabled">关闭登录检查</Checkbox>
+        </div>
+        <p class="setting-hint">游戏偶尔会换IP地址导致无法正常登录，可以通过该功能解决</p>
       </div>
-      <p class="setting-hint">游戏偶尔会换IP地址导致无法正常登录，可以通过该功能解决</p>
     </div>
 
     <!-- 作者模块 -->
