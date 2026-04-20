@@ -114,6 +114,7 @@
       :visible="showLoginModal"
       :account-list="savedAccounts"
       :delete-account="deleteAccount"
+      :game-settings="safeGameSettings"
       @close="showLoginModal = false"
       @login-success="handleLoginSuccess"
     />
@@ -266,6 +267,8 @@ const [_gameSettings, setGameSettings] = useLocalStorageState<Partial<GameSettin
 const safeGameSettings = computed(() => {
   return RendererUtils.mergeSettings(defaultGameSettings, _gameSettings.value)
 })
+
+console.log(safeGameSettings)
 
 // 已登录过账号
 const [savedAccounts, setSavedAccounts] = useLocalStorageState<UserInfo[]>(

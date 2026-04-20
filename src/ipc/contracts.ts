@@ -100,6 +100,7 @@ export type IpcMainEvents =
       'tcp-login': (
         username: string,
         password: string,
+        serverIp: string,
       ) => IpcResult<{
         status?: 'SUCCESS' | 'FAILURE' | 'ERROR' | 'UNKNOWN'
         message?: string
@@ -114,6 +115,7 @@ export type IpcMainEvents =
           UserID?: number
         }
       }>
+      'get-server-ip': () => IpcResult<{ serverIp: string }>
       'download-patch-lists': (
         versions: string[],
         keepLatestOnly?: boolean,

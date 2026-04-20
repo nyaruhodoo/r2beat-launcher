@@ -82,15 +82,21 @@ const getStatusText = (status: ServerStatus): string => {
 
 // 检测服务端状态
 const checkServerStatus = async () => {
-  // if (!props.userInfo?.username || !props.userInfo?.password) return
-  return
+  if (
+    !props.userInfo?.username ||
+    !props.userInfo?.password ||
+    props.gameSettings.isTcpLoginDisabled
+  ) {
+    serverStatus.value = 'normal'
+    return
+  }
 
-  // eslint-disable-next-line no-unreachable
   try {
     const result = await ipcEmitter.invoke(
       'tcp-login',
       props.userInfo?.username,
       props.userInfo?.password,
+      props.gameSettings.tcpLoginIp,
     )
 
     const previousStatus = serverStatus.value

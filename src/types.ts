@@ -84,6 +84,11 @@ export interface GameSettings {
   lowerNPPriority: boolean
   // 屏蔽字
   isShieldWordDisabled: boolean
+  // 屏蔽登录器更新检查
+  isLauncherUpdateDisabled: boolean
+  // 关闭tcp登录
+  isTcpLoginDisabled: boolean
+  tcpLoginIp: string
 }
 
 /**

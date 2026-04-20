@@ -94,11 +94,28 @@
         <p class="setting-hint">经常顿卡的玩家，该配置可能有一些作用</p>
         <p class="setting-hint">降低NP优先级会影响启动速度，但可以降低对CPU的占用率</p>
       </div>
+
+      <div class="setting-item">
+        <div class="path-input-group path-input-group-library">
+          <input
+            v-model="settings.tcpLoginIp"
+            type="text"
+            class="path-input"
+            placeholder="服务器IP地址"
+            readonly
+          />
+          <button class="browse-btn" @click="getServerIp">检测</button>
+        </div>
+        <p class="setting-hint">如果你不知道这个功能是干嘛的，你就不要修改！！！</p>
+      </div>
       <div class="checkbox-group">
-        <Checkbox v-model="settings.autoUpdate">自动更新游戏</Checkbox>
         <Checkbox v-model="settings.minimizeToTrayOnLaunch">启动游戏后最小化到托盘</Checkbox>
         <Checkbox v-model="settings.isShieldWordDisabled">关闭屏蔽字</Checkbox>
+        <Checkbox v-model="settings.autoUpdate">自动更新游戏</Checkbox>
+        <Checkbox v-model="settings.isLauncherUpdateDisabled">隐藏登录器更新弹窗</Checkbox>
+        <Checkbox v-model="settings.isTcpLoginDisabled">关闭登录检查</Checkbox>
       </div>
+      <p class="setting-hint">游戏偶尔会换IP地址导致无法正常登录，可以通过该功能解决</p>
     </div>
 
     <!-- 作者模块 -->
@@ -158,7 +175,7 @@ const emit = defineEmits<{
   (e: 'save', settings: GameSettings): void
 }>()
 
-const { error: showError } = useToast()
+const { error: showError, success: showSuccess } = useToast()
 
 // 创建一个本地的响应式对象用于 v-model 绑定
 const settings = ref<GameSettings>(defaultGameSettings)
@@ -400,6 +417,20 @@ const loadConfigIni = async () => {
   } catch {
     configIniJson.value = undefined
     showError(`读取 config.ini 异常`)
+  }
+}
+
+const getServerIp = async () => {
+  try {
+    const result = await ipcEmitter.invoke('get-server-ip')
+    if (result?.success && result.serverIp) {
+      settings.value.tcpLoginIp = result.serverIp
+      showSuccess(`服务器IP获取成功: ${result.serverIp}`)
+    } else {
+      throw new Error(result?.error)
+    }
+  } catch (error) {
+    showError(`获取服务器IP失败: ${error}`)
   }
 }
 

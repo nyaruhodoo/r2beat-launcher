@@ -1,9 +1,9 @@
 import { Socket } from 'net'
 
 // 服务器配置
-const SERVER_HOST = '114.117.135.107'
+const SERVER_HOST = '43.137.89.168'
 const SERVER_PORT = 28004
-const CONNECTION_TIMEOUT = 10000 // 10秒超时
+const CONNECTION_TIMEOUT = 15000
 
 // 登录响应结果类型
 export interface LoginResponse {
@@ -192,7 +192,11 @@ function parseLoginResponse(data: Buffer): LoginResponse {
  * @param password 密码
  * @returns Promise<LoginResponse> 登录响应结果
  */
-export function sendTcpLoginRequest(username: string, password: string): Promise<LoginResponse> {
+export function sendTcpLoginRequest(
+  username: string,
+  password: string,
+  serverIp: string,
+): Promise<LoginResponse> {
   return new Promise((resolve, reject) => {
     // 创建登录包
     const loginPacket = createLoginPacket(username, password)
@@ -204,7 +208,7 @@ export function sendTcpLoginRequest(username: string, password: string): Promise
     client.setTimeout(CONNECTION_TIMEOUT)
 
     // 连接成功回调
-    client.connect(SERVER_PORT, SERVER_HOST, () => {
+    client.connect(SERVER_PORT, serverIp ?? SERVER_HOST, () => {
       console.log(`[TCP Login] 已连接到服务器: ${SERVER_HOST}:${SERVER_PORT}`)
       console.log(`[TCP Login] 正在发送登录包...`)
 

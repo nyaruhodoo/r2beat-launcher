@@ -147,7 +147,7 @@ import Modal from './Modal.vue'
 import Checkbox from './Checkbox.vue'
 import { useToast } from '@renderer/composables/useToast'
 import { confirm } from '@renderer/composables/useConfirm'
-import type { UserInfo } from '@src/types'
+import type { GameSettings, UserInfo } from '@src/types'
 import useEventListener from 'vue-hooks-plus/lib/useEventListener'
 import { ipcEmitter } from '@renderer/ipc'
 
@@ -155,6 +155,7 @@ const props = defineProps<{
   visible: boolean
   accountList?: UserInfo[]
   deleteAccount: (username: string) => void
+  gameSettings: GameSettings
 }>()
 
 const { error: showError } = useToast()
@@ -313,21 +314,22 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
-    emit('login-success', {
-      username: formData.value.username,
-      password: formData.value.password,
-      rememberPassword: rememberPassword.value,
-      remark: formData.value.remark,
-    })
+    if (props.gameSettings.isTcpLoginDisabled) {
+      // 直接模拟登录成功
+      emit('login-success', {
+        username: formData.value.username,
+        password: formData.value.password,
+        rememberPassword: rememberPassword.value,
+        remark: formData.value.remark,
+      })
+      return
+    }
 
-    return
-
-    // 发送 TCP 登录请求
-    // eslint-disable-next-line no-unreachable
     const result = await ipcEmitter.invoke(
       'tcp-login',
       formData.value.username.trim(),
       formData.value.password.trim(),
+      props.gameSettings.tcpLoginIp,
     )
 
     console.log(result)
