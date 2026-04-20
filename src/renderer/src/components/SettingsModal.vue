@@ -96,7 +96,7 @@
       </div>
 
       <div class="setting-item">
-        <label class="setting-label">服务器IP</label>
+        <label class="setting-label">觉醒服务器IP</label>
 
         <div class="path-input-group path-input-group-library">
           <input
@@ -104,23 +104,24 @@
             type="text"
             class="path-input"
             placeholder="服务器IP地址"
-            readonly
           />
           <button class="browse-btn" @click="getServerIp">检测</button>
         </div>
         <p class="setting-hint">当登录器无法正常登录时可以考虑使用此功能（如果作者还活着）</p>
+        <p class="setting-hint">更简单的做法是关闭登录检查（如果作者死了）</p>
       </div>
 
       <div class="setting-item">
         <label class="setting-label">启动配置</label>
         <div class="checkbox-group">
           <Checkbox v-model="settings.minimizeToTrayOnLaunch">启动游戏后最小化到托盘</Checkbox>
-          <Checkbox v-model="settings.isShieldWordDisabled">关闭屏蔽字</Checkbox>
+          <Checkbox v-model="settings.isShieldWordDisabled">关闭游戏内屏蔽字</Checkbox>
           <Checkbox v-model="settings.autoUpdate">自动更新游戏</Checkbox>
           <Checkbox v-model="settings.isLauncherUpdateDisabled">隐藏登录器更新弹窗</Checkbox>
           <Checkbox v-model="settings.isTcpLoginDisabled">关闭登录检查</Checkbox>
         </div>
-        <p class="setting-hint">游戏偶尔会换IP地址导致无法正常登录，可以通过该功能解决</p>
+        <p class="setting-hint">该功能启用后，登录操作将退化为只保存账号密码</p>
+        <p class="setting-hint">代价是不再检测服务器状态，无法使用维护后自动登录</p>
       </div>
     </div>
 
