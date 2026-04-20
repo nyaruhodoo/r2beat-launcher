@@ -55,6 +55,11 @@ export const defaultGameSettings: GameSettings = {
   lowerNPPriority: false,
   // 禁用屏蔽字
   isShieldWordDisabled: false,
+  // 禁用登录器更新检查
+  isLauncherUpdateDisabled: false,
+  // 关闭tcp登录
+  isTcpLoginDisabled: false,
+  tcpLoginIp: '43.137.89.168',
 }
 
 /**
