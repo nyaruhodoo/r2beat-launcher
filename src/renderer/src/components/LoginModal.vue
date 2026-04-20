@@ -313,7 +313,17 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
+    emit('login-success', {
+      username: formData.value.username,
+      password: formData.value.password,
+      rememberPassword: rememberPassword.value,
+      remark: formData.value.remark,
+    })
+
+    return
+
     // 发送 TCP 登录请求
+    // eslint-disable-next-line no-unreachable
     const result = await ipcEmitter.invoke(
       'tcp-login',
       formData.value.username.trim(),

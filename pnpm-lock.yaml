@@ -41,6 +41,9 @@ importers:
       tsv:
         specifier: ^0.2.0
         version: 0.2.0
+      util-deprecate:
+        specifier: ^1.0.2
+        version: 1.0.2
       vue:
         specifier: ^3.5.25
         version: 3.5.27(typescript@5.9.3)
