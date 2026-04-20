@@ -268,8 +268,6 @@ const safeGameSettings = computed(() => {
   return RendererUtils.mergeSettings(defaultGameSettings, _gameSettings.value)
 })
 
-console.log(safeGameSettings)
-
 // 已登录过账号
 const [savedAccounts, setSavedAccounts] = useLocalStorageState<UserInfo[]>(
   'r2beat_saved_accounts',
@@ -362,6 +360,10 @@ const searchGamePath = async () => {
  * 检查应用更新（带缓存，30分钟内不重复检查）
  */
 const checkAppUpdate = async () => {
+  if (safeGameSettings.value.isLauncherUpdateDisabled) {
+    console.log('[App] 已禁用自动检查更新')
+    return
+  }
   const now = Date.now()
   const timeSinceLastCheck = now - (lastUpdateCheckTime.value || 0)
 
