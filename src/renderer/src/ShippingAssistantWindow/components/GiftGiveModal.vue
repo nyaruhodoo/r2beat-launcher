@@ -24,7 +24,7 @@
           :debounce="200"
           popper-class="gift-giver-autocomplete-popper"
           style="width: 260px"
-          maxlength="10"
+          maxlength="20"
         >
           <template #default="{ item }">
             <div class="gift-giver-suggest-row">
