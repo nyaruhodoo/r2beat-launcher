@@ -59,7 +59,6 @@ export const defaultGameSettings: GameSettings = {
   isLauncherUpdateDisabled: false,
   // 关闭tcp登录
   isTcpLoginDisabled: false,
-  tcpLoginIp: '43.137.89.168',
 }
 
 /**

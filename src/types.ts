@@ -88,7 +88,6 @@ export interface GameSettings {
   isLauncherUpdateDisabled: boolean
   // 关闭tcp登录
   isTcpLoginDisabled: boolean
-  tcpLoginIp: string
 }
 
 /**

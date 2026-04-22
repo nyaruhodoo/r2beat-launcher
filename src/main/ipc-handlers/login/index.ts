@@ -5,18 +5,24 @@ import { webLogin } from './web-login'
 import { checkWebLoginForUsers } from './check-web-login'
 import { refreshWebUsersConcurrent } from './refresh-web-users'
 import { logError, logInfo, logSuccess } from '../../log'
-import axios from 'axios'
+import dns from 'dns/promises'
 
 /** TCP 与网页登录、登录态检查与刷新 */
 export function registerLoginHandlers(ipc: IpcListener<IpcMainEvents>): void {
-  ipc.handle('tcp-login', async (_, username, password, serverIp) => {
+  ipc.handle('tcp-login', async (_, username, password) => {
     try {
       if (!username || !password) {
         throw new Error('用户名和密码不能为空')
       }
 
       console.log(`[Main] 收到 TCP 登录请求: ${username}`)
-      const result = await sendTcpLoginRequest(username, password, serverIp)
+
+      const DNS_URL = 'r2beat-cn-ddos.xiyouxi.com'
+
+      // 使用 lookup 获取第一个解析到的 IP 地址
+      const { address } = await dns.lookup(DNS_URL)
+
+      const result = await sendTcpLoginRequest(username, password, address)
 
       if (result.status === 'SUCCESS') {
         return {
@@ -45,27 +51,19 @@ export function registerLoginHandlers(ipc: IpcListener<IpcMainEvents>): void {
 
   ipc.handle('get-server-ip', async () => {
     try {
-      // 注意：此处转换为 GitHub 的 Raw 原始文件地址
-      const RAW_URL =
-        'https://raw.githubusercontent.com/nyaruhodoo/r2beat-launcher/main/src/config.ts'
+      const DNS_URL = 'r2beat-cn-ddos.xiyouxi.com'
 
-      const response = await axios.get(RAW_URL, { timeout: 10000 })
-      const content = response.data as string
-
-      const regex = /tcpLoginIp\s*:\s*['"]([^'"]+)['"]/
-      const match = content.match(regex)
-
-      if (!match || !match[1]) {
-        throw new Error('未找到服务器IP地址')
-      }
+      // 使用 lookup 获取第一个解析到的 IP 地址
+      const { address } = await dns.lookup(DNS_URL)
 
       return {
         success: true,
-        serverIp: match[1],
+        serverIp: address,
       }
     } catch (error) {
+      // 捕获 DNS 解析失败的情况（如断网、域名不存在等）
       const message = error instanceof Error ? error.message : '获取服务器IP失败'
-      logError(message)
+      console.error('DNS Lookup Error:', message)
 
       return {
         success: false,

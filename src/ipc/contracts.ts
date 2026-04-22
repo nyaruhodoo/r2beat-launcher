@@ -100,7 +100,6 @@ export type IpcMainEvents =
       'tcp-login': (
         username: string,
         password: string,
-        serverIp: string,
       ) => IpcResult<{
         status?: 'SUCCESS' | 'FAILURE' | 'ERROR' | 'UNKNOWN'
         message?: string

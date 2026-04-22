@@ -96,22 +96,6 @@
       </div>
 
       <div class="setting-item">
-        <label class="setting-label">觉醒服务器IP</label>
-
-        <div class="path-input-group path-input-group-library">
-          <input
-            v-model="settings.tcpLoginIp"
-            type="text"
-            class="path-input"
-            placeholder="服务器IP地址"
-          />
-          <button class="browse-btn" @click="getServerIp">检测</button>
-        </div>
-        <p class="setting-hint">当登录器无法正常登录时可以考虑使用此功能（如果作者还活着）</p>
-        <p class="setting-hint">更简单的做法是关闭登录检查（如果作者死了）</p>
-      </div>
-
-      <div class="setting-item">
         <label class="setting-label">启动配置</label>
         <div class="checkbox-group">
           <Checkbox v-model="settings.minimizeToTrayOnLaunch">启动游戏后最小化到托盘</Checkbox>
@@ -182,7 +166,7 @@ const emit = defineEmits<{
   (e: 'save', settings: GameSettings): void
 }>()
 
-const { error: showError, success: showSuccess } = useToast()
+const { error: showError } = useToast()
 
 // 创建一个本地的响应式对象用于 v-model 绑定
 const settings = ref<GameSettings>(defaultGameSettings)
@@ -424,20 +408,6 @@ const loadConfigIni = async () => {
   } catch {
     configIniJson.value = undefined
     showError(`读取 config.ini 异常`)
-  }
-}
-
-const getServerIp = async () => {
-  try {
-    const result = await ipcEmitter.invoke('get-server-ip')
-    if (result?.success && result.serverIp) {
-      settings.value.tcpLoginIp = result.serverIp
-      showSuccess(`服务器IP获取成功: ${result.serverIp}`)
-    } else {
-      throw new Error(result?.error)
-    }
-  } catch (error) {
-    showError(`获取服务器IP失败: ${error}`)
   }
 }
 

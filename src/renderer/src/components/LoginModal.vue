@@ -329,7 +329,6 @@ const handleLogin = async () => {
       'tcp-login',
       formData.value.username.trim(),
       formData.value.password.trim(),
-      props.gameSettings.tcpLoginIp,
     )
 
     console.log(result)

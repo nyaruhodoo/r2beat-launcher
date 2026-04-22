@@ -96,7 +96,6 @@ const checkServerStatus = async () => {
       'tcp-login',
       props.userInfo?.username,
       props.userInfo?.password,
-      props.gameSettings.tcpLoginIp,
     )
 
     const previousStatus = serverStatus.value

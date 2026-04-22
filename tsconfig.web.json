@@ -10,11 +10,10 @@
   ],
   "compilerOptions": {
     "composite": true,
-    "baseUrl": ".",
     "strictNullChecks": false,
     "noImplicitReturns": false,
     "paths": {
-      "@renderer/*": ["src/renderer/src/*"],
+      "@renderer/*": ["./src/renderer/src/*"],
       "@src/*": ["./src/*"]
     },
     "types": ["element-plus/global"]
