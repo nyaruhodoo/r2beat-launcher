@@ -33,21 +33,33 @@ const createFridaScriptTemplate = (username: string, password: string) => {
               const buf = args[1];
               const originalLen = args[2].toUInt32();
 
-              if (originalLen < 8) return;
-              // 读取前两个字节判断是否为目标登陆包
-              const header = buf.readByteArray(2);
-              const headerView = new Uint8Array(header);
+              // 登录包即使账号密码只有1位，加上外层包裹总长度也至少有 38 字节
+              // 这里设为 22 字节是为了安全读取前 21 位的检测特征
+              if (originalLen < 22) return;
 
-              if (headerView[0] === 0xFF && headerView[1] === 0x01) {
-                console.log("🎯 发现登陆包，正在执行完全替换");
+              // 读取前 22 个字节用于特征复合匹配
+              const header = buf.readByteArray(22);
+              const view = new Uint8Array(header);
 
-                // 修改第二个参数 (void* buf) 指向新申请的内存
+              // 1️⃣ 过滤网一：验证外层 TCP 协议固定魔数是否为 70 00 1a 42
+              const hasOuterMagic = (view[4] === 0x70 && view[5] === 0x00 && view[6] === 0x1A && view[7] === 0x42);
+
+              // 2️⃣ 过滤网二：验证内层 Base64 头部是否为 "/wEA" (对应解密后的 ff 01 00)
+              const hasBase64Header = (view[9] === 0x2F && view[10] === 0x77 && view[11] === 0x45 && view[12] === 0x41);
+
+              // 3️⃣ 过滤网三：验证内层登录指令码特征位是否为 "AAAF" (对应解密后的 00 00 05)
+              const hasLoginOpcode = (view[17] === 0x41 && view[18] === 0x41 && view[19] === 0x41 && view[20] === 0x46);
+
+              if (hasOuterMagic && hasBase64Header && hasLoginOpcode) {
+                console.log("🎯 发现目标登录包，正在执行完全替换...");
+
+                // 修改第二个参数 (void* buf) 指向你新申请的内存指针
                 args[1] = pCustomBuf;
-                // 修改第三个参数 (size_t len) 为新包的长度
-                args[2] = ptr(customLen);
- 
                 
-                console.log("✅ 修改成功，开始卸载 Frida");
+                // 修改第三个参数 (size_t len) 为新包的实际动态长度
+                args[2] = ptr(customLen);
+
+                console.log("🚀 正在卸载 Frida 拦截器...");
 
                 listener.detach();
                 send({ type: 'finish' });
