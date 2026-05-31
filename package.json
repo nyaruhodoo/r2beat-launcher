@@ -1,6 +1,6 @@
 {
   "name": "r2beat-launcher",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "音速觉醒启动器",
   "homepage": "https://electron-vite.org",
   "author": "https://github.com/nyaruhodoo",
@@ -28,6 +28,7 @@
     "dexie": "^4.4.2",
     "element-plus": "^2.13.6",
     "frida": "^17.6.0",
+    "iconv-lite": "^0.7.2",
     "ini": "^6.0.0",
     "lzma-native": "^8.0.6",
     "pinyin-pro": "^3.28.0",

@@ -5,6 +5,7 @@ import type { IpcListener } from '@electron-toolkit/typed-ipc/main'
 import type { IpcMainEvents } from '../../../ipc/contracts'
 import type { GameConfig, PatchInfo } from '@src/types'
 import { MainUtils } from '../../main-utils'
+import iconv from 'iconv-lite'
 
 /** 游戏 config.ini 与 Patch.ini */
 export function registerGameConfigHandlers(ipc: IpcListener<IpcMainEvents>): void {
@@ -21,7 +22,8 @@ export function registerGameConfigHandlers(ipc: IpcListener<IpcMainEvents>): voi
         throw new Error('未在指定路径中找到配置文件')
       }
 
-      const fileContent = await readFile(configIniPath, 'utf-8')
+      const buffer = await readFile(configIniPath)
+      const fileContent = iconv.decode(buffer, 'win1252')
 
       return { success: true, exists: true, data: parse(fileContent) as GameConfig }
     } catch (error) {
@@ -48,9 +50,12 @@ export function registerGameConfigHandlers(ipc: IpcListener<IpcMainEvents>): voi
 
       await writeFile(
         configIniPath,
-        stringify(configJson, {
-          whitespace: true,
-        }),
+        iconv.encode(
+          stringify(configJson, {
+            whitespace: true,
+          }),
+          'win1252',
+        ),
         'utf-8',
       )
 
