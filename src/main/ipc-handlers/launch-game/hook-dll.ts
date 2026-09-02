@@ -4,6 +4,9 @@ import { createLoginPacket } from '../login/tcp-login'
 const createFridaScriptTemplate = (username: string, password: string) => {
   const loginPacket = createLoginPacket(username, password)
 
+  console.log('✅ 登录包已生成')
+  console.log(loginPacket)
+
   return /*js*/ `
       try {
         const moduleName = "hv.dll";
@@ -41,16 +44,14 @@ const createFridaScriptTemplate = (username: string, password: string) => {
               const header = buf.readByteArray(22);
               const view = new Uint8Array(header);
 
+
               // 1️⃣ 过滤网一：验证外层 TCP 协议固定魔数是否为 70 00 1a 42
               const hasOuterMagic = (view[4] === 0x70 && view[5] === 0x00 && view[6] === 0x1A && view[7] === 0x42);
 
-              // 2️⃣ 过滤网二：验证内层 Base64 头部是否为 "/wEA" (对应解密后的 ff 01 00)
-              const hasBase64Header = (view[9] === 0x2F && view[10] === 0x77 && view[11] === 0x45 && view[12] === 0x41);
+              const lastByte = buf.add(originalLen - 1).readU8();
+              const isEndWith80 = (lastByte === 0x80);
 
-              // 3️⃣ 过滤网三：验证内层登录指令码特征位是否为 "AAAF" (对应解密后的 00 00 05)
-              const hasLoginOpcode = (view[17] === 0x41 && view[18] === 0x41 && view[19] === 0x41 && view[20] === 0x46);
-
-              if (hasOuterMagic && hasBase64Header && hasLoginOpcode) {
+              if (hasOuterMagic && isEndWith80) {
                 console.log("🎯 发现目标登录包，正在执行完全替换...");
 
                 // 修改第二个参数 (void* buf) 指向你新申请的内存指针
